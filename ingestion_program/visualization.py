@@ -6,10 +6,11 @@ import seaborn as sns # seaborn for nice plot quicker
 from sklearn.metrics import roc_curve
 from IPython.display import display
 from sklearn.metrics import roc_auc_score
+import pylab as pl
 
 class Dataset_visualise():
 
-    def __init__(self,data,weights = None,labels = None,name = "dataset"):
+    def __init__(self, data, weights=None, labels=None, name="dataset"):
         self.dfall = data
         self.target = labels
         self.weights = weights
@@ -26,7 +27,8 @@ class Dataset_visualise():
         print(f'[*] --- Number of background events : {self.dfall[self.target==0].shape[0]}')
 
         print('[*] --- List of all features')
-        display(self.dfall.columns)
+        for col in self.dfall.columns.values:
+            print(f"\t{col}")
 
         print('[*] --- Examples of all features')
         display(self.dfall.head())
@@ -35,10 +37,9 @@ class Dataset_visualise():
         display(self.dfall.describe())
 
     def histogram_dataset(self,columns = None):
-        plt.figure()
         if columns == None:
             columns  =self.columns
-        sns.set(rc={'figure.figsize':(40,40)})
+        g = sns.set(rc={'figure.figsize':(40,40)})
 
         dfplot=pd.DataFrame(self.dfall, columns=columns)
 
@@ -48,9 +49,9 @@ class Dataset_visualise():
         dfplot[self.target==1].hist(weights=self.weights[self.target==1],figsize=(15,12),color='r',alpha=0.5,density=True,ax=ax, bins = nbins,label="S")
 
 
-        plt.legend(loc="best")
-        plt.title('Histograms of features in' + self.name)
-        plt.show
+        # ax.legend(loc="best")
+        pl.suptitle('Histograms of features in' + self.name)
+        plt.show()
 
     def correlation_plots(self,columns = None):
         caption = ["Signal feature","Background feature"]
@@ -59,7 +60,6 @@ class Dataset_visualise():
         for i in range(2):
             sns.set(rc={'figure.figsize':(10,10)})
 
-            
             dfplot=pd.DataFrame(self.dfall, columns=columns)
 
             print (caption[i]," correlation matrix")
@@ -69,7 +69,7 @@ class Dataset_visualise():
             plt.show()
 
 
-    def pair_plots(self,sample_size = 1000,columns = None):
+    def pair_plots(self,sample_size = 10,columns = None):
         if columns == None:
             columns  =self.columns
         df_sample = self.dfall[columns].copy()
