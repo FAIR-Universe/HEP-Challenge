@@ -10,10 +10,13 @@ from itertools import product
 from numpy.random import RandomState
 import warnings
 from copy import deepcopy
-from multiprocessing import Process, Manager
+import multiprocessing as mp
+from multiprocessing import shared_memory
 import sys
-warnings.filterwarnings("ignore")
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
+warnings.filterwarnings("ignore")
 
 # ------------------------------------------
 # Settings
@@ -24,7 +27,192 @@ CODABENCH = False
 NUM_SETS = 1  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
 USE_SYSTEAMTICS = True
-NUM_PROCESS = 3
+MAX_WORKERS = 30
+CHUNK_SIZE = 2
+
+# initialize worker environment
+def _init_worker():
+    import tensorflow as tf
+
+    tf.config.threading.set_inter_op_parallelism_threads(1)
+    tf.config.threading.set_intra_op_parallelism_threads(1)
+    tf.config.set_visible_devices([], "GPU")
+
+def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
+    temp_df = deepcopy(test_set["data"])
+    temp_df["weights"] = test_set["weights"]
+    temp_df["labels"] = test_set["labels"]
+
+    # Apply systematics to the sampled data
+    from systematics import Systematics
+
+    data_syst = Systematics(data=temp_df, tes=tes).data
+
+    # Apply weight scaling factor mu to the data
+    data_syst["weights"][data_syst["labels"] == 1] *= mu
+
+    data_syst.pop("labels")
+
+    prng = RandomState(seed)
+    new_weights = prng.poisson(lam=data_syst["weights"])
+
+    data_syst["weights"] = new_weights
+
+    del temp_df
+
+    return {"data": data_syst.drop("weights", axis=1), "weights": new_weights}
+
+
+# Define a function to process a set of combinations, not an instance method
+# to avoid pickling the instance and all its associated data.
+def _process_combination(arrays, test_settings, model, combination):
+    print("[*] Processing combination")
+
+    try:
+        # Setup shared memory for the test set
+        with SharedTestSet(arrays=arrays) as test_set:
+            set_index, test_set_index = combination
+
+            # random tes value (one per test set)
+            if USE_SYSTEAMTICS:
+                # random tes value (one per test set)
+                tes = np.random.uniform(0.9, 1.1)
+            else:
+                tes = 1.0  # create a seed
+            seed = (set_index * NUM_PSEUDO_EXPERIMENTS) + test_set_index
+            # get mu value of set from test settings
+            set_mu = test_settings["ground_truth_mus"][set_index]
+
+            # get bootstrapped dataset from the original test set
+            test_set = _get_bootstraped_dataset(test_set, mu=set_mu, tes=tes, seed=seed)
+            print(f"[*] Predicting process with seed {seed}")
+            predicted_dict = {}
+            predicted_dict = model.predict(test_set)
+            predicted_dict["test_set_index"] = test_set_index
+
+            print(
+                f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}"
+            )
+
+            return (combination, predicted_dict)
+    except Exception as e:
+        print(f"[-] Error in _process_combination: {e}")
+        raise e
+
+
+# ------------------------------------------
+# Shared test set class
+# ------------------------------------------
+class SharedTestSet:
+    def __init__(self, arrays=None, test_set=None):
+        self._data = {}
+        self._sm = []
+        self._owner = False
+
+        if arrays is not None:
+            self._load_arrays(arrays)
+
+        if test_set is not None:
+            self._load(test_set["data"], test_set["weights"], test_set["labels"])
+            self._owner = True
+
+    def _load_arrays(self, arrays):
+        def _create_sm_array(name, dtype, shape):
+            shm_b = shared_memory.SharedMemory(name=name, create=False)
+            self._sm.append(shm_b)
+            return np.ndarray(shape, dtype=dtype, buffer=shm_b.buf)
+
+        for key, value in arrays.items():
+            # Special case for DataFrame
+            if isinstance(value, list):
+                columns = {}
+                for entry in value:
+                    name = entry["name"]
+                    dtype = entry["dtype"]
+                    shape = entry["shape"]
+
+                    array = _create_sm_array(name, dtype, shape)
+                    columns[name] = array
+                self._data[key] = pd.DataFrame(columns, copy=False)
+                continue
+
+            dtype = value.get("dtype")
+            shape = value.get("shape")
+
+            self._data[key] = _create_sm_array(key, dtype, shape)
+
+    def _load(self, data, weights, labels):
+        # data
+        d = {}
+        for column in data.columns:
+            value = data[column]
+            size = value.nbytes
+            shm_b = shared_memory.SharedMemory(name=column, create=True, size=size)
+            self._sm.append(shm_b)
+
+            d[column] = np.ndarray(value.shape, dtype=value.dtype, buffer=shm_b.buf)
+            d[column][:] = value
+
+        self._data["data"] = pd.DataFrame(d, copy=False)
+
+        # weights
+        shm_b = shared_memory.SharedMemory(
+            name="weights", create=True, size=weights.nbytes
+        )
+        self._sm.append(shm_b)
+        self._data["weights"] = np.ndarray(
+            weights.shape, dtype=weights.dtype, buffer=shm_b.buf
+        )
+        self._data["weights"][:] = weights
+
+        # labels
+        shm_b = shared_memory.SharedMemory(
+            name="labels", create=True, size=labels.nbytes
+        )
+        self._sm.append(shm_b)
+        self._data["labels"] = np.ndarray(
+            labels.shape, dtype=labels.dtype, buffer=shm_b.buf
+        )
+        self._data["labels"][:] = labels
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+        # context manager to close the shared memory
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        for sm_block in self._sm:
+            sm_block.close()
+            if self._owner:
+                sm_block.unlink()
+
+    def asdict(self):
+        def _asdict(array):
+            if isinstance(array, dict):
+                d = {}
+                for k, v in array.items():
+                    d[k] = _asdict(v)
+
+                return d
+            elif isinstance(array, pd.DataFrame):
+                arrays = []
+                for column in array.columns:
+                    arrays.append(
+                        {
+                            "name": column,
+                            "dtype": array[column].dtype,
+                            "shape": array[column].shape,
+                        }
+                    )
+
+                return arrays
+            else:
+                return {"dtype": array.dtype, "shape": array.shape}
+
+        return _asdict(self._data)
 
 
 # ------------------------------------------
@@ -163,36 +351,6 @@ class Ingestion():
         print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Test data loaded successfully")
 
-    def get_bootstraped_dataset(self, mu=1.0, tes=1.0, seed=42):
-
-        temp_df = deepcopy(self.test_set["data"])
-        temp_df["weights"] = self.test_set["weights"]
-        temp_df["labels"] = self.test_set["labels"]
-
-        # Apply systematics to the sampled data
-        from systematics import Systematics
-        data_syst = Systematics(
-            data=temp_df,
-            tes=tes
-        ).data
-
-        # Apply weight scaling factor mu to the data
-        data_syst['weights'][data_syst["labels"] == 1] *= mu
-
-        data_syst.pop("labels")
-
-        prng = RandomState(seed)
-        new_weights = prng.poisson(lam=data_syst['weights'])
-
-        data_syst['weights'] = new_weights
-
-        del temp_df
-
-        return {
-            "data": data_syst.drop("weights", axis=1),
-            "weights": new_weights
-        }
-
     def init_submission(self):
         print("[*] Initializing Submmited Model")
         from model import Model
@@ -221,78 +379,36 @@ class Ingestion():
         # randomly shuffle all combinations of indices
         np.random.shuffle(all_combinations)
 
-        manager = Manager()
-        return_dict = manager.dict()
+        results = {}
+        futures = []
+
+        with SharedTestSet(test_set=self.test_set) as test_set:
+            with ProcessPoolExecutor(
+                mp_context=mp.get_context("spawn"), initializer=_init_worker
+            ) as executor:
+                # The description of the shared memory arrays for the test set
+                test_set_sm_arrays = test_set.asdict()
+                func = partial(
+                    _process_combination,
+                    test_set_sm_arrays,
+                    self.test_settings,
+                    self.model,
+                )
+                futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
+
+                # Iterate over the futures
+                for combination, predicted_dict in futures:
+                    set_index, test_set_index = combination
+
+                    # set results, preserving the order of the test set indices
+                    set_results = results.setdefault(set_index, {})
+                    set_results[test_set_index] = predicted_dict
 
         self.results_dict = {}
-        
-        # Define a function to process each combination in parallel
-        def process_combination(combination, return_dict):
-            set_index, test_set_index = combination
-            # random tes value (one per test set)
-            tes = np.random.uniform(0.9, 1.1)
-            # create a seed
-            seed = (set_index*100) + test_set_index
-            # get mu value of set from test settings
-            set_mu = self.test_settings["ground_truth_mus"][set_index]
-
-            # get bootstrapped dataset from the original test set
-            test_set = self.get_bootstraped_dataset(mu=set_mu, tes=tes, seed=seed)
-            print (f"[*] Predicting process")
-            predicted_dict = {}
-            predicted_dict = self.model.predict(test_set)
-            predicted_dict["test_set_index"] = test_set_index
-
-            print(f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}")
-
-            return_dict[seed] = predicted_dict
-            return 0
-
-        # Create a multiprocessing pool with 5 processes
-          # List to hold the pools
-        total_num = len(all_combinations)
-
-        reminder = total_num % NUM_PROCESS
-        for i in range(0, int(total_num/NUM_PROCESS)):
-            some_combinations = all_combinations[i*NUM_PROCESS: (i+1)*NUM_PROCESS]
-            pools = []
-            for combination in some_combinations:
-                pool = Process(target=process_combination, args= (combination, return_dict))
-                pool.start()
-                print(f"[*] Started process for combination: {combination}")
-                pools.append(pool)
-                
-
-            # for combination in all_combinations:
-            #     process_combination(combination)
-            for pool in pools:
-                pool.join()
-        
-            pool.close()
-
-        if reminder > 0:
-            some_combinations = all_combinations[-reminder:]
-            pools = []
-            for combination in some_combinations:
-                pool = Process(target=process_combination, args= (combination, return_dict))
-                pool.start()
-                print(f"[*] Started process for combination: {combination}")
-                pools.append(pool)
-                
-
-            # for combination in all_combinations:
-            #     process_combination(combination)
-            for pool in pools:
-                pool.join()
-        
-            pool.close()
-
-        for set_index in set_indices:
-            for test_set_index in test_set_indices:
-                seed = (set_index*100) + test_set_index
-                if set_index not in self.results_dict:
-                    self.results_dict[set_index] = []
-                self.results_dict[set_index].append(return_dict[seed])
+        for set_index, set_results in results.items():
+            self.results_dict[set_index] = [
+                set_results[i] for i in range(NUM_PSEUDO_EXPERIMENTS)
+            ]
 
 
         print("[*] All processes done")
