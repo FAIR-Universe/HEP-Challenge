@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 # ------------------------------------------
 # True when running on Codabench
 # False when running locally
-CODABENCH = False
+CODABENCH = True
 NUM_SETS = 1  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
 USE_SYSTEAMTICS = True
