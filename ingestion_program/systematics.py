@@ -780,8 +780,8 @@ def DER_data(data):
 
 def postprocess(data):
 
-    data = data.drop(data[data.PRI_had_pt<20].index)
-    data = data.drop(data[data.PRI_lep_pt<26].index)
+    data = data.drop(data[data.PRI_had_pt<26].index)
+    data = data.drop(data[data.PRI_lep_pt<20].index)
     # data = data.drop(data[data.PRI_met>70].index)
 
     return data
