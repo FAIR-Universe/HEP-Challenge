@@ -1,14 +1,15 @@
 # FAIR-UNIVERSE HEP competition yaml file
 # Created by: Ihsan Ullah
-# Created on: September 14, 2022
+# Created on: February 15, 2024
 
 version: 2
-title: Fair Universe - HEP
-description: Fair-Universe Competition HEP
+title: FAIR Universe - HiggsML Uncertainty Challenge
+description: FAIR Universe - HiggsML Uncertainty Challenge Organized by FAIR Universe
 image: logo.png
-has_registration: True   
-force_submission_to_leaderboard: True
-docker_image: ihsaanullah/fair-universe:new
+registration_auto_approve: False   
+enable_detailed_results: True
+docker_image: ihsaanullah/fair_universe:latest
+
 
 terms: pages/terms.md
 pages:  
@@ -16,24 +17,30 @@ pages:
     file: pages/overview.md
   - title: Evaluation
     file: pages/evaluation.md
-  - title: Terms
-    file: pages/terms.md
   - title: Data
     file: pages/data.md
+  - title: Starting Kit
+    file: pages/starting_kit.md
+  - title: Example Estimators
+    file: pages/example_estimators.md
+  - title: Terms
+    file: pages/terms.md
+  
 
 phases:
   - index: 0
     name: Phase 1
     description: Feedback Phase
-    start: 2023-09-15
-    end: 2023-10-15
+    start: 2024-02-15
+    end: 2024-03-15
     tasks:
       - 0
 
+
 tasks:
   - index: 0
-    name: Mu Estimation HEP
-    description: Estimate signal strength mu
+    name: FU HEP Task
+    description: Estimate Coverage
     input_data: input_data/
     reference_data: reference_data/  
     scoring_program: scoring_program/
@@ -47,34 +54,11 @@ leaderboards:
     submission_rule: "Force_Latest_Multiple"
     columns:
       - index: 0
-        title: mu_hat
-        key: mu_hat
+        title: Quantile Score
+        key: quantiles_score
       - index: 1
-        title: delta_mu_hat
-        key: delta_mu_hat
+        title: Interval
+        key: interval
       - index: 2
-        title: mae_mu
-        key: mae_mu
-      - index: 3
-        title: mse_mu
-        key: mse_mu
-      - index: 4
-        title: mae_delta_mu
-        key: mae_delta_mu
-      - index: 5
-        title: mse_delta_mu
-        key: mse_delta_mu
-      - index: 6
-        title: coverage_mu
-        key: coverage_mu
-      - index: 7
-        title: coverage_C
-        key: coverage_C
-      - index: 8
-        title: score_mae
-        key: score_mae
-      - index: 9
-        title: score_mse
-        key: score_mse
-
-
+        title: Coverage
+        key: coverage
