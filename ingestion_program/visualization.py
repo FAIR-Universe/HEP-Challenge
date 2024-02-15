@@ -6,7 +6,6 @@ import seaborn as sns # seaborn for nice plot quicker
 from sklearn.metrics import roc_curve
 from IPython.display import display
 from sklearn.metrics import roc_auc_score
-import pylab as pl
 
 class Dataset_visualise():
 
@@ -37,9 +36,10 @@ class Dataset_visualise():
         display(self.dfall.describe())
 
     def histogram_dataset(self,columns = None):
+        fig = plt.figure()
         if columns == None:
             columns  =self.columns
-        g = sns.set(rc={'figure.figsize':(40,40)})
+        sns.set(rc={'figure.figsize':(40,40)})
 
         dfplot=pd.DataFrame(self.dfall, columns=columns)
 
@@ -49,8 +49,8 @@ class Dataset_visualise():
         dfplot[self.target==1].hist(weights=self.weights[self.target==1],figsize=(15,12),color='r',alpha=0.5,density=True,ax=ax, bins = nbins,label="S")
 
 
-        # ax.legend(loc="best")
-        pl.suptitle('Histograms of features in' + self.name)
+        plt.legend(loc="best")
+        plt.title('Histograms of features in' + self.name)
         plt.show()
 
     def correlation_plots(self,columns = None):

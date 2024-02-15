@@ -2,13 +2,4 @@
 .DS_Store?
 ._*
 __pycache__
-run.py
-run2.py
-
-.ipynb_checkpoints/
-ML_Stuff/
-
-reference_data/
-input_data/
-sample_result_submission/
 

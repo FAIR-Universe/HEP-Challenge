@@ -4,7 +4,8 @@
 ## Starting Kit
 We are providing a starting kit as a Google Colab notebook to demonstrate the problem and a solution for it which can be submitted as a submission the competition. You can copy the Colab notebook and make changes as you want.  
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ihsaan-ullah/fair-universe/blob/master/Starting_Kits/HEP/StartingKit_HiggsML_Uncertainty_Challenge.ipynb#scrollTo=Rpw8UzjelmUv)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ihsaan-ullah/fair-universe/blob/master/Competition_Bundles/HEP/StartingKit_HiggsML_Uncertainty_Challenge.ipynb)
+
 
 
 ## Dummy Sample Submission

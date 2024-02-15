@@ -6,43 +6,17 @@ import numpy as np
 import json
 from datetime import datetime as dt
 import matplotlib.pyplot as plt
+import sys
 import io
 import base64
 
 # ------------------------------------------
-# Default Directories
+# Settings
 # ------------------------------------------
-# # root directory
-# module_dir = os.path.dirname(os.path.realpath(__file__))
-# root_dir = os.path.dirname(module_dir)
-# # Directory to output computed score into
-# output_dir = os.path.join(root_dir, "scoring_output")
-# # reference data (test labels)
-# reference_dir = os.path.join(root_dir,"reference_data")
-# # submitted/predicted lables
-# prediction_dir = os.path.join(root_dir, "sample_result_submission")
-# # score file to write score into
-# score_file = os.path.join(output_dir, "scores.json")
-# # html file to write score and figures into
-# html_file = os.path.join(output_dir, 'detailed_results.html')
-
-# ------------------------------------------
-# Codabench Directories
-# ------------------------------------------
-# root directory
-root_dir = "/app"
-# Directory read predictions and solutions from
-input_dir = os.path.join(root_dir, "input")
-# Directory to output computed score into
-output_dir = os.path.join(root_dir, "output")
-# reference data (test labels)
-reference_dir = os.path.join(input_dir, 'ref')  # Ground truth data
-# submitted/predicted labels
-prediction_dir = os.path.join(input_dir, 'res')
-# score file to write score into
-score_file = os.path.join(output_dir, 'scores.json')
-# html file to write score and figures into
-html_file = os.path.join(output_dir, 'detailed_results.html')
+# True when running on Codabench
+# False when running locally
+CODABENCH = False
+NUM_SETS = 1  # Total = 10
 
 
 class Scoring:
@@ -77,9 +51,50 @@ class Scoring:
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
+    def set_directories(self):
+
+        # set default directories for Codabench
+        module_dir = os.path.dirname(os.path.realpath(__file__))
+        root_dir_name = os.path.dirname(module_dir)
+        output_dir_name = "scoring_output"
+        reference_dir_name = "reference_data"
+        predictions_dir_name = "sample_result_submission"
+        score_file_name = "scores.json"
+        html_file_name = "detailed_results.html"
+
+        if CODABENCH:
+            root_dir_name = "/app"
+            input_dir_name = os.path.join(root_dir_name, "input")
+            output_dir_name = os.path.join(root_dir_name, "output")
+            reference_dir_name = os.path.join(input_dir_name, 'ref')
+            predictions_dir_name = os.path.join(input_dir_name, 'res')
+
+        # Directory to output computed score into
+        self.output_dir = os.path.join(root_dir_name, output_dir_name)
+        # reference data (test labels)
+        self.reference_dir = os.path.join(root_dir_name, reference_dir_name)
+        # submitted/predicted labels
+        self.prediction_dir = os.path.join(root_dir_name, predictions_dir_name)
+        # score file to write score into
+        self.score_file = os.path.join(output_dir_name, score_file_name)
+        # html file to write score and figures into
+        self.html_file = os.path.join(output_dir_name, html_file_name)
+
+        # In case predictions dir and output dir are provided as args
+        if len(sys.argv) > 1:
+            self.output_dir = sys.argv[1]
+
+        if len(sys.argv) > 2:
+            self.prediction_dir = sys.argv[2]
+
+        # Add to path
+        sys.path.append(self.reference_dir)
+        sys.path.append(self.output_dir)
+        sys.path.append(self.prediction_dir)
+
     def load_test_settings(self):
         print("[*] Reading test settings")
-        settings_file = os.path.join(reference_dir, "settings", "data.json")
+        settings_file = os.path.join(self.reference_dir, "settings", "data.json")
         with open(settings_file) as f:
             self.test_settings = json.load(f)
 
@@ -88,10 +103,9 @@ class Scoring:
     def load_ingestion_results(self):
         print("[*] Reading predictions")
         self.ingestion_results = []
-        # loop over sets (1 value of mu, total 10 sets)
-        # for i in range(0, 10):
-        for i in range(0, 1):
-            results_file = os.path.join(prediction_dir, "result_"+str(i)+".json")
+        # loop over sets (1 set = 1 value of mu)
+        for i in range(0, NUM_SETS):
+            results_file = os.path.join(self.prediction_dir, "result_"+str(i)+".json")
             with open(results_file) as f:
                 self.ingestion_results.append(json.load(f))
 
@@ -199,17 +213,16 @@ class Scoring:
             return_coverage = np.mean((mu >= p16) & (mu <= p84))
             return return_coverage
 
-        def f(x, n_tries, max_coverage=1e4, one_sigma = 0.6827):
-                sigma68 = np.sqrt(((1-one_sigma)*one_sigma*n_tries))/n_tries
+        def f(x, n_tries, max_coverage=1e4, one_sigma=0.6827):
+            sigma68 = np.sqrt(((1-one_sigma)*one_sigma*n_tries))/n_tries
 
-                if (x >= one_sigma-2*sigma68 and x <= one_sigma+2*sigma68):
-                    out = 1
-                elif (x < one_sigma-2*sigma68):
-                    out = 1 + abs((x-(one_sigma-2*sigma68))/sigma68)**4
-                elif (x > one_sigma+2*sigma68):
-                    out = 1 + abs((x-(one_sigma+2*sigma68))/sigma68)**3
-                return out
-
+            if (x >= one_sigma-2*sigma68 and x <= one_sigma+2*sigma68):
+                out = 1
+            elif (x < one_sigma-2*sigma68):
+                out = 1 + abs((x-(one_sigma-2*sigma68))/sigma68)**4
+            elif (x > one_sigma+2*sigma68):
+                out = 1 + abs((x-(one_sigma+2*sigma68))/sigma68)**3
+            return out
 
         coverage = Coverage(mu, p16, p84)
         interval = Interval(p16, p84)
@@ -219,13 +232,13 @@ class Scoring:
     def write_scores(self):
         print("[*] Writing scores")
 
-        with open(score_file, "w") as f_score:
+        with open(self.score_file, "w") as f_score:
             f_score.write(json.dumps(self.scores_dict, indent=4))
 
         print("[✔]")
 
     def write_html(self, content):
-        with open(html_file, 'a', encoding="utf-8") as f:
+        with open(self.html_file, 'a', encoding="utf-8") as f:
             f.write(content)
 
     def _print(self, content):
@@ -258,6 +271,9 @@ if __name__ == "__main__":
 
     # Init scoring
     scoring = Scoring()
+
+    # Set directories
+    scoring.set_directories()
 
     # Start timer
     scoring.start_timer()

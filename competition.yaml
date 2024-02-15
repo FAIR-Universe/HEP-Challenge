@@ -1,0 +1,80 @@
+# FAIR-UNIVERSE HEP competition yaml file
+# Created by: Ihsan Ullah
+# Created on: September 14, 2022
+
+version: 2
+title: Fair Universe - HEP
+description: Fair-Universe Competition HEP
+image: logo.png
+has_registration: True   
+force_submission_to_leaderboard: True
+docker_image: ihsaanullah/fair-universe:new
+
+terms: pages/terms.md
+pages:  
+  - title: Overview
+    file: pages/overview.md
+  - title: Evaluation
+    file: pages/evaluation.md
+  - title: Terms
+    file: pages/terms.md
+  - title: Data
+    file: pages/data.md
+
+phases:
+  - index: 0
+    name: Phase 1
+    description: Feedback Phase
+    start: 2023-09-15
+    end: 2023-10-15
+    tasks:
+      - 0
+
+tasks:
+  - index: 0
+    name: Mu Estimation HEP
+    description: Estimate signal strength mu
+    input_data: input_data/
+    reference_data: reference_data/  
+    scoring_program: scoring_program/
+    ingestion_program: ingestion_program/
+
+
+leaderboards:
+  - index: 0 
+    title: Results
+    key: main
+    submission_rule: "Force_Latest_Multiple"
+    columns:
+      - index: 0
+        title: mu_hat
+        key: mu_hat
+      - index: 1
+        title: delta_mu_hat
+        key: delta_mu_hat
+      - index: 2
+        title: mae_mu
+        key: mae_mu
+      - index: 3
+        title: mse_mu
+        key: mse_mu
+      - index: 4
+        title: mae_delta_mu
+        key: mae_delta_mu
+      - index: 5
+        title: mse_delta_mu
+        key: mse_delta_mu
+      - index: 6
+        title: coverage_mu
+        key: coverage_mu
+      - index: 7
+        title: coverage_C
+        key: coverage_C
+      - index: 8
+        title: score_mae
+        key: score_mae
+      - index: 9
+        title: score_mse
+        key: score_mse
+
+
