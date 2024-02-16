@@ -301,8 +301,7 @@ class Ingestion():
         print("[*] Saving ingestion result")
 
         # loop over sets
-        # for i in range(0, 10):
-        for i in range(0, 1):
+        for i in range(0, NUM_SETS):
             set_result = self.results_dict[i]
             set_result.sort(key=lambda x: x['test_set_index'])
             mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
