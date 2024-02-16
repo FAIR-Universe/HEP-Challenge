@@ -4,7 +4,7 @@
 ## Starting Kit
 We are providing a starting kit as a Google Colab notebook to demonstrate the problem and a solution for it which can be submitted as a submission the competition. You can copy the Colab notebook and make changes as you want.  
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ihsaan-ullah/fair-universe/blob/master/Competition_Bundles/HEP/StartingKit_HiggsML_Uncertainty_Challenge.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FAIR-Universe/HEP-Challenge/blob/master/StartingKit_HiggsML_Uncertainty_Challenge.ipynb)
 
 
 
@@ -16,7 +16,7 @@ Dummy sample submission is provided to make you understand what is expected as a
 
 #### ⚠️ Note:
 Participants can submit a pre-trained model zipped together with the `model.py`. It is the participants responsibility to load the pre-trained model in the Model class. In this case participants may want to ignore the train_set provided as input of the Model class. 
-You can download and see real sample submissions from our github repo: https://github.com/ihsaan-ullah/fair-universe/tree/master/Starting_Kits/HEP/example_submissions/
+You can download and see real sample submissions from our github repo: https://github.com/FAIR-Universe/HEP-Challenge/tree/master/example_submissions/
 
 Participants are encouraged to submit pre-trained models to use the maximum time for predictions rather than using the allowed time for training and then failing to evaluate your mode. To download training data click the **`Files`** tab.
 
