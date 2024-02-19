@@ -76,5 +76,5 @@ Only background events coming from Z boson are included in this challenge. While
 
 or use the following command to download using terminal
 ```
-wget -O Uncertainty_challenge_open_data.zip https://www.codabench.org/datasets/download/b51439bf-9221-41d4-aca6-51a0a5a13f9c/
+wget -O UC_public_data_21_12_23.zip https://www.codabench.org/datasets/download/9cf2ed28-2963-457a-a160-0b617b538c00/
 ```
