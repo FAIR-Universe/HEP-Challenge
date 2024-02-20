@@ -30,13 +30,16 @@ USE_SYSTEAMTICS = True
 MAX_WORKERS = 30
 CHUNK_SIZE = 2
 
-# initialize worker environment
-def _init_worker():
-    import tensorflow as tf
 
-    tf.config.threading.set_inter_op_parallelism_threads(1)
-    tf.config.threading.set_intra_op_parallelism_threads(1)
-    tf.config.set_visible_devices([], "GPU")
+# initialize worker environment
+def _init_worker(using_tensorflow):
+    if using_tensorflow:
+        import tensorflow as tf
+
+        tf.config.threading.set_inter_op_parallelism_threads(1)
+        tf.config.threading.set_intra_op_parallelism_threads(1)
+        tf.config.set_visible_devices([], "GPU")
+
 
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
     temp_df = deepcopy(test_set["data"])
@@ -382,9 +385,13 @@ class Ingestion():
         self.results_dict = {}
         futures = []
 
+        using_tensorflow = "tensorflow" in sys.modules
+
         with SharedTestSet(test_set=self.test_set) as test_set:
             with ProcessPoolExecutor(
-                mp_context=mp.get_context("spawn"), initializer=_init_worker
+                mp_context=mp.get_context("spawn"),
+                initializer=_init_worker,
+                initargs=(using_tensorflow,),
             ) as executor:
                 # The description of the shared memory arrays for the test set
                 test_set_sm_arrays = test_set.asdict()
