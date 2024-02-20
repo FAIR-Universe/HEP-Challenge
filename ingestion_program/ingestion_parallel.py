@@ -379,7 +379,7 @@ class Ingestion():
         # randomly shuffle all combinations of indices
         np.random.shuffle(all_combinations)
 
-        results = {}
+        self.results_dict = {}
         futures = []
 
         with SharedTestSet(test_set=self.test_set) as test_set:
@@ -398,18 +398,10 @@ class Ingestion():
 
                 # Iterate over the futures
                 for combination, predicted_dict in futures:
-                    set_index, test_set_index = combination
+                    set_index, _ = combination
 
-                    # set results, preserving the order of the test set indices
-                    set_results = results.setdefault(set_index, {})
-                    set_results[test_set_index] = predicted_dict
-
-        self.results_dict = {}
-        for set_index, set_results in results.items():
-            self.results_dict[set_index] = [
-                set_results[i] for i in range(NUM_PSEUDO_EXPERIMENTS)
-            ]
-
+                    set_results = self.results_dict.setdefault(set_index, [])
+                    set_results.append(predicted_dict)
 
         print("[*] All processes done")
 
