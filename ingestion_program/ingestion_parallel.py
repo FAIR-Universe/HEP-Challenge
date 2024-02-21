@@ -145,36 +145,32 @@ class SharedTestSet:
             self._data[key] = _create_sm_array(key, dtype, shape)
 
     def _load(self, data, weights, labels):
+        def _create_sm_array(name, dtype, shape, size):
+            shm_b = shared_memory.SharedMemory(name=name, create=True, size=size)
+            self._sm.append(shm_b)
+
+            return np.ndarray(shape, dtype=dtype, buffer=shm_b.buf)
+
         # data
         d = {}
         for column in data.columns:
             value = data[column]
             size = value.nbytes
-            shm_b = shared_memory.SharedMemory(name=column, create=True, size=size)
-            self._sm.append(shm_b)
 
-            d[column] = np.ndarray(value.shape, dtype=value.dtype, buffer=shm_b.buf)
+            d[column] = _create_sm_array(column, value.dtype, value.shape, size)
             d[column][:] = value
 
         self._data["data"] = pd.DataFrame(d, copy=False)
 
         # weights
-        shm_b = shared_memory.SharedMemory(
-            name="weights", create=True, size=weights.nbytes
-        )
-        self._sm.append(shm_b)
-        self._data["weights"] = np.ndarray(
-            weights.shape, dtype=weights.dtype, buffer=shm_b.buf
+        self._data["weights"] = _create_sm_array(
+            "weights", weights.dtype, weights.shape, weights.nbytes
         )
         self._data["weights"][:] = weights
 
         # labels
-        shm_b = shared_memory.SharedMemory(
-            name="labels", create=True, size=labels.nbytes
-        )
-        self._sm.append(shm_b)
-        self._data["labels"] = np.ndarray(
-            labels.shape, dtype=labels.dtype, buffer=shm_b.buf
+        self._data["labels"] = _create_sm_array(
+            "labels", labels.dtype, labels.shape, labels.nbytes
         )
         self._data["labels"][:] = labels
 
