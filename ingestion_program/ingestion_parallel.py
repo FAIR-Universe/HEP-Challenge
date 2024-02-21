@@ -221,10 +221,8 @@ class SharedTestSet:
 # ------------------------------------------
 # Ingestion Class
 # ------------------------------------------
-class Ingestion():
-
+class Ingestion:
     def __init__(self):
-
         # Initialize class variables
         self.start_time = None
         self.end_time = None
@@ -250,11 +248,10 @@ class Ingestion():
 
     def show_duration(self):
         print("\n---------------------------------")
-        print(f'[✔] Total duration: {self.get_duration()}')
+        print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
     def set_directories(self):
-
         # set default directories
         module_dir = os.path.dirname(os.path.realpath(__file__))
         root_dir_name = os.path.dirname(module_dir)
@@ -295,10 +292,16 @@ class Ingestion():
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        train_data_file = os.path.join(self.input_dir, 'train', 'data', 'data.csv')
-        train_labels_file = os.path.join(self.input_dir, 'train', 'labels', 'data.labels')
-        train_settings_file = os.path.join(self.input_dir, 'train', 'settings', 'data.json')
-        train_weights_file = os.path.join(self.input_dir, 'train', 'weights', 'data.weights')
+        train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
+        train_labels_file = os.path.join(
+            self.input_dir, "train", "labels", "data.labels"
+        )
+        train_settings_file = os.path.join(
+            self.input_dir, "train", "settings", "data.json"
+        )
+        train_weights_file = os.path.join(
+            self.input_dir, "train", "weights", "data.weights"
+        )
 
         # read train labels
         with open(train_labels_file, "r") as f:
@@ -317,7 +320,7 @@ class Ingestion():
             "data": pd.read_csv(train_data_file, dtype=np.float32),
             "labels": train_labels,
             "settings": train_settings,
-            "weights": train_weights
+            "weights": train_weights,
         }
 
         del train_labels, train_settings, train_weights
@@ -327,10 +330,14 @@ class Ingestion():
     def load_test_set(self):
         print("[*] Loading Test data")
 
-        test_data_file = os.path.join(self.input_dir, 'test', 'data', 'data.csv')
-        test_settings_file = os.path.join(self.input_dir, 'test', 'settings', 'data.json')
-        test_weights_file = os.path.join(self.input_dir, 'test', 'weights', 'data.weights')
-        test_labels_file = os.path.join(self.input_dir, 'test', 'labels', 'data.labels')
+        test_data_file = os.path.join(self.input_dir, "test", "data", "data.csv")
+        test_settings_file = os.path.join(
+            self.input_dir, "test", "settings", "data.json"
+        )
+        test_weights_file = os.path.join(
+            self.input_dir, "test", "weights", "data.weights"
+        )
+        test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
 
         # read test settings
         with open(test_settings_file) as f:
@@ -347,7 +354,7 @@ class Ingestion():
         self.test_set = {
             "data": pd.read_csv(test_data_file),
             "weights": test_weights,
-            "labels": test_labels
+            "labels": test_labels,
         }
         del test_weights, test_labels
 
@@ -358,10 +365,8 @@ class Ingestion():
         print("[*] Initializing Submmited Model")
         from model import Model
         from systematics import Systematics
-        self.model = Model(
-            train_set=self.train_set,
-            systematics=Systematics
-        )
+
+        self.model = Model(train_set=self.train_set, systematics=Systematics)
 
         del self.train_set
 
@@ -418,7 +423,7 @@ class Ingestion():
         # loop over sets
         for i in range(0, NUM_SETS):
             set_result = self.results_dict[i]
-            set_result.sort(key=lambda x: x['test_set_index'])
+            set_result.sort(key=lambda x: x["test_set_index"])
             mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
             for test_set_dict in set_result:
                 mu_hats.append(test_set_dict["mu_hat"])
@@ -432,13 +437,12 @@ class Ingestion():
                 "p16": p16,
                 "p84": p84,
             }
-            result_file = os.path.join(self.output_dir, "result_"+str(i)+".json")
-            with open(result_file, 'w') as f:
+            result_file = os.path.join(self.output_dir, "result_" + str(i) + ".json")
+            with open(result_file, "w") as f:
                 f.write(json.dumps(ingestion_result_dict, indent=4))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     print("############################################")
     print("### Parallel Ingestion Program")
     print("############################################\n")
