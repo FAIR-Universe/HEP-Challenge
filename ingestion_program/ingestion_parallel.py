@@ -348,7 +348,7 @@ class Ingestion:
             test_labels = np.array(f.read().splitlines(), dtype=float)
 
         self.test_set = {
-            "data": pd.read_csv(test_data_file),
+            "data": pd.read_csv(test_data_file, dtype=np.float32),
             "weights": test_weights,
             "labels": test_labels,
         }
