@@ -18,8 +18,9 @@ warnings.filterwarnings("ignore")
 # Settings
 # ------------------------------------------
 # True when running on Codabench
-# False when running locally
-CODABENCH = True
+CODABENCH = False
+# True when using public data (to run locally)
+USE_PUBLIC_DATA = False
 NUM_SETS = 1  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
 USE_SYSTEAMTICS = True
@@ -66,7 +67,7 @@ class Ingestion():
         module_dir = os.path.dirname(os.path.realpath(__file__))
         root_dir_name = os.path.dirname(module_dir)
 
-        input_data_dir_name = "input_data"
+        input_data_dir_name = "public_data" if USE_PUBLIC_DATA else "input_data"
         output_dir_name = "sample_result_submission"
         program_dir_name = "ingestion_program"
         submission_dir_name = "sample_code_submission"
