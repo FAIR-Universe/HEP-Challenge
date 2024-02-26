@@ -15,7 +15,7 @@ import base64
 # ------------------------------------------
 # True when running on Codabench
 # False when running locally
-CODABENCH = True
+CODABENCH = False
 NUM_SETS = 1  # Total = 10
 
 

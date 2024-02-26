@@ -2,4 +2,6 @@
 .DS_Store?
 ._*
 __pycache__
+public_data/
+public_data.zip
 
