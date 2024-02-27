@@ -126,8 +126,6 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
-        all_delta_mu_hats = []
-        all_mu_hats = []
 
         for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, self.test_settings["ground_truth_mus"])):
 
