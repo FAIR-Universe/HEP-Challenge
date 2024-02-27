@@ -15,7 +15,7 @@ import base64
 # ------------------------------------------
 # True when running on Codabench
 # False when running locally
-CODABENCH = True
+CODABENCH = False
 NUM_SETS = 1  # Total = 10
 USE_RANDOM_MUS = False
 
@@ -99,7 +99,11 @@ class Scoring:
 
     def load_test_settings(self):
         print("[*] Reading test settings")
-        settings_file = os.path.join(self.reference_dir, "settings", "data.json")
+        if USE_RANDOM_MUS:
+            settings_file = os.path.join(self.prediction_dir,"random_mu.json")
+        else:
+            settings_file = os.path.join(self.reference_dir, "settings", "data.json") 
+            
         with open(settings_file) as f:
             self.test_settings = json.load(f)
 
@@ -124,14 +128,8 @@ class Scoring:
         all_p16s, all_p84s, all_mus = [], [], []
         all_delta_mu_hats = []
         all_mu_hats = []
-        ground_truth_mus = []
-        if USE_RANDOM_MUS:
-            for i in range(0, NUM_SETS):
-                ground_truth_mus.append(self.ingestion_results[i]["ground_truth_mus"].mean())
-        else:
-            ground_truth_mus = self.test_settings["ground_truth_mus"]
 
-        for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, ground_truth_mus)):
+        for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, self.test_settings["ground_truth_mus"])):
 
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]

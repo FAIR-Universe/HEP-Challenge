@@ -19,10 +19,11 @@ warnings.filterwarnings("ignore")
 # ------------------------------------------
 # True when running on Codabench
 # False when running locally
-CODABENCH = True
+CODABENCH = False
 NUM_SETS = 1  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
 USE_SYSTEAMTICS = True
+USE_RANDOM_MUS = False
 
 
 # ------------------------------------------
@@ -140,8 +141,18 @@ class Ingestion():
         test_labels_file = os.path.join(self.input_dir, 'test', 'labels', 'data.labels')
 
         # read test settings
-        with open(test_settings_file) as f:
-            self.test_settings = json.load(f)
+        if USE_RANDOM_MUS:
+            self.test_settings = {
+                "ground_truth_mus": np.random.uniform(0.1, 3, NUM_SETS)
+            }
+            random_settings_file = os.path.join(
+                self.output_dir,"random_mu.json"
+            )
+            with open(random_settings_file, "w") as f:
+                json.dump(self.test_settings, f)
+        else:
+            with open(test_settings_file) as f:
+                self.test_settings = json.load(f)
 
         # read test weights
         with open(test_weights_file) as f:
@@ -227,7 +238,7 @@ class Ingestion():
             else:
                 tes = 1.0
             # create a seed
-            seed = (set_index*100) + test_set_index
+            seed = (set_index*NUM_PSEUDO_EXPERIMENTS) + test_set_index
             # get mu value of set from test settings
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
