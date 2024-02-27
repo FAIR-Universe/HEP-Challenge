@@ -17,6 +17,7 @@ import base64
 # False when running locally
 CODABENCH = True
 NUM_SETS = 1  # Total = 10
+USE_RANDOM_MUS = False
 
 
 class Scoring:
@@ -87,6 +88,14 @@ class Scoring:
         if len(sys.argv) > 2:
             self.prediction_dir = sys.argv[2]
 
+        print(f"[*] -- OutPut Directory : {self.output_dir}")
+        print(f"[*] -- Prediction Directory : {self.prediction_dir}")
+
+        # score file to write score into
+        self.score_file = os.path.join(self.output_dir, score_file_name)
+        # html file to write score and figures into
+        self.html_file = os.path.join(self.output_dir, html_file_name)
+
         # Add to path
         sys.path.append(self.reference_dir)
         sys.path.append(self.output_dir)
@@ -117,7 +126,16 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
-        for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, self.test_settings["ground_truth_mus"])):
+        all_delta_mu_hats = []
+        all_mu_hats = []
+        ground_truth_mus = []
+        if USE_RANDOM_MUS:
+            for i in range(0, NUM_SETS):
+                ground_truth_mus.append(self.ingestion_results[i]["ground_truth_mus"].mean())
+        else:
+            ground_truth_mus = self.test_settings["ground_truth_mus"]
+
+        for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, ground_truth_mus)):
 
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]
