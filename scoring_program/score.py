@@ -76,10 +76,6 @@ class Scoring:
         self.reference_dir = os.path.join(root_dir_name, reference_dir_name)
         # submitted/predicted labels
         self.prediction_dir = os.path.join(root_dir_name, predictions_dir_name)
-        # score file to write score into
-        self.score_file = os.path.join(output_dir_name, score_file_name)
-        # html file to write score and figures into
-        self.html_file = os.path.join(output_dir_name, html_file_name)
 
         # In case predictions dir and output dir are provided as args
         if len(sys.argv) > 1:
