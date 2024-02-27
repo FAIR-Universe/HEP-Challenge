@@ -143,7 +143,7 @@ class Ingestion():
         # read test settings
         if USE_RANDOM_MUS:
             self.test_settings = {
-                "ground_truth_mus": np.random.uniform(0.1, 3, NUM_SETS)
+                "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
             }
             random_settings_file = os.path.join(
                 self.output_dir,"random_mu.json"
