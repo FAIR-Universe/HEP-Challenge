@@ -17,6 +17,7 @@ import base64
 # False when running locally
 CODABENCH = False
 NUM_SETS = 1  # Total = 10
+USE_RANDOM_MUS = False
 
 
 class Scoring:
@@ -75,10 +76,6 @@ class Scoring:
         self.reference_dir = os.path.join(root_dir_name, reference_dir_name)
         # submitted/predicted labels
         self.prediction_dir = os.path.join(root_dir_name, predictions_dir_name)
-        # score file to write score into
-        self.score_file = os.path.join(output_dir_name, score_file_name)
-        # html file to write score and figures into
-        self.html_file = os.path.join(output_dir_name, html_file_name)
 
         # In case predictions dir and output dir are provided as args
         if len(sys.argv) > 1:
@@ -87,6 +84,14 @@ class Scoring:
         if len(sys.argv) > 2:
             self.prediction_dir = sys.argv[2]
 
+        print(f"[*] -- OutPut Directory : {self.output_dir}")
+        print(f"[*] -- Prediction Directory : {self.prediction_dir}")
+
+        # score file to write score into
+        self.score_file = os.path.join(self.output_dir, score_file_name)
+        # html file to write score and figures into
+        self.html_file = os.path.join(self.output_dir, html_file_name)
+
         # Add to path
         sys.path.append(self.reference_dir)
         sys.path.append(self.output_dir)
@@ -94,7 +99,11 @@ class Scoring:
 
     def load_test_settings(self):
         print("[*] Reading test settings")
-        settings_file = os.path.join(self.reference_dir, "settings", "data.json")
+        if USE_RANDOM_MUS:
+            settings_file = os.path.join(self.prediction_dir,"random_mu.json")
+        else:
+            settings_file = os.path.join(self.reference_dir, "settings", "data.json") 
+            
         with open(settings_file) as f:
             self.test_settings = json.load(f)
 
@@ -117,6 +126,7 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
+
         for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, self.test_settings["ground_truth_mus"])):
 
             mu_hats = ingestion_result["mu_hats"]

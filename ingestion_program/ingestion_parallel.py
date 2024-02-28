@@ -29,6 +29,7 @@ NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
 USE_SYSTEAMTICS = True
 MAX_WORKERS = os.environ.get("MAX_WORKERS", 30)
 CHUNK_SIZE = 2
+USE_RANDOM_MUS = False
 
 
 # initialize worker environment
@@ -88,7 +89,7 @@ def _process_combination(arrays, test_settings, model, combination):
 
             # get bootstrapped dataset from the original test set
             test_set = _get_bootstraped_dataset(test_set, mu=set_mu, tes=tes, seed=seed)
-            print(f"[*] Predicting process with seed {seed}")
+            # print(f"[*] Predicting process with seed {seed}")
             predicted_dict = {}
             predicted_dict = model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
@@ -336,8 +337,18 @@ class Ingestion:
         test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
 
         # read test settings
-        with open(test_settings_file) as f:
-            self.test_settings = json.load(f)
+        if USE_RANDOM_MUS:
+            self.test_settings = {
+                "ground_truth_mus": np.random.uniform(0.1, 3, NUM_SETS)
+            }
+            random_settings_file = os.path.join(
+                self.output_dir,"random_mu.json"
+            )
+            with open(random_settings_file, "w") as f:
+                json.dump(self.test_settings, f)
+        else:
+            with open(test_settings_file) as f:
+                self.test_settings = json.load(f)
 
         # read test weights
         with open(test_weights_file) as f:
