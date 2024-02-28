@@ -402,6 +402,7 @@ class Ingestion:
         with SharedTestSet(test_set=self.test_set) as test_set:
             with ProcessPoolExecutor(
                 mp_context=mp.get_context("spawn"),
+                max_workers=MAX_WORKERS,
                 initializer=_init_worker,
                 initargs=(using_tensorflow,),
             ) as executor:
