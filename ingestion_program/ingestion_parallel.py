@@ -44,7 +44,9 @@ def _init_worker(using_tensorflow):
 
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
-    data_syst["weights"][data_syst["labels"] == 1] *= mu
+    test_set["weights"][test_set["labels"] == 1] *= mu
+    prng = RandomState(seed)
+
     new_weights = prng.poisson(lam=data_syst["weights"])
     
     temp_df = test_set["data"][new_weights > 0].copy()
@@ -58,17 +60,12 @@ def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
     # Apply weight scaling factor mu to the data
 
-
-
     data_syst.pop("labels")
-
-    prng = RandomState(seed)
-
-    data_syst["weights"] = new_weights
+    weights = data_syst.pop("weights")
 
     del temp_df
 
-    return {"data": data_syst.drop("weights", axis=1), "weights": new_weights}
+    return {"data": data_syst, "weights": weights}
 
 
 # Define a function to process a set of combinations, not an instance method
