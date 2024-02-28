@@ -44,13 +44,16 @@ def _init_worker(using_tensorflow):
 
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
-    test_set["weights"][test_set["labels"] == 1] *= mu
+    weights = test_set["weights"].copy()
+    weights[ test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
     prng = RandomState(seed)
 
-    new_weights = prng.poisson(lam=data_syst["weights"])
+    new_weights = prng.poisson(lam=weights)
+
+    del weights
     
     temp_df = test_set["data"][new_weights > 0].copy()
-    temp_df["weights"] = test_set["weights"][new_weights > 0]
+    temp_df["weights"] = new_weights[new_weights > 0]
     temp_df["labels"] = test_set["labels"][new_weights > 0]
 
     # Apply systematics to the sampled data
