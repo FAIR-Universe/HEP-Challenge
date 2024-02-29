@@ -175,33 +175,31 @@ class Ingestion():
 
     def get_bootstraped_dataset(self, mu=1.0, tes=1.0, seed=42):
 
-        temp_df = deepcopy(self.test_set["data"])
-        temp_df["weights"] = self.test_set["weights"]
-        temp_df["labels"] = self.test_set["labels"]
+        weights = self.test_set["weights"].copy()
+        weights[ self.test_set["labels"] == 1] = weights[self.test_set["labels"] == 1] * mu
+        prng = RandomState(seed)
+
+        new_weights = prng.poisson(lam=weights)
+
+        del weights
+        
+        temp_df = self.test_set["data"][new_weights > 0].copy()
+        temp_df["weights"] = new_weights[new_weights > 0]
+        temp_df["labels"] = self.test_set["labels"][new_weights > 0]
 
         # Apply systematics to the sampled data
         from systematics import Systematics
-        data_syst = Systematics(
-            data=temp_df,
-            tes=tes
-        ).data
+
+        data_syst = Systematics(data=temp_df, tes=tes).data
 
         # Apply weight scaling factor mu to the data
-        data_syst['weights'][data_syst["labels"] == 1] *= mu
 
         data_syst.pop("labels")
-
-        prng = RandomState(seed)
-        new_weights = prng.poisson(lam=data_syst['weights'])
-
-        data_syst['weights'] = new_weights
+        weights = data_syst.pop("weights")
 
         del temp_df
 
-        return {
-            "data": data_syst.drop("weights", axis=1),
-            "weights": new_weights
-        }
+        return {"data": data_syst, "weights": weights}
 
     def init_submission(self):
         print("[*] Initializing Submmited Model")
