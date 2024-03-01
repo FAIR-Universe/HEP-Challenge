@@ -65,7 +65,6 @@ This competition allows code submissions. Participants can submit either of the 
 
 
 ## Contact
-***
 Visit our website: https://fair-universe.lbl.gov/
 
 Email: fair-universe@lbl.gov
