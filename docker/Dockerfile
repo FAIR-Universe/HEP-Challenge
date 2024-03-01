@@ -5,7 +5,7 @@ FROM nvidia/cuda:12.3.1-devel-ubuntu20.04
 RUN apt-get update && apt-get install -y python3 python3-pip
 # Install Python packages
 RUN pip3 install --upgrade pip && \
-    pip3 install numpy pandas pyarrows matplotlib xgboost scikit-learn nflows lightgbm seaborn iminuit
+    pip3 install numpy pandas pyarrow matplotlib xgboost scikit-learn nflows lightgbm seaborn iminuit
 # Install TensorFlow and PyTorch
 RUN pip3 install keras
 RUN pip3 install tensorflow[and-cuda] 
