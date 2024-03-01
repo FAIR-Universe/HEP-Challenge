@@ -294,7 +294,7 @@ class Ingestion:
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
+        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
         train_labels_file = os.path.join(
             self.input_dir, "train", "labels", "data.labels"
         )
@@ -319,7 +319,7 @@ class Ingestion:
         train_weights = train_weights
 
         self.train_set = {
-            "data": pd.read_csv(train_data_file, dtype=np.float32),
+            "data": pd.read_parquet(train_data_file, engine="pyarrow"),
             "labels": train_labels,
             "settings": train_settings,
             "weights": train_weights,
@@ -332,7 +332,7 @@ class Ingestion:
     def load_test_set(self):
         print("[*] Loading Test data")
 
-        test_data_file = os.path.join(self.input_dir, "test", "data", "data.csv")
+        test_data_file = os.path.join(self.input_dir, "test", "data", "data.parquet")
         test_settings_file = os.path.join(
             self.input_dir, "test", "settings", "data.json"
         )
@@ -364,7 +364,7 @@ class Ingestion:
             test_labels = np.array(f.read().splitlines(), dtype=float)
 
         self.test_set = {
-            "data": pd.read_csv(test_data_file, dtype=np.float32),
+            "data": pd.read_parquet(test_data_file, engine="pyarrow"),
             "weights": test_weights,
             "labels": test_labels,
         }
