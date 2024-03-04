@@ -1,7 +1,7 @@
 # image with depracation notice
 # FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04 # deprecated
 # image with problem with tf and cuda drivers
-FROM nvidia/cuda:12.3.1-devel-ubuntu20.04 
+FROM nvidia/cuda:12.3.1-devel-ubuntu22.04
 RUN apt-get update && apt-get install -y python3 python3-pip
 # Install Python packages
 RUN pip3 install --upgrade pip && \
