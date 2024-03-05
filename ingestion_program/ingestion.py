@@ -21,8 +21,8 @@ warnings.filterwarnings("ignore")
 CODABENCH = False
 # True when using public data (to run locally)
 USE_PUBLIC_DATA = False
-NUM_SETS = 1  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
+NUM_SETS = 4  # Total = 10
+NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
 USE_RANDOM_MUS = False
 

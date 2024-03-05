@@ -76,5 +76,5 @@ Only background events coming from Z boson are included in this challenge. While
 
 or use the following command to download using terminal
 ```
-wget -O UC_public_data_21_12_23.zip https://www.codabench.org/datasets/download/9cf2ed28-2963-457a-a160-0b617b538c00/
+wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/8b22e5ed-9821-41ae-b5f5-e3ab10726a73/
 ```
