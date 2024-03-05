@@ -1,26 +1,24 @@
 import os
 from sys import path
 import numpy as np
-import pandas as pd
-from math import sqrt, log
-from xgboost import XGBClassifier
-from sklearn.utils import shuffle
+
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.multioutput import MultiOutputRegressor
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import seaborn as sns
+import pickle
+import json
 
+# import mplhep as hep
 
+# hep.set_style("ATLAS")
 # ------------------------------
 # Absolute path to submission dir
 # ------------------------------
 submissions_dir = os.path.dirname(os.path.abspath(__file__))
 path.append(submissions_dir)
 
-from systematics import postprocess
 # ------------------------------
 # Constants
 # ------------------------------
@@ -29,10 +27,29 @@ EPSILON = np.finfo(float).eps
 hist_analysis_dir = os.path.dirname(submissions_dir)
 path.append(hist_analysis_dir)
 
-from hist_analysis import compute_results_syst, compute_result
+from hist_analysis import compute_result,plot_score
+import torch
+import torch.nn as nn
 
+class PyTorchModel(nn.Module):
+    def __init__(self, n_cols):
+        super(PyTorchModel, self).__init__()
+        self.fc1 = nn.Linear(n_cols, 200)
+        self.fc2 = nn.Linear(200, 200)
+        self.fc3 = nn.Linear(200, 200)
+        self.fc4 = nn.Linear(200, 1)
+        self.activation = nn.Sigmoid()
 
-
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.activation(x)
+        x = self.fc2(x)
+        x = self.activation(x)
+        x = self.fc3(x)
+        x = self.activation(x)
+        x = self.fc4(x)
+        x = self.activation(x)
+        return x
 # ------------------------------
 # Baseline Model
 # ------------------------------
@@ -62,10 +79,7 @@ class Model():
         Params:
             train_set:
                 labelled train set
-
-            test_sets:
-                unlabelled test sets
-
+                
             systematics:
                 systematics class
 
@@ -76,18 +90,19 @@ class Model():
         # Set class variables from parameters
         self.train_set = train_set
         self.systematics = systematics
-        self.model_name = "XGB_NLL"
+        self.model_name = "NN_NLL"
         # Intialize class variables
-        self.validation_set = None
-        self.theta_candidates = np.linspace(0.5, 1.0, 100)
-        self.mu_scan = np.linspace(0, 3.92, 100)
+
         self.threshold = 0.8
-        self.bins = 5
-        self.bin_nums = 5
-        self.force_correction = 0
-        self.plot_count = 0
+        self.bins = 30
+        self.bin_nums = 30
+        self.batch_size = 1000
+        self.plot_count = 5
+        self.max_num_epochs = 100
         self.variable = "DER_deltar_lep_had"
+        self.calibration = 0
         self.scaler = StandardScaler()
+        self.SYST = True
 
     def fit(self):
         """
@@ -101,15 +116,15 @@ class Model():
             None
         """
 
-        self._generate_validation_sets()
+        self._generate_holdout_sets()
         self._init_model()
         self._train()
-        self._predict_holdout()
-        self.plot_score_holdout()
-        # self._choose_theta()
         self.mu_hat_calc()
-        # self._validate()
-        # self._compute_validation_result()
+        # self.save_model()
+
+        self.plot_dir = os.path.join(submissions_dir, "plots/")
+        if not os.path.exists(self.plot_dir):
+            os.makedirs(self.plot_dir)
 
     def predict(self, test_set):
         """
@@ -130,41 +145,51 @@ class Model():
         print("[*] - Testing")
         test_df = test_set['data']
         test_df = self.scaler.transform(test_df)
-        Y_hat_test = self._return_score(test_df)
-        test_set['score'] = Y_hat_test
-
-        if self.plot_count < 2:
-            # self.plot_score(test_set)
-            self.plot_count += 1
-
+        test_score = self._return_score(test_df)
+        test_set['score'] = test_score
 
         print("[*] - Computing Test result")
-        weights_train = self.train_set["weights"].copy()
         weights_test = test_set["weights"].copy()
 
-        # print(f"[*] --- total weight test: {weights_test.sum()}") 
-        # print(f"[*] --- total weight train: {weights_train.sum()}")
-        # print(f"[*] --- total weight mu_cals_set: {self.holdout['weights'].sum()}")
 
-        weight_clean = weights_test[Y_hat_test > self.threshold]
-        test_df = test_set['data'][Y_hat_test > self.threshold]
-        test_array = Y_hat_test[Y_hat_test > self.threshold]
+        test_hist , bins = np.histogram(test_score,
+                    bins=self.bins, density=False, weights=weights_test)
+        
+        test_hist_control = test_hist[-self.control_bins:]
 
-        # test_array = test_df[self.variable]
+        mu_hat, mu_p16, mu_p84, alpha = compute_result(test_hist_control,self.fit_dict_control,SYST=self.SYST)
 
-
-        test_hist ,_ = np.histogram(test_array,
-                    bins=self.bins, density=False, weights=weight_clean)
-
-
-
-        mu_hat, mu_p16, mu_p84 = compute_results_syst(test_hist,self.fit_function_dict)
         delta_mu_hat = mu_p84 - mu_p16
+        
+        mu_p16 = mu_p16-self.calibration
+        mu_p84 = mu_p84-self.calibration
+        mu_hat = mu_hat-self.calibration
 
+        if self.plot_count > 0:
+            hist_fit_s = []
+            hist_fit_b = []
+
+            if self.SYST:
+                for i in range(self.bin_nums):
+                    hist_fit_s.append(self.fit_dict["gamma_roi"][i](alpha))
+                    hist_fit_b.append(self.fit_dict["beta_roi"][i](alpha))
+
+            else:       
+                hist_fit_s = self.fit_dict["gamma_roi"]
+                hist_fit_b = self.fit_dict["beta_roi"]
+
+            hist_fit_s = np.array(hist_fit_s)
+            hist_fit_b = np.array(hist_fit_b)
+
+            plot_score(test_hist,hist_fit_s,hist_fit_b,mu_hat,bins,threshold=self.threshold,save_path=(self.plot_dir + f"NN_score_{self.plot_count}.png"))
+
+            self.plot_count = self.plot_count - 1 
+            
         print(f"[*] --- mu_hat: {mu_hat}")
         print(f"[*] --- delta_mu_hat: {delta_mu_hat}")
         print(f"[*] --- p16: {mu_p16}")
         print(f"[*] --- p84: {mu_p84}")
+        print(f"[*] --- alpha: {alpha}")
 
         return {
             "mu_hat": mu_hat,
@@ -174,89 +199,61 @@ class Model():
         }
 
     def _init_model(self):
-        print("[*] - Intialize Baseline Model (XBM Classifier Model)")
 
-        self.model = XGBClassifier(
-            tree_method="hist",
-            use_label_encoder=False,
-            eval_metric=['logloss', 'auc'],
-            n_thread=1,
-            n_jobs=1,
-        )
-    def _generate_validation_sets(self):
-        print("[*] - Generating Validation sets")
-        print("[*] -- Basic Parameters")
-        print(f"[*] --- theta candidates: {min(self.theta_candidates)} - {max(self.theta_candidates)} --- len: {len(self.theta_candidates)}")
-        print(f"[*] --- bins: {self.bins}")
+        print("[*] - Intialize Baseline Model (NN bases Uncertainty Estimator Model)")
+
+        n_cols = self.train_set["data"].shape[1]
+
+        self.model = PyTorchModel(n_cols)
+
+        self.criterion = nn.BCELoss()
+
+
         
+    def _generate_holdout_sets(self):
+        print("[*] - Generating Validation sets")
+
         # Calculate the sum of weights for signal and background in the original dataset
         signal_weights = self.train_set["weights"][self.train_set["labels"] == 1].sum()
         background_weights = self.train_set["weights"][self.train_set["labels"] == 0].sum()
 
-        # Split the data into training and validation sets while preserving the proportion of samples with respect to the target variable
-        train_df, valid_df, train_labels, valid_labels, train_weights, valid_weights = train_test_split(
+        # Split the data into training and holdout sets while preserving the proportion of samples with respect to the target variable
+        train_df, holdout_df, train_labels, holdout_labels, train_weights, holdout_weights =  train_test_split(
             self.train_set["data"],
             self.train_set["labels"],
             self.train_set["weights"],
-            test_size=0.2,
+            test_size=0.1,
             stratify=self.train_set["labels"]
         )
 
-        train_df, holdout_df, train_labels, holdout_labels, train_weights, holdout_weights = train_test_split(
-            train_df,
-            train_labels,
-            train_weights,
-            test_size=0.5,
-            shuffle=True,
-            stratify=train_labels
-        )
 
 
-        # Calculate the sum of weights for signal and background in the training and validation sets
+        # Calculate the sum of weights for signal and background in the training and holdout sets
         train_signal_weights = train_weights[train_labels == 1].sum()
         train_background_weights = train_weights[train_labels == 0].sum()
-        valid_signal_weights = valid_weights[valid_labels == 1].sum()
-        valid_background_weights = valid_weights[valid_labels == 0].sum()
+
         holdout_signal_weights = holdout_weights[holdout_labels == 1].sum()
         holdout_background_weights = holdout_weights[holdout_labels == 0].sum()
 
-        # Balance the sum of weights for signal and background in the training and validation sets
+        # Balance the sum of weights for signal and background in the training and holdout sets
         train_weights[train_labels == 1] *= signal_weights / train_signal_weights
         train_weights[train_labels == 0] *= background_weights / train_background_weights
-        valid_weights[valid_labels == 1] *= signal_weights / valid_signal_weights
-        valid_weights[valid_labels == 0] *= background_weights / valid_background_weights
+
         holdout_weights[holdout_labels == 1] *= signal_weights / holdout_signal_weights
         holdout_weights[holdout_labels == 0] *= background_weights / holdout_background_weights
 
         train_df = train_df.copy()
         train_df["weights"] = train_weights
         train_df["labels"] = train_labels
-        train_df = postprocess(train_df)
+
+        train_df = self.systematics(
+            data=train_df.copy(),
+            tes=1.0
+        ).data
 
         train_weights = train_df.pop('weights')
         train_labels = train_df.pop('labels')
         
-
-        holdout_df = holdout_df.copy()
-        holdout_df["weights"] = holdout_weights
-        holdout_df["labels"] = holdout_labels
-
-        holdout_df = postprocess(holdout_df)
-
-        holdout_weights = holdout_df.pop('weights')
-        holdout_labels = holdout_df.pop('labels')
-
-        # valid_df = valid_df.copy()
-        # valid_df["weights"] = valid_weights
-        # valid_df["labels"] = valid_labels
-
-        # valid_df = postprocess(valid_df)
-
-        # valid_weights = valid_df.pop('weights')
-        # valid_labels = valid_df.pop('labels')
-
-
-
 
         self.train_df = train_df
 
@@ -267,56 +264,23 @@ class Model():
             "settings": self.train_set["settings"]
         }
 
-        self.eval_set = [(self.train_set['data'], self.train_set['labels']), (valid_df.to_numpy(), valid_labels)]
-
         self.holdout = {
                 "data": holdout_df,
                 "labels": holdout_labels,
                 "weights": holdout_weights
             }
 
-        self.validation_sets = []
-        for _ in range(10):
-            # Loop 10 times to generate 10 validation sets
-            tes = round(np.random.uniform(0.9, 1.10), 2)
-            # apply systematics
-            valid_df_temp = valid_df.copy()
-            valid_df_temp["weights"] = valid_weights
-            valid_df_temp["labels"] = valid_labels
-
-            valid_with_systematics_temp = self.systematics(
-                data=valid_df_temp,
-                tes=tes
-            ).data
-            # valid_with_systematics_temp = postprocess(valid_df_temp)
-
-            valid_labels_temp = valid_with_systematics_temp.pop('labels')
-            valid_weights_temp = valid_with_systematics_temp.pop('weights')
-            valid_with_systematics = valid_with_systematics_temp.copy()
-
-            self.validation_sets.append({
-                "data": valid_with_systematics,
-                "labels": valid_labels_temp,
-                "weights": valid_weights_temp,
-                "settings": self.train_set["settings"],
-                "tes": tes
-            })
-            del valid_with_systematics_temp
-            del valid_df_temp
-
-        self.validation_set = self.validation_sets[1]
-
+        
         train_signal_weights = train_weights[train_labels == 1].sum()
         train_background_weights = train_weights[train_labels == 0].sum()
-        valid_signal_weights = valid_weights[valid_labels == 1].sum()
-        valid_background_weights = valid_weights[valid_labels == 0].sum()
-        holdout_signal_weights = holdout_weights[holdout_labels == 1].sum()
-        holdout_background_weights = holdout_weights[holdout_labels == 0].sum()
+
+        holdout_set_signal_weights = holdout_weights[holdout_labels == 1].sum()
+        holdout_set_background_weights = holdout_weights[holdout_labels == 0].sum()
 
         print(f"[*] --- original signal: {signal_weights} --- original background: {background_weights}")
         print(f"[*] --- train signal: {train_signal_weights} --- train background: {train_background_weights}")
-        print(f"[*] --- valid signal: {valid_signal_weights} --- valid background: {valid_background_weights}")
-        print(f"[*] --- holdout signal: {holdout_signal_weights} --- holdout background: {holdout_background_weights}")
+        print(f"[*] --- holdout_set signal: {holdout_set_signal_weights} --- holdout_set background: {holdout_set_background_weights}")
+  
 
     def _train(self):
 
@@ -333,151 +297,156 @@ class Model():
 
         print("[*] --- Training Model")
         train_data = self.scaler.fit_transform(train_data)
+        train_labels = np.array(train_labels).ravel()
+        weights_train = np.array(weights_train).ravel()
 
         print("[*] --- shape of train tes data", train_data.shape)
 
         self._fit(train_data, train_labels, weights_train)
 
-        print("[*] --- Predicting Train set")
-        self.train_set['predictions'] = (self.train_set['data'], self.threshold)
+        del self.train_set
 
-        self.train_set['score'] = self._return_score(self.train_set['data'])
+        # print("[*] --- Predicting Train set")
+        # self.train_set['predictions'] = (self.train_set['data'], self.threshold)
 
-        auc_train = roc_auc_score(
-            y_true=self.train_set['labels'],
-            y_score=self.train_set['score'],
-            sample_weight=self.train_set['weights']
-        )
-        print(f"[*] --- AUC train : {auc_train}")
+        # self.train_set['score'] = self._return_score(self.train_set['data'])
+
+        # auc_train = roc_auc_score(
+        #     y_true=self.train_set['labels'],
+        #     y_score=self.train_set['score'],
+        #     sample_weight=self.train_set['weights']
+        # )
+        # print(f"[*] --- AUC train : {auc_train}")
+
+    def _batch_fit(self, X_batch, y_batch, w_batch):
+        
+        self.optimizer.zero_grad()
+        outputs = self.model(X_batch).ravel()
+        loss = self.criterion(outputs, y_batch)
+        loss.backward()
+        self.optimizer.step()
+
+        return loss
+
 
     def _fit(self, X, y, w):
         print("[*] --- Fitting Model")
-        self.model.fit(X, y, sample_weight=w)
+        
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001, weight_decay=0.0001)
+
+        X, X_val, y, y_val, w, w_val = train_test_split(X, y, w, test_size=0.01, stratify=y)
+
+
+        X_train = torch.tensor(X, dtype=torch.float32)
+        y_train = torch.tensor(y, dtype=torch.float32)
+        w_train = torch.tensor(w, dtype=torch.float32)
+
+        X_val = torch.tensor(X_val, dtype=torch.float32)
+        y_val = torch.tensor(y_val, dtype=torch.float32)
+        w_val = torch.tensor(w_val, dtype=torch.float32)
+
+        iterations = int(len(X_train) / self.batch_size)
+        loss = 0
+        val_loss = 0
+        for epoch in range(self.max_num_epochs):
+            pre_loss = loss
+            pre_val_loss = val_loss
+            loss = 0
+            for i in tqdm(range(iterations)):
+                X_batch = X_train[i*self.batch_size:(i+1)*self.batch_size]
+                y_batch = y_train[i*self.batch_size:(i+1)*self.batch_size]
+                w_batch = w_train[i*self.batch_size:(i+1)*self.batch_size]
+
+                loss +=self._batch_fit(X_batch, y_batch, w_batch)
+
+
+            loss = loss / iterations
+            diff_loss = abs(loss - pre_loss)
+
+            val_outputs = self.model(X_val).ravel()
+            val_loss = self.criterion(val_outputs, y_val)
+            diff_val_loss = abs(val_loss - pre_val_loss)
+
+            print(f"[*] --- epoch: {epoch} --- loss: {loss.item()} --- diff_loss: {diff_loss} --- val_loss: {val_loss.item()} --- diff_val_loss: {diff_val_loss}")
+
+            if diff_loss < 0.0001:
+                break
+
+            if diff_val_loss < 0.0005:
+                break
+
+        print(f"[*] --- Training done with loss: {loss.item()} in {epoch} epochs")
 
     def _return_score(self, X):
-        y_predict = self.model.predict_proba(X)[:, 1]
+        X = torch.tensor(X, dtype=torch.float32)
+        y_predict = self.model(X)
+        y_predict = y_predict.detach().numpy().ravel()
         return y_predict
 
-    def _predict(self, X, theta):
-        Y_predict = self._return_score(X)
-        predictions = (Y_predict > theta).astype(int)
-        return predictions
-
-
-    def _predict_holdout(self):
-        print("[*] --- Predicting Holdout set")
-        X_holdout = self.holdout['data']
-        X_holdout_sc = self.scaler.transform(X_holdout)
-        self.holdout['score'] = self._return_score(X_holdout_sc)
-        print("[*] --- Predicting Holdout set done")
-        print("[*] --- score = ", self.holdout['score'])
-
-    def plot_score_holdout(self):
-        _, ax = plt.subplots()
-
-        bins = int(self.bin_nums/(1 - self.threshold))
-
-        plt.hist(
-            self.holdout['score'][self.holdout['labels'] == 1], 
-            bins=bins, density=False, alpha=0.6, color='b',
-            weights=self.holdout['weights'][self.holdout['labels'] == 1]
-        )
-        plt.hist(
-            self.holdout['score'][self.holdout['labels'] == 0], 
-            bins=bins, density=False, alpha=0.6, color='r',
-            weights=self.holdout['weights'][self.holdout['labels'] == 0]
-        )
-
-        plt.vlines(self.threshold,0,100000,linestyles='dashed',color='k',label = "threshold")
-
-
-        plt.legend()
-        plt.title(self.model_name + ' Scores')
-        plt.xlabel(" Score ")
-        plt.ylabel(" Events ")
-        ax.set_yscale('log')
-        plt.show()
-
-        # ...
-
-    def plot_score(self,test_set):
-
-        _, ax = plt.subplots()
-
-        bins = int(self.bin_nums/(1 - self.threshold))
-        high_low = (0,1)
-        density = False
-
-        holdout_val = self.holdout['score']
-        label_holdout = self.holdout['labels']
-
-        weights_holdout_signal = self.holdout['weights'][label_holdout == 1]
-        weights_holdout_background = self.holdout['weights'][label_holdout == 0]
-
-        test_val = test_set['score']
-        weights_test = test_set['weights']
-
-        signal_val = holdout_val[label_holdout == 1]    
-        background_val = holdout_val[label_holdout == 0]
-
-        plt.hist([signal_val, background_val], bins=bins,histtype='bar', 
-                 stacked=True, label=['holdout_signal', 'holdout_background'], alpha=0.7,
-                 weights=weights_holdout_signal,color=['cyan', 'magenta'])
-
-        
-
-        # plt.hist(holdout_val[label_holdout == 0], bins=bins,histtype='bar', 
-        #          stacked=True, label=['holdout_background'], alpha=0.7, 
-        #          weights=weights_holdout_background,color='cyan')
-        # plt.hist(holdout_val[label_holdout == 1], bins=bins,histtype='step', 
-        #          stacked=True, label=['holdout_signal'], alpha=0.7, 
-        #          weights=weights_holdout_signal,edgecolor='red', fill=False)
-
-        hist, bins = np.histogram(test_val,
-                                    bins=bins, range=high_low, density=density, weights=weights_test)
-        scale = len(test_val) / sum(hist)
-        err = np.sqrt(hist * scale) / scale
-
-        center = (bins[:-1] + bins[1:]) / 2
-        plt.errorbar(center, hist, yerr=err, fmt='o', c='k', label='pseudo-data')
-
-        plt.legend()
-        plt.title(self.model_name + ' Scores')
-        plt.xlabel(" Score ")
-        plt.ylabel(" Events ")
-        ax.set_yscale('log')
-        plt.show()
 
     def mu_hat_calc(self):  
-        Y_hat_holdout = self.holdout['score']
-        Y_holdout = self.holdout['labels']
-        weights_holdout = self.holdout['weights']
 
-        mu_calc_df = self.holdout['data'][Y_hat_holdout > self.threshold]
+        X_holdout = self.holdout['data'].copy()
+        X_holdout['weights'] = self.holdout['weights'].copy()
+        X_holdout['labels'] = self.holdout['labels'].copy()
+
+        holdout_post = self.systematics(
+            data=X_holdout.copy(),
+            tes=1.0
+        ).data
+
+        label_holdout = holdout_post.pop('labels')
+        weights_holdout  = holdout_post.pop('weights')
+
+        X_holdout_sc = self.scaler.transform(holdout_post)
+        holdout_array = self._return_score(X_holdout_sc)
+        print("[*] --- Predicting Holdout set done")
+        print("[*] --- score = ", holdout_array)
+
         # compute gamma_roi
 
-        weights = weights_holdout[Y_hat_holdout > self.threshold]
-        # mu_calc_array = mu_calc_df[self.variable]
-        mu_calc_array = Y_hat_holdout[Y_hat_holdout > self.threshold]
+        self.control_bins = int(self.bin_nums * (1 - self.threshold))
+
+        if self.SYST:
+            self.theta_function()
+
+        else:
+            s , b = self.nominal_histograms(1)
+            self.fit_dict = {
+                "gamma_roi": s,
+                "beta_roi": b,
+                "error_s": [0 for _ in range(self.bins)],
+                "error_b": [0 for _ in range(self.bins)]
+            }
+
+            self.fit_dict_control = {
+                "gamma_roi": s[-self.control_bins:],
+                "beta_roi": b[-self.control_bins:],
+                "error_s": [0 for _ in range(self.control_bins)],
+                "error_b": [0 for _ in range(self.control_bins)]
+            }
+
+            
+
+        holdout_hist , _ = np.histogram(holdout_array,
+                    bins = self.bins, density=False, weights=weights_holdout)
+        
+        
+        holdout_hist_control = holdout_hist[-self.control_bins:]
+        # holdout_hist_control = (s + b)[-self.control_bins:]
+
+        mu_hat, mu_p16, mu_p84, alpha = compute_result(holdout_hist_control,self.fit_dict_control,SYST=self.SYST)
+
+        self.calibration = mu_hat - 1
+        
+        print(f"[*] --- mu_hat: {mu_hat} --- mu_p16: {mu_p16} --- mu_p84: {mu_p84} --- alpha: {alpha}")
+
+        del self.holdout
 
 
-        mu_calc_hist , bins = np.histogram(mu_calc_array,
-                    bins= self.bins, density=False, weights=weights)
+    def nominal_histograms(self,theta):
 
-
-        self.theta_function()
-
-
-        mu_hat, mu_p16, mu_p84 = compute_results_syst(mu_calc_hist,self.fit_function_dict)
-
-        print(f"[*] --- mu_hat: {mu_hat} --- mu_p16: {mu_p16} --- mu_p84: {mu_p84}")
-
-
-
-    def nominal_histograms(self,mu,theta):
-
-        X_holdout = self.holdout['data']
-
+        X_holdout = self.holdout['data'].copy()
         X_holdout['weights'] = self.holdout['weights'].copy()
         X_holdout['labels'] = self.holdout['labels'].copy()
 
@@ -487,46 +456,41 @@ class Model():
         ).data
 
 
-        Y_holdout = holdout_syst.pop('labels')
+        label_holdout = holdout_syst.pop('labels')
         weights_holdout = holdout_syst.pop('weights')
 
         X_holdout_sc = self.scaler.transform(holdout_syst)
-        Y_hat_holdout = self._return_score(X_holdout_sc)
-
-
-        mu_calc_df = holdout_syst[Y_hat_holdout > self.threshold]
-        # compute gamma_roi
-
-        weights_holdout = weights_holdout[Y_hat_holdout > self.threshold]
-        # holdout_val = mu_calc_df[self.variable]
-        holdout_val = Y_hat_holdout[Y_hat_holdout > self.threshold]
-
-        label_holdout = Y_holdout[Y_hat_holdout > self.threshold]
+        holdout_val = self._return_score(X_holdout_sc)
 
         weights_holdout_signal = weights_holdout[label_holdout == 1]
         weights_holdout_background = weights_holdout[label_holdout == 0]
 
-        holdout_signal_hist , self.bins = np.histogram(holdout_val[label_holdout == 1],
+        holdout_signal_hist , _ = np.histogram(holdout_val[label_holdout == 1],
                     bins= self.bins, density=False, weights=weights_holdout_signal)
         
-        holdout_background_hist , self.bins = np.histogram(holdout_val[label_holdout == 0],
+        holdout_background_hist , _ = np.histogram(holdout_val[label_holdout == 0],
                     bins= self.bins, density=False, weights=weights_holdout_background)
 
 
         return holdout_signal_hist , holdout_background_hist
 
 
-    def theta_function(self,plot_count=0):
+    def theta_function(self,plot_count=25):
 
         fit_line_s_list = []
         fit_line_b_list = []
+        self.coef_b_list = []
+        self.coef_s_list = []
+
+        error_s = []
+        error_b = []
+
         theta_list = np.linspace(0.9,1.1,10)
         s_list = [[] for _ in range(self.bins)]
         b_list = [[] for _ in range(self.bins)]
         
         for theta in tqdm(theta_list):
-            mu_hat = 1.0
-            s , b = self.nominal_histograms(mu_hat,theta)
+            s , b = self.nominal_histograms(theta)
             # print(f"[*] --- s: {s}")
             # print(f"[*] --- b: {b}")
 
@@ -542,183 +506,120 @@ class Model():
             s_array = np.array(s_list[i])
             b_array = np.array(b_list[i])
 
-            coef_s = np.polyfit(theta_list,s_array,1)
 
-            coef_b = np.polyfit(theta_list,b_array,1)
+            coef_s = np.polyfit(theta_list, s_array, 3)
+            coef_b = np.polyfit(theta_list, b_array, 3)
 
-            fit_line_s_list.append(np.poly1d(coef_s))
-            fit_line_b_list.append(np.poly1d(coef_b))
+            fit_fun_s = np.poly1d(coef_s)
+            fit_fun_b = np.poly1d(coef_b)
 
-        if plot_count > 0:
-            for i in range(min(plot_count,len(s_list))):
-                plt.plot(theta_list,s_list[i])
-                plt.show()
+            error_s.append(np.sqrt(np.mean((s_array - fit_fun_s(theta_list))**2)))
 
-                plt.plot(theta_list,b_list[i])
-                plt.show()
+            error_b.append(np.sqrt(np.mean((b_array - fit_fun_b(theta_list))**2)))
+
+            fit_line_s_list.append(fit_fun_s)
+            fit_line_b_list.append(fit_fun_b)
+
+            coef_b_ = coef_b.tolist()
+            coef_s_ = coef_s.tolist()
+
+            self.coef_s_list.append(coef_s_)
+            self.coef_b_list.append(coef_b_)
 
 
-        print(f"[*] --- fit_line_s_list: {fit_line_s_list}")
-        print(f"[*] --- fit_line_b_list: {fit_line_b_list}")
+        for i in range(min(plot_count,len(s_list))):
 
-        self.fit_function_dict = {
+            _, ax = plt.subplots()
+
+            plt.plot(theta_list,s_list[i],'b.',label="s")
+            plt.plot(theta_list,fit_line_s_list[i](theta_list),'cyan',label="fit s")
+            plt.legend()
+            plt.title(f"Bin {i}")
+            plt.xlabel("theta")
+            plt.ylabel("Events")
+            # hep.atlas.text(loc=1, text='Internal')
+            save_path = os.path.join(submissions_dir, "plots/")
+            plot_file = os.path.join(save_path, f"NN_s_{i}.png")
+            plt.savefig(plot_file)
+            plt.show()
+
+            _, ax = plt.subplots()
+
+            plt.plot(theta_list,b_list[i],'r.',label="b")
+            plt.plot(theta_list,fit_line_b_list[i](theta_list),'orange',label="fit b")
+            plt.legend()
+            plt.title(f"Bin {i}")
+            plt.xlabel("theta")
+            plt.ylabel("Events")
+            # hep.atlas.text(loc=1, text='Internal')
+            save_path = os.path.join(submissions_dir, "plots/")
+            plot_file = os.path.join(save_path, f"NN_b_{i}.png")
+            plt.savefig(plot_file)
+            plt.show()
+
+
+
+            plot_count = plot_count - 1
+
+            if plot_count <= 0:
+                break
+        
+
+
+        self.fit_dict = {
             "gamma_roi": fit_line_s_list,
-            "beta_roi": fit_line_b_list
+            "beta_roi": fit_line_b_list,
+            "error_s": error_s,
+            "error_b": error_b
+        }
+
+        print(f"[*] --- number of bins: {self.bins}")
+        print(f"[*] --- number of control bins: {self.control_bins}")
+
+        self.fit_dict_control = {
+            "gamma_roi": fit_line_s_list[-self.control_bins:],
+            "beta_roi": fit_line_b_list[-self.control_bins:],
+            "error_s": error_s[-self.control_bins:],
+            "error_b": error_b[-self.control_bins:]
         }
 
 
 
+    def save_model(self):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
+        model_dir = os.path.join(parent_dir, "NN_min_saved")   
+        model_path = os.path.join(model_dir, "model.keras")
+        settings_path = os.path.join(model_dir, "settings.pkl")
+        scaler_path = os.path.join(model_dir, "scaler.pkl")
 
-    def amsasimov_x(self, s, b):
-        '''
-        This function calculates the Asimov crossection significance for a given number of signal and background events.
-        Parameters: s (float) - number of signal events
 
-        Returns:    float - Asimov crossection significance
-        '''
+        print("[*] - Saving Model")
+        print(f"[*] --- model path: {model_path}")
+        print(f"[*] --- settings path: {settings_path}")
+        print(f"[*] --- scaler path: {scaler_path}")
 
-        if b <= 0 or s <= 0:
-            return 0
-        try:
-            return s/sqrt(s+b)
-        except ValueError:
-            print(1+float(s)/b)
-            print(2*((s+b)*log(1+float(s)/b)-s))
-        # return s/sqrt(s+b)
+        
 
-    def del_mu_stat(self, s, b):
-        '''
-        This function calculates the statistical uncertainty on the signal strength.
-        Parameters: s (float) - number of signal events
-                    b (float) - number of background events
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
 
-        Returns:    float - statistical uncertainty on the signal strength
+        self.model.save(model_path)
 
-        '''
-        return (np.sqrt(s + b)/s)
 
-    def get_meta_validation_set(self):
-
-        meta_validation_data = []
-        meta_validation_labels = []
-        meta_validation_weights = []
-
-        for valid_set in self.validation_sets:
-            meta_validation_data.append(valid_set['data'])
-            meta_validation_labels = np.concatenate((meta_validation_labels, valid_set['labels']))
-            meta_validation_weights = np.concatenate((meta_validation_weights, valid_set['weights']))
-
-        return {
-            'data': pd.concat(meta_validation_data),
-            'labels': meta_validation_labels,
-            'weights': meta_validation_weights
+        settings = {
+            "threshold": self.threshold,
+            "bin_nums": self.bin_nums,
+            "control_bins": self.control_bins,
+            "coef_s_list": self.coef_s_list,
+            "coef_b_list": self.coef_b_list,
+            "calibration": self.calibration,
         }
 
 
-    def _choose_theta(self):
+        pickle.dump(settings, open(settings_path, "wb"))
 
-        print("[*] Choose best theta")
+        pickle.dump(self.scaler, open(scaler_path, "wb"))
 
-        meta_validation_set = self.validation_set
-        val_min = 1
-        # Loop over theta candidates
-        # try each theta on meta-validation set
-        # choose best theta
-        for theta in tqdm(self.theta_candidates):
-            meta_validation_set_df_sc = self.scaler.transform(meta_validation_set["data"])
-            meta_validation_set['score'] = self._return_score(meta_validation_set_df_sc)
+        print("[*] - Model saved")
 
-            weights_valid = meta_validation_set["weights"].copy()
-            valid_df = meta_validation_set["data"][meta_validation_set['score'] > theta]
-            valid_array = valid_df[self.variable]
-            weights_valid = weights_valid[meta_validation_set['score'] > theta]  
-            Y_hat_valid = meta_validation_set['score'][meta_validation_set['score'] > theta]
-             
-            # Get predictions from trained model
-
-
-            # get region of interest
-
-            # predict probabilities for holdout
-            holdout_val = self.holdout['data'][self.variable]
-            Y_hat_holdout = self.holdout['score']
-            Y_holdout = self.holdout['labels']
-            weights_holdout = self.holdout['weights']
-            # compute gamma_roi
-
-            weights_holdout = weights_holdout[Y_hat_holdout > theta]
-            holdout_val = holdout_val[Y_hat_holdout > theta]
-
-            Y_holdout = Y_holdout[Y_hat_holdout > theta]
-
-            weights_holdout_signal = weights_holdout[Y_holdout == 1]
-            weights_holdout_bkg = weights_holdout[Y_holdout == 0]
-            bins = self.bins
-            
-            gamma_roi ,bins = np.histogram(holdout_val[Y_holdout == 1],
-                        bins=bins, density=False, weights=weights_holdout_signal)
-            
-            beta_roi , bins = np.histogram(holdout_val[Y_holdout == 0],
-                        bins=bins, density=False, weights=weights_holdout_bkg)
-            
-
-            
-            hist_llr = self.calculate_NLL(weights_valid,Y_hat_valid,beta_roi,gamma_roi)
-
-            val =  np.abs(self.mu_scan[np.argmin(hist_llr)] - 1)
-
-            if val < val_min:
-                print("val: ", val)
-                print("gamma_roi: ", gamma_roi)
-                print("beta_roi: ", beta_roi)
-                print("theta: ", theta)
-                print("Uncertainity", np.sqrt(gamma_roi + beta_roi)/gamma_roi)
-                val_min = val
-                self.threshold = theta
-
-        print(f"[*] --- best theta: {self.threshold}")
-
-
-
-    def _validate(self):
-        for valid_set in self.validation_sets:
-            Scaled_valid_df = self.scaler.transform(valid_set['data'])
-            valid_set['predictions'] = self._predict(Scaled_valid_df, self.threshold)
-            valid_set['score'] = self._return_score(Scaled_valid_df)
-
-
-
-    def _compute_validation_result(self):
-        print("[*] - Computing Validation result")
-
-        self.validation_delta_mu_hats = []
-        for valid_set in self.validation_sets:
-            Y_hat_valid = valid_set["predictions"]
-            Score_valid = valid_set["score"]
-
-            auc_valid = roc_auc_score(y_true=valid_set["labels"], y_score=Score_valid,sample_weight=valid_set['weights'])
-            print(f"\n[*] --- AUC validation : {auc_valid} --- tes : {valid_set['tes']}")
-
-            weights_valid = valid_set["weights"].copy()
-
-
-            weight_clean = weights_valid[Y_hat_valid > self.threshold]
-            valid_df_clean = valid_set['data'][Y_hat_valid > self.threshold]
-
-            valid_array = valid_df_clean[self.variable]
-
-            valid_hist ,_ = np.histogram(valid_array,
-                    bins=self.bins, density=False, weights=weight_clean)
-
-
-            mu_hat, mu_p16, mu_p84 = compute_result(valid_hist,self.fit_function_dict)
-
-            # Compute delta mu hat (absolute value)
-            delta_mu_hat = np.abs(valid_set["settings"]["ground_truth_mu"] - mu_hat)
-
-            self.validation_delta_mu_hats.append(delta_mu_hat)
-
-
-            print(f"[*] --- p16: {np.round(mu_p16, 4)} --- p84: {np.round(mu_p84, 4)} --- mu_hat: {np.round(mu_hat, 4)}")
-
-        print(f"[*] --- validation delta_mu_hat (avg): {np.round(np.mean(self.validation_delta_mu_hats), 4)}")
