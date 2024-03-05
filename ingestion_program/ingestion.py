@@ -323,6 +323,9 @@ if __name__ == '__main__':
     # Show duration
     ingestion.show_duration()
 
+    # Save duration
+    ingestion.save_duration()
+
     print("\n----------------------------------------------")
     print("[✔] Ingestions Program executed successfully!")
     print("----------------------------------------------\n\n")
