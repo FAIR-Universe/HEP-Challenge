@@ -19,7 +19,6 @@ import json
 submissions_dir = os.path.dirname(os.path.abspath(__file__))
 path.append(submissions_dir)
 
-from systematics import postprocess, DER_data
 # ------------------------------
 # Constants
 # ------------------------------
@@ -246,7 +245,11 @@ class Model():
         train_df = train_df.copy()
         train_df["weights"] = train_weights
         train_df["labels"] = train_labels
-        train_df = postprocess(train_df)
+
+        train_df = self.systematics(
+            data=train_df.copy(),
+            tes=1.0
+        ).data
 
         train_weights = train_df.pop('weights')
         train_labels = train_df.pop('labels')
