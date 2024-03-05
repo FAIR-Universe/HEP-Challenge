@@ -301,6 +301,9 @@ if __name__ == "__main__":
     # Load test settings
     scoring.load_test_settings()
 
+    # Load ingestion duration
+    scoring.load_ingestion_duration()
+
     # Load ingestions results
     scoring.load_ingestion_results()
 
