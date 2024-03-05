@@ -62,6 +62,13 @@ class Ingestion():
         print(f'[✔] Total duration: {self.get_duration()}')
         print("---------------------------------")
 
+    def save_duration(self):
+        duration = self.get_duration()
+        duration_file = os.path.join(self.output_dir, "ingestion_duration.txt")
+        if duration is not None:
+            with open(duration_file, "w") as f:
+                f.write(str(duration))
+
     def set_directories(self):
 
         # set default directories
