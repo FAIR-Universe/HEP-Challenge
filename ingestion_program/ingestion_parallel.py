@@ -24,8 +24,8 @@ warnings.filterwarnings("ignore")
 # True when running on Codabench
 # False when running locally
 CODABENCH = False
-NUM_SETS = 1  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 100  # Total = 100
+NUM_SETS = 4  # Total = 10
+NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
 MAX_WORKERS = os.environ.get("MAX_WORKERS", 30)
 CHUNK_SIZE = 2

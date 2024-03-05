@@ -16,7 +16,7 @@ import base64
 # True when running on Codabench
 # False when running locally
 CODABENCH = False
-NUM_SETS = 1  # Total = 10
+NUM_SETS = 4  # Total = 10
 USE_RANDOM_MUS = False
 
 
