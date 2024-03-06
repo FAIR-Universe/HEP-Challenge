@@ -116,9 +116,8 @@ def plot_score(test_hist,hist_s,hist_b,mu_hat,bins,threshold=0,save_path=f"XGB_s
     plt.ylabel(" Events ")
     plt.ylim(1e3, 1e6)
     ax.set_yscale('log')
-    hep.atlas.text(loc=1, text='Internal')
     plot_file = os.path.join(save_path)
-    plt.savefig(plot_file)
+    # plt.savefig(plot_file)
     plt.show()
     plt.close()
 

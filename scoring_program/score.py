@@ -17,7 +17,7 @@ import base64
 # False when running locally
 CODABENCH = False
 NUM_SETS = 4  # Total = 10
-USE_RANDOM_MUS = False
+USE_RANDOM_MUS = True
 
 
 class Scoring:
@@ -100,10 +100,10 @@ class Scoring:
     def load_test_settings(self):
         print("[*] Reading test settings")
         if USE_RANDOM_MUS:
-            settings_file = os.path.join(self.prediction_dir,"random_mu.json")
+            settings_file = os.path.join(self.prediction_dir, "random_mu.json")
         else:
             settings_file = os.path.join(self.reference_dir, "settings", "data.json") 
-            
+
         with open(settings_file) as f:
             self.test_settings = json.load(f)
 

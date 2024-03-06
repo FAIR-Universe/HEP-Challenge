@@ -384,7 +384,7 @@ class Model():
         return y_predict
 
 
-    def mu_hat_calc(self):  
+    def mu_hat_calc(self):
 
         X_holdout = self.holdout['data'].copy()
         X_holdout['weights'] = self.holdout['weights'].copy()
@@ -408,7 +408,7 @@ class Model():
         self.control_bins = int(self.bin_nums * (1 - self.threshold))
 
         if self.SYST:
-            self.theta_function()
+            self.theta_function(plot_count=2)
 
         else:
             s , b = self.nominal_histograms(1)
@@ -475,7 +475,7 @@ class Model():
         return holdout_signal_hist , holdout_background_hist
 
 
-    def theta_function(self,plot_count=25):
+    def theta_function(self, plot_count=25):
 
         fit_line_s_list = []
         fit_line_b_list = []
@@ -529,32 +529,28 @@ class Model():
 
         for i in range(min(plot_count,len(s_list))):
 
-            _, ax = plt.subplots()
-
+            _ = plt.figure(figsize=(8, 8))
             plt.plot(theta_list,s_list[i],'b.',label="s")
-            plt.plot(theta_list,fit_line_s_list[i](theta_list),'cyan',label="fit s")
+            plt.plot(theta_list,fit_line_s_list[i](theta_list),'green',label="fit s")
             plt.legend()
             plt.title(f"Bin {i}")
             plt.xlabel("theta")
             plt.ylabel("Events")
-            # hep.atlas.text(loc=1, text='Internal')
             save_path = os.path.join(submissions_dir, "plots/")
             plot_file = os.path.join(save_path, f"NN_s_{i}.png")
-            plt.savefig(plot_file)
+            # plt.savefig(plot_file)
             plt.show()
 
-            _, ax = plt.subplots()
-
+            _ = plt.figure(figsize=(8, 8))
             plt.plot(theta_list,b_list[i],'r.',label="b")
-            plt.plot(theta_list,fit_line_b_list[i](theta_list),'orange',label="fit b")
+            plt.plot(theta_list,fit_line_b_list[i](theta_list),'brown',label="fit b")
             plt.legend()
             plt.title(f"Bin {i}")
             plt.xlabel("theta")
             plt.ylabel("Events")
-            # hep.atlas.text(loc=1, text='Internal')
             save_path = os.path.join(submissions_dir, "plots/")
             plot_file = os.path.join(save_path, f"NN_b_{i}.png")
-            plt.savefig(plot_file)
+            # plt.savefig(plot_file)
             plt.show()
 
 
