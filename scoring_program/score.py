@@ -109,6 +109,14 @@ class Scoring:
 
         print("[✔]")
 
+    def load_ingestion_duration(self):
+        print("[*] Reading ingestion duration")
+        ingestion_duration_file = os.path.join(self.prediction_dir, "ingestion_duration.txt")
+        with open(ingestion_duration_file) as f:
+            self.ingestion_duration = f.read()
+
+        print("[✔]")
+
     def load_ingestion_results(self):
         print("[*] Reading predictions")
         self.ingestion_results = []
@@ -169,7 +177,8 @@ class Scoring:
             "mae": np.mean(maes),
             "interval": overall_interval,
             "coverage": overall_coverage,
-            "quantiles_score": overall_quantiles_score
+            "quantiles_score": overall_quantiles_score,
+            "ingestion_duration": self.ingestion_duration,
 
         }
 
@@ -181,6 +190,7 @@ class Scoring:
         self._print(f"[*] --- Interval: {round(overall_interval, 3)}")
         self._print(f"[*] --- Coverage: {round(overall_coverage, 3)}")
         self._print(f"[*] --- Quantiles score: {round(overall_quantiles_score, 3)}")
+        self._print(f"[*] --- Ingestion duration: {self.ingestion_duration}")
 
         print("[✔]")
 
@@ -290,6 +300,9 @@ if __name__ == "__main__":
 
     # Load test settings
     scoring.load_test_settings()
+
+    # Load ingestion duration
+    scoring.load_ingestion_duration()
 
     # Load ingestions results
     scoring.load_ingestion_results()
