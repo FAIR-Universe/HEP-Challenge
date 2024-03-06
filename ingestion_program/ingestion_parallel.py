@@ -256,7 +256,7 @@ class Ingestion:
     def save_duration(self):
         duration = self.get_duration()
         duration_in_mins = int(duration.total_seconds() / 60)
-        duration_file = os.path.join(self.output_dir, "ingestion_duration..json")
+        duration_file = os.path.join(self.output_dir, "ingestion_duration.json")
         if duration is not None:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
