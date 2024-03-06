@@ -111,9 +111,9 @@ class Scoring:
 
     def load_ingestion_duration(self):
         print("[*] Reading ingestion duration")
-        ingestion_duration_file = os.path.join(self.prediction_dir, "ingestion_duration.txt")
+        ingestion_duration_file = os.path.join(self.prediction_dir, "ingestion_duration.json")
         with open(ingestion_duration_file) as f:
-            self.ingestion_duration = f.read()
+            self.ingestion_duration = json.load(f)["ingestion_duration"]
 
         print("[✔]")
 
