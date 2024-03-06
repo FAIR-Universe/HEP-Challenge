@@ -9,7 +9,6 @@ import json
 from itertools import product
 from numpy.random import RandomState
 import warnings
-from copy import deepcopy
 import sys
 warnings.filterwarnings("ignore")
 
@@ -24,7 +23,7 @@ USE_PUBLIC_DATA = False
 NUM_SETS = 4  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
-USE_RANDOM_MUS = False
+USE_RANDOM_MUS = True
 
 
 # ------------------------------------------
@@ -155,7 +154,7 @@ class Ingestion():
                 "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
             }
             random_settings_file = os.path.join(
-                self.output_dir,"random_mu.json"
+                self.output_dir, "random_mu.json"
             )
             with open(random_settings_file, "w") as f:
                 json.dump(self.test_settings, f)
@@ -184,13 +183,13 @@ class Ingestion():
     def get_bootstraped_dataset(self, mu=1.0, tes=1.0, seed=42):
 
         weights = self.test_set["weights"].copy()
-        weights[ self.test_set["labels"] == 1] = weights[self.test_set["labels"] == 1] * mu
+        weights[self.test_set["labels"] == 1] = weights[self.test_set["labels"] == 1] * mu
         prng = RandomState(seed)
 
         new_weights = prng.poisson(lam=weights)
 
         del weights
-        
+
         temp_df = self.test_set["data"][new_weights > 0].copy()
         temp_df["weights"] = new_weights[new_weights > 0]
         temp_df["labels"] = self.test_set["labels"][new_weights > 0]

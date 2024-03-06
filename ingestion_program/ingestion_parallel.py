@@ -9,7 +9,6 @@ import json
 from itertools import product
 from numpy.random import RandomState
 import warnings
-from copy import deepcopy
 import multiprocessing as mp
 from multiprocessing import shared_memory
 import sys
@@ -29,8 +28,7 @@ NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
-USE_RANDOM_MUS = False
-
+USE_RANDOM_MUS = True
 
 
 # initialize worker environment
@@ -46,13 +44,13 @@ def _init_worker(using_tensorflow):
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
     weights = test_set["weights"].copy()
-    weights[ test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
+    weights[test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
     prng = RandomState(seed)
 
     new_weights = prng.poisson(lam=weights)
 
     del weights
-    
+
     temp_df = test_set["data"][new_weights > 0].copy()
     temp_df["weights"] = new_weights[new_weights > 0]
     temp_df["labels"] = test_set["labels"][new_weights > 0]
@@ -355,7 +353,7 @@ class Ingestion:
                 "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
             }
             random_settings_file = os.path.join(
-                self.output_dir,"random_mu.json"
+                self.output_dir, "random_mu.json"
             )
             with open(random_settings_file, "w") as f:
                 json.dump(self.test_settings, f)
