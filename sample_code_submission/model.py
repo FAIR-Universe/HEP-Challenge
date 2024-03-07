@@ -120,7 +120,7 @@ class Model():
         self._init_model()
         self._train()
         self.mu_hat_calc()
-        # self.save_model()
+        self.save_model()
 
         self.plot_dir = os.path.join(submissions_dir, "plots/")
         if not os.path.exists(self.plot_dir):
@@ -583,25 +583,16 @@ class Model():
 
     def save_model(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(current_dir)
-        model_dir = os.path.join(parent_dir, "NN_min_saved")   
-        model_path = os.path.join(model_dir, "model.keras")
-        settings_path = os.path.join(model_dir, "settings.pkl")
-        scaler_path = os.path.join(model_dir, "scaler.pkl")
-
+        model_path = os.path.join(current_dir, "model.pt")
+        settings_path = os.path.join(current_dir, "settings.pkl")
+        scaler_path = os.path.join(current_dir, "scaler.pkl")
 
         print("[*] - Saving Model")
         print(f"[*] --- model path: {model_path}")
         print(f"[*] --- settings path: {settings_path}")
         print(f"[*] --- scaler path: {scaler_path}")
 
-        
-
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-
-        self.model.save(model_path)
-
+        torch.save(self.model.state_dict(), model_path)
 
         settings = {
             "threshold": self.threshold,
@@ -612,10 +603,8 @@ class Model():
             "calibration": self.calibration,
         }
 
-
         pickle.dump(settings, open(settings_path, "wb"))
 
         pickle.dump(self.scaler, open(scaler_path, "wb"))
 
         print("[*] - Model saved")
-
