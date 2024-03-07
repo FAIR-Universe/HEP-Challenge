@@ -88,21 +88,81 @@ class Model():
         """
 
         # Set class variables from parameters
-        self.train_set = train_set
-        self.systematics = systematics
-        self.model_name = "NN_PyTorch"
-        # Intialize class variables
 
-        self.threshold = 0.8
-        self.bins = 30
-        self.bin_nums = 30
-        self.batch_size = 1000
-        self.plot_count = 5
-        self.max_num_epochs = 100
-        self.variable = "DER_deltar_lep_had"
-        self.calibration = 0
-        self.scaler = StandardScaler()
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        module_file = os.path.join(current_dir, "model.pt")
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.SYST = True
+        self.plot_count = 0
+        self.model_name = "NN_NLL"
+
+
+
+
+        if os.path.exists(module_file):
+            self.model_exists = True
+            self._read_settings()
+            self.model = PyTorchModel(n_cols=train_set["data"].shape[1])
+            self.model.load_state_dict(torch.load(module_file))
+            self.model.to(self.device)
+            del train_set
+            del systematics
+
+        else:
+            self.model_exists = False
+            self.train_set = train_set
+            self.systematics = systematics
+            self.threshold = 0.8
+            self.bins = 30
+            self.bin_nums = 30
+            self.batch_size = 1000
+            self.max_num_epochs = 100
+            self.calibration = 0
+            self.scaler = StandardScaler()
+
+
+    def _read_settings(self):
+
+        settings_file = os.path.join(submissions_dir, "settings.pkl")
+        scaler_file = os.path.join(submissions_dir, "scaler.pkl")
+
+        settings = pickle.load(open(settings_file, "rb"))
+
+        self.threshold = settings["threshold"]
+        self.bin_nums = settings["bin_nums"]
+        self.control_bins = settings["control_bins"]
+        self.coef_s_list = settings["coef_s_list"]
+        self.coef_b_list = settings["coef_b_list"]
+        self.calibration = settings["calibration"]
+        self.bins = np.linspace(0, 1, self.bin_nums + 1)
+
+        fit_line_s_list = []
+        fit_line_b_list = []
+
+        for coef_s_,coef_b_ in zip(self.coef_s_list,self.coef_b_list):
+
+            coef_s = np.array(coef_s_)
+            coef_b = np.array(coef_b_)
+
+            fit_line_s_list.append(np.poly1d(coef_s))
+            fit_line_b_list.append(np.poly1d(coef_b))
+
+        self.fit_dict = {
+            "gamma_roi":fit_line_s_list,
+            "beta_roi":fit_line_b_list
+        }
+
+        print(f"[*] --- length of fit_line_s_list: {len(fit_line_s_list)}")
+        print(f"[*] --- length of fit_line_b_list: {len(fit_line_b_list)}")
+
+        self.fit_dict_control = {
+            "gamma_roi":fit_line_s_list[-self.control_bins:],
+            "beta_roi":fit_line_b_list[-self.control_bins:]
+        }
+
+        self.scaler = pickle.load(open(scaler_file, 'rb'))
+
 
     def fit(self):
         """
@@ -115,6 +175,9 @@ class Model():
         Returns:
             None
         """
+
+        if self.model_exists:
+            return
 
         self._generate_holdout_sets()
         self._init_model()
@@ -378,7 +441,7 @@ class Model():
         print(f"[*] --- Training done with loss: {loss.item()} in {epoch} epochs")
 
     def _return_score(self, X):
-        X = torch.tensor(X, dtype=torch.float32)
+        X = torch.tensor(X, dtype=torch.float32).to(self.device)
         y_predict = self.model(X)
         y_predict = y_predict.detach().numpy().ravel()
         return y_predict
