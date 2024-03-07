@@ -14,6 +14,7 @@ from multiprocessing import shared_memory
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+import pickle
 
 warnings.filterwarnings("ignore")
 
@@ -41,7 +42,9 @@ USE_RANDOM_MUS = True
 os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 # initialize worker environment
-def _init_worker(using_tensorflow):
+_model = None
+def _init_worker(using_tensorflow, pickled_model=None):
+    global _model
     if using_tensorflow:
         import tensorflow as tf
 
@@ -50,6 +53,8 @@ def _init_worker(using_tensorflow):
         for gpu in tf.config.list_physical_devices('GPU'):
             tf.config.experimental.set_memory_growth(gpu, True)
 
+    # Now that are framework parameters are set we can unpickle the model
+    _model = pickle.loads(pickled_model)
 
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
@@ -79,10 +84,10 @@ def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
     return {"data": data_syst, "weights": weights}
 
-
+_model = None
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
-def _process_combination(arrays, test_settings, model, combination):
+def _process_combination(arrays, test_settings, combination):
     print("[*] Processing combination")
 
     try:
@@ -104,7 +109,8 @@ def _process_combination(arrays, test_settings, model, combination):
             test_set = _get_bootstraped_dataset(test_set, mu=set_mu, tes=tes, seed=seed)
             # print(f"[*] Predicting process with seed {seed}")
             predicted_dict = {}
-            predicted_dict = model.predict(test_set)
+            # Call predict method of the model that was passed to the worker
+            predicted_dict = _model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
 
             print(
@@ -425,7 +431,11 @@ class Ingestion:
                 mp_context=mp.get_context("spawn"),
                 max_workers=MAX_WORKERS,
                 initializer=_init_worker,
-                initargs=(using_tensorflow,),
+                # We are pickling the model explicitly here rather than
+                # letting multiprocessing do it implicitly, so we
+                # initialize tensorflow parameters before the model potentially
+                # initializes it.
+                initargs=(using_tensorflow, pickle.dumps(self.model),),
             ) as executor:
                 # The description of the shared memory arrays for the test set
                 test_set_sm_arrays = test_set.asdict()
@@ -433,7 +443,6 @@ class Ingestion:
                     _process_combination,
                     test_set_sm_arrays,
                     self.test_settings,
-                    self.model,
                 )
                 futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
 
