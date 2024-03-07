@@ -72,7 +72,7 @@ Only background events coming from Z boson are included in this challenge. While
 ## How to get Public Data?
 ***
 - Go to the "Files" tab
-- Download the "Uncertainty challenge Open data"
+- Download the "ACAT_Public_DATA_parquet"
 
 or use the following command to download using terminal
 ```
