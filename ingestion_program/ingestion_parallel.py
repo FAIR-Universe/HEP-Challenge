@@ -30,6 +30,15 @@ MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
 USE_RANDOM_MUS = True
 
+# tf.config.threading.set_inter_op_parallelism_threads(1)
+# tf.config.threading.set_intra_op_parallelism_threads(1)
+# for gpu in tf.config.list_physical_devices('GPU'):
+#     tf.config.experimental.set_memory_growth(gpu, True)
+
+# Here we set the environment variable to allow the GPU memory to grow
+# rather than pre allocating. We use this rather than the API
+# because we want to avoid loading tensorflow.
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 # initialize worker environment
 def _init_worker(using_tensorflow):
@@ -38,7 +47,8 @@ def _init_worker(using_tensorflow):
 
         tf.config.threading.set_inter_op_parallelism_threads(1)
         tf.config.threading.set_intra_op_parallelism_threads(1)
-        tf.config.set_visible_devices([], "GPU")
+        for gpu in tf.config.list_physical_devices('GPU'):
+            tf.config.experimental.set_memory_growth(gpu, True)
 
 
 def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
