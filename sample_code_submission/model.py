@@ -90,7 +90,7 @@ class Model():
         # Set class variables from parameters
         self.train_set = train_set
         self.systematics = systematics
-        self.model_name = "NN_NLL"
+        self.model_name = "NN_PyTorch"
         # Intialize class variables
 
         self.threshold = 0.8
