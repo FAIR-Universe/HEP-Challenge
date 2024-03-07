@@ -39,3 +39,5 @@ Dummy sample submission is provided to make you understand what is expected as a
     ### Loading a NumPy file
     hists = np.load(model_dir+"/Templates.npy")
     ```
+
+    To test your models in a non - systematic case, feel free to use the [Playground Competition](https://www.codabench.org/competitions/2162/?secret_key=20c0db6f-95db-4e28-9038-132ae7534989)
