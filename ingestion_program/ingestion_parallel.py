@@ -43,21 +43,28 @@ os.environ["TF_FORCE_GPU_ALLOW_GROWTH"] = "true"
 
 # initialize worker environment
 _model = None
-def _init_worker(using_tensorflow, pickled_model=None):
+
+
+def _init_worker(using_tensorflow, pickled_model, device_queue):
     global _model
+
+    # Get the device to use
+    device = device_queue.get()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(device)
+
     if using_tensorflow:
         import tensorflow as tf
 
         tf.config.threading.set_inter_op_parallelism_threads(1)
         tf.config.threading.set_intra_op_parallelism_threads(1)
-        for gpu in tf.config.list_physical_devices('GPU'):
+        for gpu in tf.config.list_physical_devices("GPU"):
             tf.config.experimental.set_memory_growth(gpu, True)
 
     # Now that are framework parameters are set we can unpickle the model
     _model = pickle.loads(pickled_model)
 
-def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
+def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
     weights = test_set["weights"].copy()
     weights[test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
     prng = RandomState(seed)
@@ -84,7 +91,10 @@ def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
 
     return {"data": data_syst, "weights": weights}
 
+
 _model = None
+
+
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
 def _process_combination(arrays, test_settings, combination):
@@ -368,9 +378,7 @@ class Ingestion:
             self.test_settings = {
                 "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
             }
-            random_settings_file = os.path.join(
-                self.output_dir, "random_mu.json"
-            )
+            random_settings_file = os.path.join(self.output_dir, "random_mu.json")
             with open(random_settings_file, "w") as f:
                 json.dump(self.test_settings, f)
         else:
@@ -427,15 +435,33 @@ class Ingestion:
         using_tensorflow = "tensorflow" in sys.modules
 
         with SharedTestSet(test_set=self.test_set) as test_set:
+            mp_context = mp.get_context("spawn")
+
+            # We want to round robin the devices. So we create a queue
+            # and put the devices indexes in the queue. The workers will
+            # then get the device index from the queue.
+            import torch
+
+            device_count = torch.cuda.device_count()
+            devices = list(range(0, device_count))
+            device_queue = mp_context.Queue()
+            # round robin the devices
+            for w in range(0, MAX_WORKERS):
+                device_queue.put(devices[w % device_count])
+
             with ProcessPoolExecutor(
-                mp_context=mp.get_context("spawn"),
+                mp_context=mp_context,
                 max_workers=MAX_WORKERS,
                 initializer=_init_worker,
                 # We are pickling the model explicitly here rather than
                 # letting multiprocessing do it implicitly, so we
                 # initialize tensorflow parameters before the model potentially
                 # initializes it.
-                initargs=(using_tensorflow, pickle.dumps(self.model),),
+                initargs=(
+                    using_tensorflow,
+                    pickle.dumps(self.model),
+                    device_queue,
+                ),
             ) as executor:
                 # The description of the shared memory arrays for the test set
                 test_set_sm_arrays = test_set.asdict()
