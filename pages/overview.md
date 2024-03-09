@@ -17,7 +17,7 @@ The standard approach used in LHC analyses is to construct a 1D feature $f(x)$ (
 
 ## Challenge target: Estimation of $\mu$ and uncertainty
 ***
-The aim of this challenge is to determine the signal strength $\mu$ and its uncertainty. In addition participants submissions will be evaluated against test datasets which can have a range of true “$\mu$” values (for the first “phase” a single $\mu$ test set will be used).  Furthermore the test datasets have systematic uncertainties applied on nuisance parameters at values that may be different to those available during training. Currently for this challenge, we will have a single parameter, representing one of the most important sources of uncertainty: the energy scale of the tau particles (`TES`). 
+The aim of this challenge is to determine the signal strength $\mu$ and its uncertainty. In addition participants submissions will be evaluated against test datasets which can have a range of true “$\mu$” values.  Furthermore the test datasets have systematic uncertainties applied on nuisance parameters at values that may be different to those available during training. Currently for this challenge, we will have a single parameter, representing one of the most important sources of uncertainty: the energy scale of the tau particles (`TES`). 
 
 **The specific target of this challenge is to determine a 68% confidence interval for \mu on these test dataset(s).** We desire the interval to be as small as possible so long as the coverage is close to 68%. **Participants should consult the “Evaluation” tab for more details on what quantity should be returned and how it will be scored, and the “Starting Kit” tab for examples of how to return these values from your models within their submission. In addition the “Starting Kit” provides examples of how to apply TES systematics to the training data when training your model.** Though the values of TES applied in this way may not be the one in the test set, this information can be used to constrain (“profile”) the TES value. It is not necessary for participants to provide the value of TES on the test data (we only care about $\mu$), but it may be necessary to determine TES and its uncertainty in order to win the challenge.
 
@@ -72,4 +72,4 @@ Email: fair-universe@lbl.gov
 
 Updates will be announced through fair-universe-announcements google group. [Click to join Google Group](https://groups.google.com/u/0/a/lbl.gov/g/Fair-Universe-Announcements/)
 
-Join #higgsml-uncertainty-challenge-spring-24 channel in [FAIR Universe slack workspace](https://join.slack.com/t/fairuniverse/shared_invite/zt-2dt9ovrp1-jvi0DnCK9jzL3VGrdwYNMA)
+Join **#higgsml-uncertainty-challenge-spring-24** channel in [FAIR Universe slack workspace](https://join.slack.com/t/fairuniverse/shared_invite/zt-2dt9ovrp1-jvi0DnCK9jzL3VGrdwYNMA)
