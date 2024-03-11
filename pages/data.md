@@ -12,7 +12,7 @@ The Higgs bosons are produced with all possible production modes and decay into 
 Only background events coming from Z boson are included in this challenge. While simulating the process, interference effects between Z boson and Photon are included. Similar to signal events, only the tau-tau decay mode of the Z boson is included in the dataset.
 
  
-> **NOTE**   
+>#### ⚠️ Note: 
 > 
 > The training events have weights.
 >
@@ -67,7 +67,18 @@ Only background events coming from Z boson are included in this challenge. While
 | 32. | Weight                       | The event weight $w_i$.                                                                                  |
 | 33. | Label                        | The event label $y_i \in \{1,0\}$ (1 for signal, 0 for background). {should **NOT** be used as a  training feature}                    |
 
+### Preselection Cuts
 
+
+| Criteria              | Pre-selected cut                  | Post selection cut                  |
+| --------------------- | --------------------------------- | ----------------------------------- |
+| Number of $\tau_{had}$           | 1                |                |
+| Number of $\tau_{lep}$           | 1                |                |
+| $p_T \tau_{had}$           | > 20GeV               |  > 26GeV               |
+| $p_T \tau_{lep}$           | > 20GeV                |  > 20GeV               |
+| Charege | Opposite Charges              |  |
+
+**⚠️ Note:** The Post selection cuts are the cuts made after systematics is applied. 
 
 ## How to get Public Data?
 ***
