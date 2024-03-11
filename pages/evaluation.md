@@ -3,6 +3,8 @@
 
 **The specific target of this challenge is to determine a 68% confidence interval for $\mu$ on provided test dataset(s) (see main “Overview” page)**
 
+For this competetion participants models will be tested on ***4*** sets of ***50*** pseudo experiments (Total **200** pseudo experiments). Each set will have a different value of $\mu$. The Overall Quantile score will be based on total coveragre and average interval. 
+
 ## Quantiles Score
 
 The participants are requested to provide a method that, for a given test data set, returns an interval [$\mu_{16}, \mu_{84}$]. This interval should describe the central 68% quantile of the likelihood function of the signal strength $\mu$. In other words, the interval should contain the true $\mu$ value of a given data set 68% of the time. 
