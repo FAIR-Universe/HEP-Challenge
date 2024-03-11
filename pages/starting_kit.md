@@ -15,6 +15,8 @@ Dummy sample submission is provided to make you understand what is expected as a
 
 
 #### ⚠️ Note:
+- Please register with your university or official email for security reasons. 
+
 - Participants can submit a pre-trained model zipped together with the `model.py`. It is the participants responsibility to load the pre-trained model in the Model class. In this case participants may want to ignore the train_set provided as input of the Model class. 
 
 - You can download and see real sample submissions from our github repo: https://github.com/FAIR-Universe/HEP-Challenge/tree/master/example_submissions/
@@ -39,5 +41,7 @@ Dummy sample submission is provided to make you understand what is expected as a
     ### Loading a NumPy file
     hists = np.load(model_dir+"/Templates.npy")
     ```
+-  The Submissions are tested in parallel hence the models have to be serialisable. 
 
-    To test your models in a non - systematic case, feel free to use the [Playground Competition](https://www.codabench.org/competitions/2162/?secret_key=20c0db6f-95db-4e28-9038-132ae7534989)
+
+
