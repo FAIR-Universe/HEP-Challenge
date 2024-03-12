@@ -1,6 +1,8 @@
 # Overview 
 ***
 
+## Codabench Walkthrough tutorial: [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/HiggsML_Uncertainty_Challenge-Codabench_Tutorial.pdf)
+
 ## Introduction 
 In 2012, the Nobel-prize-winning discovery of the Higgs Boson by the ATLAS and CMS experiments at the Large Hadron Collider (LHC) at CERN in Geneva, Switzerland was a major milestone in the history of physics. However, despite the validation it provided of the Standard Model of particle physics (SM), there are still numerous questions in physics that the SM does not answer. One promissing approach to uncover some of these mysteries is to study the Higgs Boson in great detail, as the rate of Higgs Boson production and its decay properties may hold the secrets to the nature of dark matter and other phenomena not explained by the SM.
 
