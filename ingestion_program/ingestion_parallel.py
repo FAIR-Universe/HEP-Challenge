@@ -27,6 +27,14 @@ CODABENCH = False
 NUM_SETS = 4  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
+DICT_SYSTEMATICS = {
+    "tes": True,
+    "jes": False,
+    "soft_met": False,
+    "w_scale": False,
+    "bkg_scale": False,
+}
+NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
 USE_RANDOM_MUS = True
@@ -64,7 +72,16 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
     _model = pickle.loads(pickled_model)
 
 
-def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
+def _get_bootstraped_dataset(
+    test_set,
+    mu=1.0,
+    tes=1.0,
+    jes=1.0,
+    soft_met=1.0,
+    w_scale=None,
+    bkg_scale=None,
+    seed=0,
+):
     weights = test_set["weights"].copy()
     weights[test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
     prng = RandomState(seed)
@@ -80,7 +97,14 @@ def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
     # Apply systematics to the sampled data
     from systematics import Systematics
 
-    data_syst = Systematics(data=temp_df, tes=tes).data
+    data_syst = Systematics(
+        data=temp_df,
+        tes=tes,
+        jes=jes,
+        soft_met=soft_met,
+        w_scale=w_scale,
+        bkg_scale=bkg_scale,
+    )
 
     # Apply weight scaling factor mu to the data
 
@@ -108,15 +132,51 @@ def _process_combination(arrays, test_settings, combination):
             # random tes value (one per test set)
             if USE_SYSTEAMTICS:
                 # random tes value (one per test set)
-                tes = np.random.uniform(0.9, 1.1)
+                if DICT_SYSTEMATICS["tes"]:
+                    tes = np.random.uniform(0.9, 1.1)
+                else:
+                    tes = 1.0
+                if DICT_SYSTEMATICS["jes"]:
+                    jes = np.random.uniform(0.9, 1.1)
+                else:
+                    jes = 1.0
+                if DICT_SYSTEMATICS["soft_met"]:
+                    soft_met = np.random.uniform(1.0, 5)
+                else:
+                    soft_met = 1.0
+
+                if DICT_SYSTEMATICS["w_scale"]:
+                    w_scale = np.random.uniform(0.5, 2)
+                else:
+                    w_scale = None
+
+                if DICT_SYSTEMATICS["bkg_scale"]:
+                    bkg_scale = np.random.uniform(0.5, 2)
+                else:
+                    bkg_scale = None
+
             else:
-                tes = 1.0  # create a seed
+                tes = 1.0
+                jes = 1.0
+                soft_met = 1.0
+                w_scale = (None,)
+                bkg_scale = (None,)
+
             seed = (set_index * NUM_PSEUDO_EXPERIMENTS) + test_set_index
             # get mu value of set from test settings
             set_mu = test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = _get_bootstraped_dataset(test_set, mu=set_mu, tes=tes, seed=seed)
+            test_set = _get_bootstraped_dataset(
+                test_set,
+                mu=set_mu,
+                tes=tes,
+                jes=jes,
+                soft_met=soft_met,
+                w_scale=w_scale,
+                bkg_scale=bkg_scale,
+                seed=seed,
+            )
             # print(f"[*] Predicting process with seed {seed}")
             predicted_dict = {}
             # Call predict method of the model that was passed to the worker
