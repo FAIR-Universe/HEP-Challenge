@@ -23,6 +23,13 @@ USE_PUBLIC_DATA = False
 NUM_SETS = 4  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
 USE_SYSTEAMTICS = True
+DICT_SYSTEMATICS = {
+    "tes": True,
+    "jes": False,
+    "soft_met": False,
+    "w_scale": False,
+    "bkg_scale": False,
+}
 USE_RANDOM_MUS = True
 
 
@@ -240,16 +247,42 @@ class Ingestion():
         for set_index, test_set_index in all_combinations:
             if USE_SYSTEAMTICS:
                 # random tes value (one per test set)
-                tes = np.random.uniform(0.9, 1.1)
+                if DICT_SYSTEMATICS["tes"]:
+                    tes = np.random.uniform(0.9, 1.1)
+                else:
+                    tes = 1.0
+                if DICT_SYSTEMATICS["jes"]:
+                    jes = np.random.uniform(0.9, 1.1)
+                else:
+                    jes = 1.0
+                if DICT_SYSTEMATICS["soft_met"]:
+                    soft_met = np.random.uniform(1.0, 5)
+                else:
+                    soft_met = 1.0
+
+                if DICT_SYSTEMATICS["w_scale"]:
+                    w_scale = np.random.uniform(0.5, 2)
+                else:
+                    w_scale = None
+
+                if DICT_SYSTEMATICS["bkg_scale"]:
+                    bkg_scale = np.random.uniform(0.5, 2)
+                else:
+                    bkg_scale = None
+
             else:
                 tes = 1.0
+                jes = 1.0
+                soft_met = 1.0
+                w_scale = (None,)
+                bkg_scale = (None,)
             # create a seed
             seed = (set_index*NUM_PSEUDO_EXPERIMENTS) + test_set_index
             # get mu value of set from test settings
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = self.get_bootstraped_dataset(mu=set_mu, tes=tes, seed=seed)
+            test_set = self.get_bootstraped_dataset(mu=set_mu, tes=tes, jes=jes, soft_met=soft_met, w_scale=w_scale, bkg_scale=bkg_scale, seed=seed)
 
             predicted_dict = self.model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
