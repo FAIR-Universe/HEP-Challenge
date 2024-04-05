@@ -10,6 +10,7 @@ from itertools import product
 from numpy.random import RandomState
 import warnings
 import sys
+
 warnings.filterwarnings("ignore")
 
 
@@ -36,7 +37,7 @@ USE_RANDOM_MUS = True
 # ------------------------------------------
 # Ingestion Class
 # ------------------------------------------
-class Ingestion():
+class Ingestion:
 
     def __init__(self):
 
@@ -65,7 +66,7 @@ class Ingestion():
 
     def show_duration(self):
         print("\n---------------------------------")
-        print(f'[✔] Total duration: {self.get_duration()}')
+        print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
     def save_duration(self):
@@ -118,10 +119,16 @@ class Ingestion():
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        train_data_file = os.path.join(self.input_dir, 'train', 'data', 'data.parquet')
-        train_labels_file = os.path.join(self.input_dir, 'train', 'labels', 'data.labels')
-        train_settings_file = os.path.join(self.input_dir, 'train', 'settings', 'data.json')
-        train_weights_file = os.path.join(self.input_dir, 'train', 'weights', 'data.weights')
+        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
+        train_labels_file = os.path.join(
+            self.input_dir, "train", "labels", "data.labels"
+        )
+        train_settings_file = os.path.join(
+            self.input_dir, "train", "settings", "data.json"
+        )
+        train_weights_file = os.path.join(
+            self.input_dir, "train", "weights", "data.weights"
+        )
 
         # read train labels
         with open(train_labels_file, "r") as f:
@@ -140,7 +147,7 @@ class Ingestion():
             "data": pd.read_parquet(train_data_file, engine="pyarrow"),
             "labels": train_labels,
             "settings": train_settings,
-            "weights": train_weights
+            "weights": train_weights,
         }
 
         del train_labels, train_settings, train_weights
@@ -150,19 +157,21 @@ class Ingestion():
     def load_test_set(self):
         print("[*] Loading Test data")
 
-        test_data_file = os.path.join(self.input_dir, 'test', 'data', 'data.parquet')
-        test_settings_file = os.path.join(self.input_dir, 'test', 'settings', 'data.json')
-        test_weights_file = os.path.join(self.input_dir, 'test', 'weights', 'data.weights')
-        test_labels_file = os.path.join(self.input_dir, 'test', 'labels', 'data.labels')
+        test_data_file = os.path.join(self.input_dir, "test", "data", "data.parquet")
+        test_settings_file = os.path.join(
+            self.input_dir, "test", "settings", "data.json"
+        )
+        test_weights_file = os.path.join(
+            self.input_dir, "test", "weights", "data.weights"
+        )
+        test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
 
         # read test settings
         if USE_RANDOM_MUS:
             self.test_settings = {
                 "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
             }
-            random_settings_file = os.path.join(
-                self.output_dir, "random_mu.json"
-            )
+            random_settings_file = os.path.join(self.output_dir, "random_mu.json")
             with open(random_settings_file, "w") as f:
                 json.dump(self.test_settings, f)
         else:
@@ -180,17 +189,28 @@ class Ingestion():
         self.test_set = {
             "data": pd.read_parquet(test_data_file, engine="pyarrow"),
             "weights": test_weights,
-            "labels": test_labels
+            "labels": test_labels,
         }
         del test_weights, test_labels
 
         print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Test data loaded successfully")
 
-    def get_bootstraped_dataset(self, mu=1.0, tes=1.0, seed=42):
+    def get_bootstraped_dataset(
+        self,
+        mu=1.0,
+        tes=1.0,
+        jes=1.0,
+        soft_met=1.0,
+        w_scale=None,
+        bkg_scale=None,
+        seed=0,
+    ):
 
         weights = self.test_set["weights"].copy()
-        weights[self.test_set["labels"] == 1] = weights[self.test_set["labels"] == 1] * mu
+        weights[self.test_set["labels"] == 1] = (
+            weights[self.test_set["labels"] == 1] * mu
+        )
         prng = RandomState(seed)
 
         new_weights = prng.poisson(lam=weights)
@@ -204,7 +224,14 @@ class Ingestion():
         # Apply systematics to the sampled data
         from systematics import Systematics
 
-        data_syst = Systematics(data=temp_df, tes=tes).data
+        data_syst = Systematics(
+            data=temp_df,
+            tes=tes,
+            jes=jes,
+            soft_met=soft_met,
+            w_scale=w_scale,
+            bkg_scale=bkg_scale,
+        ).data
 
         # Apply weight scaling factor mu to the data
 
@@ -219,10 +246,8 @@ class Ingestion():
         print("[*] Initializing Submmited Model")
         from model import Model
         from systematics import Systematics
-        self.model = Model(
-            train_set=self.train_set,
-            systematics=Systematics
-        )
+
+        self.model = Model(train_set=self.train_set, systematics=Systematics)
 
         del self.train_set
 
@@ -277,17 +302,27 @@ class Ingestion():
                 w_scale = (None,)
                 bkg_scale = (None,)
             # create a seed
-            seed = (set_index*NUM_PSEUDO_EXPERIMENTS) + test_set_index
+            seed = (set_index * NUM_PSEUDO_EXPERIMENTS) + test_set_index
             # get mu value of set from test settings
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = self.get_bootstraped_dataset(mu=set_mu, tes=tes, jes=jes, soft_met=soft_met, w_scale=w_scale, bkg_scale=bkg_scale, seed=seed)
+            test_set = self.get_bootstraped_dataset(
+                mu=set_mu,
+                tes=tes,
+                jes=jes,
+                soft_met=soft_met,
+                w_scale=w_scale,
+                bkg_scale=bkg_scale,
+                seed=seed,
+            )
 
             predicted_dict = self.model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
 
-            print(f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}")
+            print(
+                f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}"
+            )
 
             if set_index not in self.results_dict:
                 self.results_dict[set_index] = []
@@ -299,7 +334,7 @@ class Ingestion():
         # loop over sets
         for i in range(0, NUM_SETS):
             set_result = self.results_dict[i]
-            set_result.sort(key=lambda x: x['test_set_index'])
+            set_result.sort(key=lambda x: x["test_set_index"])
             mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
             for test_set_dict in set_result:
                 mu_hats.append(test_set_dict["mu_hat"])
@@ -313,12 +348,12 @@ class Ingestion():
                 "p16": p16,
                 "p84": p84,
             }
-            result_file = os.path.join(self.output_dir, "result_"+str(i)+".json")
-            with open(result_file, 'w') as f:
+            result_file = os.path.join(self.output_dir, "result_" + str(i) + ".json")
+            with open(result_file, "w") as f:
                 f.write(json.dumps(ingestion_result_dict, indent=4))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     print("############################################")
     print("### Ingestion Program")
