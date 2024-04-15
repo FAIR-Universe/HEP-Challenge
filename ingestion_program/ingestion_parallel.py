@@ -18,26 +18,21 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
-# ------------------------------------------
-# Settings
-# ------------------------------------------
-# True when running on Codabench
-# False when running locally
-CODABENCH = False
-NUM_SETS = 4  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
-USE_SYSTEAMTICS = True
-DICT_SYSTEMATICS = {
-    "tes": True,
-    "jes": False,
-    "soft_met": False,
-    "w_scale": False,
-    "bkg_scale": False,
-}
-NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
+# Load config
+INPUT_DIR = None
+
+from config import (
+    NUM_SETS,
+    NUM_PSEUDO_EXPERIMENTS,
+    USE_SYSTEAMTICS,
+    DICT_SYSTEMATICS,
+    USE_RANDOM_MUS,
+    CODABENCH,
+    INPUT_DIR,
+)
+
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
-USE_RANDOM_MUS = True
 
 # tf.config.threading.set_inter_op_parallelism_threads(1)
 # tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -348,6 +343,7 @@ class Ingestion:
     def set_directories(self):
         # set default directories
         module_dir = os.path.dirname(os.path.realpath(__file__))
+        
         root_dir_name = os.path.dirname(module_dir)
 
         input_data_dir_name = "input_data"
@@ -363,7 +359,11 @@ class Ingestion:
             submission_dir_name = "ingested_program"
 
         # Input data directory to read training and test data from
-        self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
+        if INPUT_DIR is not None:
+            self.input_dir = INPUT_DIR
+        else: 
+            self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
+
         # Output data directory to write predictions to
         self.output_dir = os.path.join(root_dir_name, output_dir_name)
         # Program directory

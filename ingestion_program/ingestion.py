@@ -13,26 +13,19 @@ import sys
 
 warnings.filterwarnings("ignore")
 
+INPUT_DIR = None
 
-# ------------------------------------------
-# Settings
-# ------------------------------------------
-# True when running on Codabench
-CODABENCH = False
-# True when using public data (to run locally)
-USE_PUBLIC_DATA = False
-NUM_SETS = 4  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
-USE_SYSTEAMTICS = True
-DICT_SYSTEMATICS = {
-    "tes": True,
-    "jes": False,
-    "soft_met": False,
-    "w_scale": False,
-    "bkg_scale": False,
-}
-USE_RANDOM_MUS = True
-
+# Load config
+from config import (
+    NUM_SETS,
+    NUM_PSEUDO_EXPERIMENTS,
+    USE_SYSTEAMTICS,
+    DICT_SYSTEMATICS,
+    USE_RANDOM_MUS,
+    CODABENCH,
+    USE_PUBLIC_DATA,
+    INPUT_DIR,
+)
 
 # ------------------------------------------
 # Ingestion Class
@@ -96,7 +89,10 @@ class Ingestion:
             submission_dir_name = "ingested_program"
 
         # Input data directory to read training and test data from
-        self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
+        if INPUT_DIR is not None:
+            self.input_dir = INPUT_DIR
+        else: 
+            self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
         # Output data directory to write predictions to
         self.output_dir = os.path.join(root_dir_name, output_dir_name)
         # Program directory
