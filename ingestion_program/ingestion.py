@@ -125,6 +125,7 @@ class Ingestion:
         train_weights_file = os.path.join(
             self.input_dir, "train", "weights", "data.weights"
         )
+        train_process_flags_file = os.path.join(self.input_dir, "train", "process_flags", "data.process_flags")
 
         # read train labels
         with open(train_labels_file, "r") as f:
@@ -137,16 +138,21 @@ class Ingestion:
         # read train weights
         with open(train_weights_file) as f:
             train_weights = np.array(f.read().splitlines(), dtype=float)
-        train_weights = train_weights
 
+        # read train process flags
+        with open(train_process_flags_file) as f:
+            train_process_flags = np.array(f.read().splitlines(), dtype=float)
+            
         self.train_set = {
             "data": pd.read_parquet(train_data_file, engine="pyarrow"),
             "labels": train_labels,
             "settings": train_settings,
             "weights": train_weights,
+            "process_flags": train_process_flags,
         }
 
-        del train_labels, train_settings, train_weights
+        del train_labels, train_settings, train_weights, train_process_flags
+        
         print(self.train_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Train data loaded successfully")
 
@@ -161,6 +167,7 @@ class Ingestion:
             self.input_dir, "test", "weights", "data.weights"
         )
         test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
+        test_process_flags_file = os.path.join(self.input_dir, "test", "process_flags", "data.process_flags")
 
         # read test settings
         if USE_RANDOM_MUS:
@@ -177,6 +184,9 @@ class Ingestion:
         # read test weights
         with open(test_weights_file) as f:
             test_weights = np.array(f.read().splitlines(), dtype=float)
+            
+        with open(test_process_flags_file) as f:
+            test_process_flags = np.array(f.read().splitlines(), dtype=float)
 
         # read test labels
         with open(test_labels_file) as f:
@@ -186,8 +196,9 @@ class Ingestion:
             "data": pd.read_parquet(test_data_file, engine="pyarrow"),
             "weights": test_weights,
             "labels": test_labels,
+            "process_flags": test_process_flags,
         }
-        del test_weights, test_labels
+        del test_weights, test_labels, test_process_flags
 
         print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Test data loaded successfully")
@@ -216,12 +227,17 @@ class Ingestion:
         temp_df = self.test_set["data"][new_weights > 0].copy()
         temp_df["weights"] = new_weights[new_weights > 0]
         temp_df["labels"] = self.test_set["labels"][new_weights > 0]
+        temp_df["process_flags"] = self.test_set["process_flags"][new_weights > 0]
+
+        return temp_df
+
+    def get_systematics_dataset(self, data, tes, jes, soft_met, w_scale, bkg_scale):
 
         # Apply systematics to the sampled data
         from systematics import Systematics
 
         data_syst = Systematics(
-            data=temp_df,
+            data=data,
             tes=tes,
             jes=jes,
             soft_met=soft_met,
@@ -232,9 +248,10 @@ class Ingestion:
         # Apply weight scaling factor mu to the data
 
         data_syst.pop("labels")
+        data_syst.pop("process_flags")
         weights = data_syst.pop("weights")
 
-        del temp_df
+        del data
 
         return {"data": data_syst, "weights": weights}
 
@@ -303,14 +320,15 @@ class Ingestion:
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = self.get_bootstraped_dataset(
+            pesudo_exp_data = self.get_bootstraped_dataset(test_set, mu=set_mu, seed=seed)
+            test_set = self.get_systematics_dataset(
+                pesudo_exp_data,
                 mu=set_mu,
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
                 w_scale=w_scale,
                 bkg_scale=bkg_scale,
-                seed=seed,
             )
 
             predicted_dict = self.model.predict(test_set)
