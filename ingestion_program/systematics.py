@@ -280,84 +280,7 @@ class V4:
         return copy
 
 
-
-
 # ==================================================================================
-def getDetailLabel(origWeight, Label, num=True):
-    """
-    Given original weight and label, 
-    return more precise label specifying the original simulation type.
-    
-    Args
-    ----
-        origWeight: the original weight of the event
-        Label : the label of the event (can be {"b", "s"} or {0,1})
-        num: (default=True) if True use the numeric detail labels
-                else use the string detail labels. You should prefer numeric labels.
-
-    Return
-    ------
-        detailLabel: the corresponding detail label ("W" is the default if not found)
-
-    Note : Could be better optimized but this is fast enough.
-    """
-    # prefer numeric detail label
-    detail_label_num={
-        57207:0, # Signal
-        4613:1,
-        8145:2,
-        4610:3,
-        917703: 105, #Z
-        5127399:111,
-        4435976:112,
-        4187604:113,
-        2407146:114,
-        1307751:115,
-        944596:122,
-        936590:123,
-        1093224:124,
-        225326:132,
-        217575:133,
-        195328:134,
-        254338:135,
-        2268701:300 #T
-        }
-    # complementary for W detaillabeldict=200
-    #previous alphanumeric detail label    
-    detail_label_str={
-       57207:"S0",
-       4613:"S1",
-       8145:"S2",
-       4610:"S3",
-       917703:"Z05",
-       5127399:"Z11",
-       4435976:"Z12",
-       4187604:"Z13",
-       2407146:"Z14",
-       1307751:"Z15",
-       944596:"Z22",
-       936590:"Z23",
-       1093224:"Z24",
-       225326:"Z32",
-       217575:"Z33",
-       195328:"Z34",
-       254338:"Z35",
-       2268701:"W"  # was T
-    }
-
-    if num:
-        detailLabelDict = detail_label_num
-        defaultLabel=400 # 400 "T" is the default value if not found
-    else:
-        detailLabelDict = detail_label_str
-        defaultLabel="T" #"T" is the default value if not found
-        
-    iWeight=int(1e7*origWeight+0.5)
-    detailLabel = detailLabelDict.get(iWeight, defaultLabel) 
-    if detailLabel == "T" and (Label != 0 and Label != 'b') :
-        raise ValueError("ERROR! if not in detailLabelDict sould have Label==1 ({}, {})".format(iWeight,Label))
-
-    return detailLabel
 
 
 def w_bkg_weight_norm(data, systBkgNorm):
@@ -371,7 +294,7 @@ def w_bkg_weight_norm(data, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    data["Weight"] = (data["Weight"]*systBkgNorm).where(data["detailLabel"] == 300, other=data["Weight"])
+    data["Weight"] = (data["Weight"]*systBkgNorm).where(data["process_flags"] == 300, other=data["Weight"])
     return data
 
 
@@ -848,7 +771,7 @@ class Systematics:
             "PRI_jet_subleading_eta",
             "PRI_jet_subleading_phi",
             "PRI_jet_all_pt",
-            "Weight",
+            "weights",
             "Label",
             "detailLabel",
         ] 
