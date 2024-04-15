@@ -48,14 +48,14 @@ May 2019 (D. Rousseau) :
 - Major hack, in preparation for Centralesupelec EI,
 python syst/datawarehouse/datawarehouse/higgsml.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-s0.csv
 
-python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv --csv -p --BKGnorm 1. --Wnorm 1. --tes 1. --jes 1. --softMET 0. --seed 31415926
+python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv --csv -p --BKGnorm 1. --Wnorm 1. --tes 1. --jes 1. --soft_met 0. --seed 31415926
 python higgsml_syst.py --help # for command help
 reasonable values for parameters
 BKGnorm : 1.05  
 Wnorm : 1.5 
 tes : 1.03
 jes : 1.03
-softMET : 3 GeV
+soft_met : 3 GeV
 """
 __version__ = "4.0"
 __author__ = "David Rousseau, and Victor Estrade "
@@ -393,7 +393,7 @@ def all_bkg_weight_norm(data, systBkgNorm):
 # ==================================================================================
 # Manipulate the 4-momenta
 # ==================================================================================
-def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed = 31415):
+def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,soft_met,seed = 31415):
     """
     Manipulate primary inputs : the PRI_had_pt PRI_jet_leading_pt PRI_jet_subleading_pt and recompute the others values accordingly.
 
@@ -500,14 +500,14 @@ def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed =
         
     #note that in principle we should also fix MET for the third jet or more but we do not have enough information
 
-    if softMET>0:
+    if soft_met>0:
         # add soft met term
         # Compute the missing v4 vector
         random_state = np.random.RandomState(seed=seed)
         SIZE = data.shape[0]
         v4_soft_term = V4()
-        v4_soft_term.px = random_state.normal(0, softMET, size=SIZE)
-        v4_soft_term.py = random_state.normal(0, softMET, size=SIZE)
+        v4_soft_term.px = random_state.normal(0, soft_met, size=SIZE)
+        v4_soft_term.py = random_state.normal(0, soft_met, size=SIZE)
         v4_soft_term.pz = np.zeros(SIZE)
         v4_soft_term.e = v4_soft_term.eWithM(0.)
         # fix MET according to soft term
@@ -797,7 +797,7 @@ class Systematics:
         data=None,
         tes=1.0,
         jes=1.0,
-        softMET=1.0,
+        soft_met=1.0,
         seed=31415,
         w_scale=None,
         bkg_scale=None,
@@ -814,7 +814,7 @@ class Systematics:
             1.0 means no systemtics
         jes:
             default: 1.0
-        softMET:
+        soft_met:
             default: 1.0
         w_scale:
             default: None
@@ -825,7 +825,7 @@ class Systematics:
         self.data = data
         self.tes = tes
         self.jes = jes
-        self.softMET = softMET
+        self.soft_met = soft_met
         self.w_scale = w_scale
         self.bkg_scale = bkg_scale
 
@@ -862,6 +862,6 @@ class Systematics:
             self.data = all_bkg_weight_norm(self.data, self.bkg_scale)
         if verbose > 0:
             print("Tau energy rescaling :", self.tes)
-        self.data = mom4_manipulate(data=self.data,systTauEnergyScale = self.tes,systJetEnergyScale = self.jes,softMET = self.softMET,seed=seed)
+        self.data = mom4_manipulate(data=self.data,systTauEnergyScale = self.tes,systJetEnergyScale = self.jes,soft_met = self.soft_met,seed=seed)
         self.data = postprocess(self.data)
         self.data = DER_data(self.data)
