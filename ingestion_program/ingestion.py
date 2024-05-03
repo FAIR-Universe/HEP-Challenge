@@ -162,17 +162,8 @@ class Ingestion:
     def load_test_set(self):
         print("[*] Loading Test data")
 
-        test_data_file = os.path.join(self.input_dir, "test", "data", "data.parquet")
-        test_settings_file = os.path.join(
-            self.input_dir, "test", "settings", "data.json"
-        )
-        test_weights_file = os.path.join(
-            self.input_dir, "test", "weights", "data.weights"
-        )
-        test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
-        test_process_flags_file = os.path.join(
-            self.input_dir, "test", "process_flags", "data.process_flags"
-        )
+        test_data_dir = os.path.join(self.input_dir, "test", "data")
+        test_settings_file = os.path.join(test_data_dir, "settings", "data.json")
 
         # read test settings
         if USE_RANDOM_MUS:
@@ -185,25 +176,19 @@ class Ingestion:
         else:
             with open(test_settings_file) as f:
                 self.test_settings = json.load(f)
-
-        # read test weights
-        with open(test_weights_file) as f:
-            test_weights = np.array(f.read().splitlines(), dtype=float)
-
-        with open(test_process_flags_file) as f:
-            test_process_flags = np.array(f.read().splitlines(), dtype=float)
-
-        # read test labels
-        with open(test_labels_file) as f:
-            test_labels = np.array(f.read().splitlines(), dtype=float)
+        Z_data_file = os.path.join(test_data_dir, "Z", "data.parquet")
+        W_data_file = os.path.join(test_data_dir, "W", "data.parquet")
+        QCD_data_file = os.path.join(test_data_dir, "QCD", "data.parquet")
+        TT_data_file = os.path.join(test_data_dir, "TT", "data.parquet")
+        H_data_file = os.path.join(test_data_dir, "data.parquet")
 
         self.test_set = {
-            "data": pd.read_parquet(test_data_file, engine="pyarrow"),
-            "weights": test_weights,
-            "labels": test_labels,
-            "process_flags": test_process_flags,
+            "Z_test_set": pd.read_parquet(Z_data_file, engine="pyarrow"),
+            "W_test_set": pd.read_parquet(W_data_file, engine="pyarrow"),
+            "QCD_test_set": pd.read_parquet(QCD_data_file, engine="pyarrow"),
+            "TT_test_set": pd.read_parquet(TT_data_file, engine="pyarrow"),
+            "H_test_set": pd.read_parquet(H_data_file, engine="pyarrow"),
         }
-        del test_weights, test_labels, test_process_flags
 
         print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Test data loaded successfully")

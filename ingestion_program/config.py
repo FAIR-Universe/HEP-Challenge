@@ -1,3 +1,4 @@
+import json
 # ------------------------------------------
 # Settings
 # ------------------------------------------
@@ -6,9 +7,9 @@
 CODABENCH = False
 NUM_SETS = 4  # Total = 10
 NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
-USE_SYSTEAMTICS = True # True when using systematics
-USE_PUBLIC_DATA = False # True when using public data
-DICT_SYSTEMATICS = { # Systematics to use
+USE_SYSTEAMTICS = True  # True when using systematics
+USE_PUBLIC_DATA = False  # True when using public data
+DICT_SYSTEMATICS = {  # Systematics to use
     "tes": True,
     "jes": False,
     "soft_met": False,
@@ -17,3 +18,9 @@ DICT_SYSTEMATICS = { # Systematics to use
 }
 NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
 USE_RANDOM_MUS = True
+
+LUMINOCITY = 140  # 1/fb
+
+with open("crosssection.json") as json_file:
+    DICT_CROSSSECTION = json.load(json_file)
+
