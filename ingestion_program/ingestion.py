@@ -27,6 +27,7 @@ from config import (
     INPUT_DIR,
 )
 
+
 # ------------------------------------------
 # Ingestion Class
 # ------------------------------------------
@@ -91,7 +92,7 @@ class Ingestion:
         # Input data directory to read training and test data from
         if INPUT_DIR is not None:
             self.input_dir = INPUT_DIR
-        else: 
+        else:
             self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
         # Output data directory to write predictions to
         self.output_dir = os.path.join(root_dir_name, output_dir_name)
@@ -125,7 +126,9 @@ class Ingestion:
         train_weights_file = os.path.join(
             self.input_dir, "train", "weights", "data.weights"
         )
-        train_process_flags_file = os.path.join(self.input_dir, "train", "process_flags", "data.process_flags")
+        train_process_flags_file = os.path.join(
+            self.input_dir, "train", "process_flags", "data.process_flags"
+        )
 
         # read train labels
         with open(train_labels_file, "r") as f:
@@ -142,7 +145,7 @@ class Ingestion:
         # read train process flags
         with open(train_process_flags_file) as f:
             train_process_flags = np.array(f.read().splitlines(), dtype=float)
-            
+
         self.train_set = {
             "data": pd.read_parquet(train_data_file, engine="pyarrow"),
             "labels": train_labels,
@@ -152,7 +155,7 @@ class Ingestion:
         }
 
         del train_labels, train_settings, train_weights, train_process_flags
-        
+
         print(self.train_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Train data loaded successfully")
 
@@ -167,7 +170,9 @@ class Ingestion:
             self.input_dir, "test", "weights", "data.weights"
         )
         test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
-        test_process_flags_file = os.path.join(self.input_dir, "test", "process_flags", "data.process_flags")
+        test_process_flags_file = os.path.join(
+            self.input_dir, "test", "process_flags", "data.process_flags"
+        )
 
         # read test settings
         if USE_RANDOM_MUS:
@@ -184,7 +189,7 @@ class Ingestion:
         # read test weights
         with open(test_weights_file) as f:
             test_weights = np.array(f.read().splitlines(), dtype=float)
-            
+
         with open(test_process_flags_file) as f:
             test_process_flags = np.array(f.read().splitlines(), dtype=float)
 
@@ -203,62 +208,14 @@ class Ingestion:
         print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Test data loaded successfully")
 
-    def get_bootstraped_dataset(
-        self,
-        mu=1.0,
-        tes=1.0,
-        jes=1.0,
-        soft_met=1.0,
-        w_scale=None,
-        bkg_scale=None,
-        seed=0,
-    ):
-
-        weights = self.test_set["weights"].copy()
-        weights[self.test_set["labels"] == 1] = (
-            weights[self.test_set["labels"] == 1] * mu
-        )
-        prng = RandomState(seed)
-
-        new_weights = prng.poisson(lam=weights)
-
-        del weights
-
-        temp_df = self.test_set["data"][new_weights > 0].copy()
-        temp_df["weights"] = new_weights[new_weights > 0]
-        temp_df["labels"] = self.test_set["labels"][new_weights > 0]
-        temp_df["process_flags"] = self.test_set["process_flags"][new_weights > 0]
-
-        return temp_df
-
-    def get_systematics_dataset(self, data, tes, jes, soft_met, w_scale, bkg_scale):
-
-        # Apply systematics to the sampled data
-        from systematics import Systematics
-
-        data_syst = Systematics(
-            data=data,
-            tes=tes,
-            jes=jes,
-            soft_met=soft_met,
-            w_scale=w_scale,
-            bkg_scale=bkg_scale,
-        ).data
-
-        # Apply weight scaling factor mu to the data
-
-        data_syst.pop("labels")
-        data_syst.pop("process_flags")
-        weights = data_syst.pop("weights")
-
-        del data
-
-        return {"data": data_syst, "weights": weights}
-
     def init_submission(self):
         print("[*] Initializing Submmited Model")
         from model import Model
-        from systematics import Systematics
+        from systematics import (
+            Systematics,
+            get_bootstraped_dataset,
+            get_systematics_dataset,
+        )
 
         self.model = Model(train_set=self.train_set, systematics=Systematics)
 
@@ -320,8 +277,8 @@ class Ingestion:
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            pesudo_exp_data = self.get_bootstraped_dataset(test_set, mu=set_mu, seed=seed)
-            test_set = self.get_systematics_dataset(
+            pesudo_exp_data = get_bootstraped_dataset(test_set, mu=set_mu, seed=seed)
+            test_set = get_systematics_dataset(
                 pesudo_exp_data,
                 mu=set_mu,
                 tes=tes,

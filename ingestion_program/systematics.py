@@ -67,6 +67,7 @@ import copy
 import pandas as pd
 import numpy as np
 from numpy import sin, cos, cosh, sinh, sqrt, exp
+from numpy.random import RandomState
 
 
 def load_higgs(in_file):
@@ -788,3 +789,59 @@ class Systematics:
         self.data = mom4_manipulate(data=self.data,systTauEnergyScale = self.tes,systJetEnergyScale = self.jes,soft_met = self.soft_met,seed=seed)
         self.data = postprocess(self.data)
         self.data = DER_data(self.data)
+        
+        
+# ==================================================================================
+#  
+# ==================================================================================
+
+def get_bootstraped_dataset(
+    test_set,
+    mu=1.0,
+    seed=0,
+):
+    weights = test_set["weights"].copy()
+    weights[test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
+    prng = RandomState(seed)
+
+    new_weights = prng.poisson(lam=weights)
+
+    del weights
+
+    temp_df = test_set["data"][new_weights > 0].copy()
+    temp_df["weights"] = new_weights[new_weights > 0]
+    temp_df["labels"] = test_set["labels"][new_weights > 0]
+
+    return temp_df
+
+def get_systematics_dataset(
+    data,
+    tes=1.0,
+    jes=1.0,
+    soft_met=1.0,
+    w_scale=None,
+    bkg_scale=None,
+):
+
+    # Apply systematics to the sampled data
+    from systematics import Systematics
+
+    data_syst = Systematics(
+        data=data,
+        tes=tes,
+        jes=jes,
+        soft_met=soft_met,
+        w_scale=w_scale,
+        bkg_scale=bkg_scale,
+    )
+
+    # Apply weight scaling factor mu to the data
+
+    data_syst.pop("labels")
+    data_syst.pop("process_flags")
+    weights = data_syst.pop("weights")
+
+    del data
+
+    return {"data": data_syst, "weights": weights}
+
