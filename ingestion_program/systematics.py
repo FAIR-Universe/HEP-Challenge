@@ -959,28 +959,21 @@ def get_bootstraped_dataset(
     w_scale=1.0,
     bkg_scale=1.0,
 ):
-
-    Z_test_set = test_set.Z_test_set
-    W_test_set = test_set.W_test_set
-    QCD_test_set = test_set.QCD_test_set
-    TT_test_set = test_set.TT_test_set
-    H_test_set = test_set.H_test_set
-
-    Z_number = LHC_NUMBERS["Z"] * bkg_scale
-    QCD_number = LHC_NUMBERS["QCD"] * bkg_scale
-    TT_number = LHC_NUMBERS["TT"] * bkg_scale
-    W_number = LHC_NUMBERS["W"] * w_scale * bkg_scale
-    H_number = LHC_NUMBERS["H"] * mu
-
-    pseudo_data_Z = Z_test_set.sample(n=Z_number, replace=True, random_state=seed)
-    pseudo_data_W = W_test_set.sample(n=W_number, replace=True, random_state=seed)
-    pseudo_data_QCD = QCD_test_set.sample(n=QCD_number, replace=True, random_state=seed)
-    pseudo_data_TT = TT_test_set.sample(n=TT_number, replace=True, random_state=seed)
-    pseudo_data_H = H_test_set.sample(n=H_number, replace=True, random_state=seed)
-
-    pseudo_data = pd.concat(
-        [pseudo_data_Z, pseudo_data_W, pseudo_data_QCD, pseudo_data_TT, pseudo_data_H]
-    )
+    
+    bkg_norm = LHC_NUMBERS
+    
+    bkg_norm["W"] = LHC_NUMBERS["W"] * w_scale * bkg_scale
+    bkg_norm["Z"] = LHC_NUMBERS["Z"] * bkg_scale
+    bkg_norm["Diboson"] = LHC_NUMBERS["Diboson"] * bkg_scale
+    bkg_norm["TT"] = LHC_NUMBERS["TT"] * bkg_scale
+    bkg_norm["H"] = LHC_NUMBERS["H"] * mu
+    
+    pseudo_data = []
+    for key in test_set.keys():
+        test_set[key] = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+        pseudo_data.append(test_set[key])
+        
+    pseudo_data = pd.concat(pseudo_data)
 
     pseudo_data = pseudo_data.sample(frac=1).reset_index(drop=True, random_state=seed)
 
