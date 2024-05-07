@@ -916,7 +916,6 @@ class Systematics:
 
         if self.bkg_scale is not None:
             if "weights" in self.data.columns:
-
                 print("All bkg weight rescaling :", self.bkg_scale)
                 self.data = all_bkg_weight_norm(self.data, self.bkg_scale)
 
