@@ -7,7 +7,6 @@ import pandas as pd
 from datetime import datetime as dt
 import json
 from itertools import product
-from numpy.random import RandomState
 import warnings
 import sys
 
@@ -25,6 +24,8 @@ from config import (
     CODABENCH,
     USE_PUBLIC_DATA,
     INPUT_DIR,
+    CSV,
+    PARQUET,
 )
 
 
@@ -176,31 +177,31 @@ class Ingestion:
         else:
             with open(test_settings_file) as f:
                 self.test_settings = json.load(f)
-        Z_data_file = os.path.join(test_data_dir, "Z", "data.parquet")
-        W_data_file = os.path.join(test_data_dir, "W", "data.parquet")
-        QCD_data_file = os.path.join(test_data_dir, "QCD", "data.parquet")
-        TT_data_file = os.path.join(test_data_dir, "TT", "data.parquet")
-        H_data_file = os.path.join(test_data_dir, "data.parquet")
 
         self.test_set = {
-            "Z_test_set": pd.read_parquet(Z_data_file, engine="pyarrow"),
-            "W_test_set": pd.read_parquet(W_data_file, engine="pyarrow"),
-            "QCD_test_set": pd.read_parquet(QCD_data_file, engine="pyarrow"),
-            "TT_test_set": pd.read_parquet(TT_data_file, engine="pyarrow"),
-            "H_test_set": pd.read_parquet(H_data_file, engine="pyarrow"),
+            "Z": pd.DataFrame(),
+            "W": pd.DataFrame(),
+            "Diboson": pd.DataFrame(),
+            "TT": pd.DataFrame(),
+            "H": pd.DataFrame(),
         }
 
-        print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
+        for key in self.test_set.keys():
+            self.test_set[key] = self.test_set[key].round(3)
+            if CSV:
+                test_data_path = os.path.join(test_data_path, f"{key}_data.csv")
+                self.test_set[key] = pd.read_csv(test_data_path)
+
+            if PARQUET:
+                test_data_path = os.path.join(test_data_path, f"{key}_data.parquet")
+                self.test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+
         print("[*] Test data loaded successfully")
 
     def init_submission(self):
         print("[*] Initializing Submmited Model")
         from model import Model
-        from systematics import (
-            Systematics,
-            get_bootstraped_dataset,
-            get_systematics_dataset,
-        )
+        from systematics import Systematics
 
         self.model = Model(train_set=self.train_set, systematics=Systematics)
 
@@ -261,16 +262,18 @@ class Ingestion:
             # get mu value of set from test settings
             set_mu = self.test_settings["ground_truth_mus"][set_index]
 
+            from systematics import get_bootstraped_dataset, get_systematics_dataset
+
             # get bootstrapped dataset from the original test set
-            pesudo_exp_data = get_bootstraped_dataset(test_set, mu=set_mu, seed=seed)
+            pesudo_exp_data = get_bootstraped_dataset(
+                test_set, mu=set_mu, w_scale=w_scale, bkg_scale=bkg_scale, seed=seed
+            )
             test_set = get_systematics_dataset(
                 pesudo_exp_data,
                 mu=set_mu,
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
-                w_scale=w_scale,
-                bkg_scale=bkg_scale,
             )
 
             predicted_dict = self.model.predict(test_set)
