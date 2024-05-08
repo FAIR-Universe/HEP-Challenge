@@ -1,4 +1,5 @@
 import json
+import os
 # ------------------------------------------
 # Settings
 # ------------------------------------------
@@ -20,6 +21,9 @@ NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
 USE_RANDOM_MUS = True
 
 LUMINOCITY = 140  # 1/fb
+INPUT_DIR = os.path.dirname(os.path.realpath(__file__))
+CSV = True
+PARQUET = False
 
 with open("crosssection.json") as json_file:
     DICT_CROSSSECTION = json.load(json_file)
