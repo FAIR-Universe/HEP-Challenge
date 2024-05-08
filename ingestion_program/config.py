@@ -30,4 +30,13 @@ cross_section_path = os.path.join(INPUT_DIR, "crosssection.json")
 
 with open(cross_section_path) as json_file:
     DICT_CROSSSECTION = json.load(json_file)
+    
+LHC_NUMBERS= {
+        "Z":2569787,
+        "W": 2964267,
+        "Diboson": 9220,
+        "TT": 320318,
+        "H": 9220,
+    }
+
 
