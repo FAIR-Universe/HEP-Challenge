@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 # ------------------------------------------
 # Settings
 # ------------------------------------------
@@ -25,6 +26,8 @@ INPUT_DIR = os.path.dirname(os.path.realpath(__file__))
 CSV = True
 PARQUET = False
 
-with open("crosssection.json") as json_file:
+cross_section_path = os.path.join(INPUT_DIR, "crosssection.json")
+
+with open(cross_section_path) as json_file:
     DICT_CROSSSECTION = json.load(json_file)
 
