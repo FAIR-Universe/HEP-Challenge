@@ -214,9 +214,11 @@ class SharedTestSet:
             self._data[key] = pd.DataFrame(d, copy=False)
 
 
-    def __getitem__(self, key):
-        return self._data[key]
-
+    def __getitem__(self, column=None):
+        out_data = {}
+        for key in self._keys:
+            out_data[key] = self._data[key][column]
+        return out_data
         # context manager to close the shared memory
 
     def __enter__(self):
