@@ -15,9 +15,13 @@ import base64
 # ------------------------------------------
 # True when running on Codabench
 # False when running locally
-CODABENCH = False
-NUM_SETS = 4  # Total = 10
-USE_RANDOM_MUS = True
+current_path = os.path.dirname(os.path.realpath(__file__))
+parent_path = os.path.dirname(current_path)
+config_path = os.path.join(parent_path, "ingestion_program")
+sys.path.append(parent_path)
+sys.path.append(config_path)
+
+from config import CODABENCH, NUM_SETS, USE_RANDOM_MUS
 
 
 class Scoring:
@@ -67,13 +71,14 @@ class Scoring:
             root_dir_name = "/app"
             input_dir_name = os.path.join(root_dir_name, "input")
             output_dir_name = os.path.join(root_dir_name, "output")
-            reference_dir_name = os.path.join(input_dir_name, 'ref')
-            predictions_dir_name = os.path.join(input_dir_name, 'res')
+            reference_dir_name = os.path.join(input_dir_name, "ref")
+            predictions_dir_name = os.path.join(input_dir_name, "res")
 
         # Directory to output computed score into
         self.output_dir = os.path.join(root_dir_name, output_dir_name)
         # reference data (test labels)
-        self.reference_dir = os.path.join(root_dir_name, reference_dir_name)
+        temp_root = "/home/chakkappai/Work/Fair-Universe/trial_data_set/"
+        self.reference_dir = os.path.join(temp_root, reference_dir_name)
         # submitted/predicted labels
         self.prediction_dir = os.path.join(root_dir_name, predictions_dir_name)
 
@@ -102,7 +107,7 @@ class Scoring:
         if USE_RANDOM_MUS:
             settings_file = os.path.join(self.prediction_dir, "random_mu.json")
         else:
-            settings_file = os.path.join(self.reference_dir, "settings", "data.json") 
+            settings_file = os.path.join(self.reference_dir, "settings", "data.json")
 
         with open(settings_file) as f:
             self.test_settings = json.load(f)
@@ -111,7 +116,9 @@ class Scoring:
 
     def load_ingestion_duration(self):
         print("[*] Reading ingestion duration")
-        ingestion_duration_file = os.path.join(self.prediction_dir, "ingestion_duration.json")
+        ingestion_duration_file = os.path.join(
+            self.prediction_dir, "ingestion_duration.json"
+        )
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
 
@@ -122,7 +129,9 @@ class Scoring:
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
         for i in range(0, NUM_SETS):
-            results_file = os.path.join(self.prediction_dir, "result_"+str(i)+".json")
+            results_file = os.path.join(
+                self.prediction_dir, "result_" + str(i) + ".json"
+            )
             with open(results_file) as f:
                 self.ingestion_results.append(json.load(f))
 
@@ -135,7 +144,9 @@ class Scoring:
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
 
-        for i, (ingestion_result, mu) in enumerate(zip(self.ingestion_results, self.test_settings["ground_truth_mus"])):
+        for i, (ingestion_result, mu) in enumerate(
+            zip(self.ingestion_results, self.test_settings["ground_truth_mus"])
+        ):
 
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]
@@ -150,7 +161,9 @@ class Scoring:
             for mu_hat, delta_mu_hat in zip(mu_hats, delta_mu_hats):
                 set_rmses.append(self.RMSE_score(mu, mu_hat, delta_mu_hat))
                 set_maes.append(self.MAE_score(mu, mu_hat, delta_mu_hat))
-            set_interval, set_coverage, set_quantiles_score = self.Quantiles_Score(np.repeat(mu, len(p16s)), np.array(p16s), np.array(p84s))
+            set_interval, set_coverage, set_quantiles_score = self.Quantiles_Score(
+                np.repeat(mu, len(p16s)), np.array(p16s), np.array(p84s)
+            )
 
             set_mae = np.mean(set_maes)
             set_rmse = np.mean(set_rmses)
@@ -170,7 +183,11 @@ class Scoring:
             rmses.append(set_rmse)
             maes.append(set_mae)
 
-        overall_interval, overall_coverage, overall_quantiles_score = self.Quantiles_Score(np.array(all_mus), np.array(all_p16s), np.array(all_p84s))
+        overall_interval, overall_coverage, overall_quantiles_score = (
+            self.Quantiles_Score(
+                np.array(all_mus), np.array(all_p16s), np.array(all_p84s)
+            )
+        )
 
         self.scores_dict = {
             "rmse": np.mean(rmses),
@@ -179,7 +196,6 @@ class Scoring:
             "coverage": overall_coverage,
             "quantiles_score": overall_quantiles_score,
             "ingestion_duration": self.ingestion_duration,
-
         }
 
         self._print("\n\n==================")
@@ -203,7 +219,7 @@ class Scoring:
 
         def MSE2(mu, mu_hat, delta_mu_hat):
             """Compute the mean squared error between computed delta_mu = mu_hat - mu and delta_mu_hat."""
-            adjusted_diffs = (mu_hat - mu)**2 - delta_mu_hat**2
+            adjusted_diffs = (mu_hat - mu) ** 2 - delta_mu_hat**2
             return np.mean(adjusted_diffs**2)
 
         return np.sqrt(MSE(mu, mu_hat) + MSE2(mu, mu_hat, delta_mu_hat))
@@ -234,14 +250,14 @@ class Scoring:
             return return_coverage
 
         def f(x, n_tries, max_coverage=1e4, one_sigma=0.6827):
-            sigma68 = np.sqrt(((1-one_sigma)*one_sigma*n_tries))/n_tries
+            sigma68 = np.sqrt(((1 - one_sigma) * one_sigma * n_tries)) / n_tries
 
-            if (x >= one_sigma-2*sigma68 and x <= one_sigma+2*sigma68):
+            if x >= one_sigma - 2 * sigma68 and x <= one_sigma + 2 * sigma68:
                 out = 1
-            elif (x < one_sigma-2*sigma68):
-                out = 1 + abs((x-(one_sigma-2*sigma68))/sigma68)**4
-            elif (x > one_sigma+2*sigma68):
-                out = 1 + abs((x-(one_sigma+2*sigma68))/sigma68)**3
+            elif x < one_sigma - 2 * sigma68:
+                out = 1 + abs((x - (one_sigma - 2 * sigma68)) / sigma68) ** 4
+            elif x > one_sigma + 2 * sigma68:
+                out = 1 + abs((x - (one_sigma + 2 * sigma68)) / sigma68) ** 3
             return out
 
         coverage = Coverage(mu, p16, p84)
@@ -258,7 +274,7 @@ class Scoring:
         print("[✔]")
 
     def write_html(self, content):
-        with open(self.html_file, 'a', encoding="utf-8") as f:
+        with open(self.html_file, "a", encoding="utf-8") as f:
             f.write(content)
 
     def _print(self, content):
@@ -269,17 +285,24 @@ class Scoring:
         fig = plt.figure(figsize=(5, 5))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
-            plt.hlines(y=i, xmin=p16, xmax=p84, colors='b')
-        plt.vlines(x=mu, ymin=0, ymax=len(p16s), colors='r', linestyles='dashed', label="average $\mu$")
-        plt.xlabel('mu')
-        plt.ylabel('psuedo-experiments')
-        plt.title(f'mu distribution - Set {set}')
+            plt.hlines(y=i, xmin=p16, xmax=p84, colors="b")
+        plt.vlines(
+            x=mu,
+            ymin=0,
+            ymax=len(p16s),
+            colors="r",
+            linestyles="dashed",
+            label="average $\mu$",
+        )
+        plt.xlabel("mu")
+        plt.ylabel("psuedo-experiments")
+        plt.title(f"mu distribution - Set {set}")
         plt.legend()
 
         buf = io.BytesIO()
-        fig.savefig(buf, format='png')
+        fig.savefig(buf, format="png")
         buf.seek(0)
-        fig_b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
 
         self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
 
