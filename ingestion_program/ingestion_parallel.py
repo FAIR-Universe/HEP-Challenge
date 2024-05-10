@@ -160,7 +160,7 @@ class SharedTestSet:
             self._load_arrays(arrays)
 
         if test_set is not None:
-            self._load(test_set["data"], test_set["weights"], test_set["labels"])
+            self._load(test_set)
             self._owner = True
 
     def _load_arrays(self, arrays):
@@ -188,7 +188,7 @@ class SharedTestSet:
 
             self._data[key] = _create_sm_array(key, dtype, shape)
 
-    def _load(self, data, weights, labels):
+    def _load(self,data_set):
         def _create_sm_array(name, dtype, shape, size):
             shm_b = shared_memory.SharedMemory(name=name, create=True, size=size)
             self._sm.append(shm_b)
@@ -196,27 +196,21 @@ class SharedTestSet:
             return np.ndarray(shape, dtype=dtype, buffer=shm_b.buf)
 
         # data
-        d = {}
-        for column in data.columns:
-            value = data[column]
-            size = value.nbytes
+        for key in data_set.keys():
+            d = {}
+            data = data_set[key]
+            for column in data.columns:
+                value = data[column]
+                
+                new_column = f"{key}_" + column
+                
+                size = value.nbytes
 
-            d[column] = _create_sm_array(column, value.dtype, value.shape, size)
-            d[column][:] = value
+                d[new_column] = _create_sm_array(new_column, value.dtype, value.shape, size)
+                d[new_column][:] = value
 
-        self._data["data"] = pd.DataFrame(d, copy=False)
+            self._data[key] = pd.DataFrame(d, copy=False)
 
-        # weights
-        self._data["weights"] = _create_sm_array(
-            "weights", weights.dtype, weights.shape, weights.nbytes
-        )
-        self._data["weights"][:] = weights
-
-        # labels
-        self._data["labels"] = _create_sm_array(
-            "labels", labels.dtype, labels.shape, labels.nbytes
-        )
-        self._data["labels"][:] = labels
 
     def __getitem__(self, key):
         return self._data[key]
@@ -344,8 +338,6 @@ class Ingestion:
 
     def load_train_set(self):
         print("[*] Loading Train data")
-
-        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
         train_labels_file = os.path.join(
             self.input_dir, "train", "labels", "data.labels"
         )
@@ -375,13 +367,28 @@ class Ingestion:
         with open(train_process_flags_file) as f:
             train_process_flags = np.array(f.read().splitlines(), dtype=float)
 
-        self.train_set = {
-            "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-            "labels": train_labels,
-            "settings": train_settings,
-            "weights": train_weights,
-            "process_flags": train_process_flags,
-        }
+        if PARQUET:
+            train_data_file = os.path.join(
+                self.input_dir, "train", "data", "data.parquet"
+            )
+            self.train_set = {
+                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
+                "labels": train_labels,
+                "settings": train_settings,
+                "weights": train_weights,
+                "process_flags": train_process_flags,
+            }
+
+        if CSV:
+            train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
+
+            self.train_set = {
+                "data": pd.read_csv(train_data_file),
+                "labels": train_labels,
+                "settings": train_settings,
+                "weights": train_weights,
+                "process_flags": train_process_flags,
+            }
 
         del train_labels, train_settings, train_weights, train_process_flags
 
@@ -417,12 +424,12 @@ class Ingestion:
         for key in self.test_set.keys():
             self.test_set[key] = self.test_set[key].round(3)
             if CSV:
-                test_data_path = os.path.join(test_data_path, f"{key}_data.csv")
-                self.test_set[key] = pd.read_csv(test_data_path)
+                test_data_file = os.path.join(test_data_dir, f"{key}_data.csv")
+                self.test_set[key] = pd.read_csv(test_data_file)
 
             if PARQUET:
-                test_data_path = os.path.join(test_data_path, f"{key}_data.parquet")
-                self.test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+                test_data_file = os.path.join(test_data_dir, f"{key}_data.parquet")
+                self.test_set[key] = pd.read_parquet(test_data_file, engine="pyarrow")
 
         print("[*] Test data loaded successfully")
 

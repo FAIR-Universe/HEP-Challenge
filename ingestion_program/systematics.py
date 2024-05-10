@@ -71,20 +71,6 @@ from numpy.random import RandomState
 from config import LUMINOCITY, DICT_CROSSSECTION, LHC_NUMBERS
 
 
-def load_higgs(in_file):
-    """
-    Load HiggsML dataset from csv file.
-    Parameters: in_file (str) - path to the csv file
-    Returns: data (pandas.DataFrame) - the dataset
-
-    """
-
-    filename = in_file
-    print("filename=", filename)
-    data = pd.read_csv(filename)
-    return data
-
-
 # ==================================================================================
 #  V4 Class and physic computations
 # ==================================================================================

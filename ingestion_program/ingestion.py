@@ -117,7 +117,12 @@ class Ingestion:
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
+        if CSV:
+            train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
+        if PARQUET:
+            train_data_file = os.path.join(
+                self.input_dir, "train", "data", "data.parquet"
+            )
         train_labels_file = os.path.join(
             self.input_dir, "train", "labels", "data.labels"
         )
@@ -147,13 +152,23 @@ class Ingestion:
         with open(train_process_flags_file) as f:
             train_process_flags = np.array(f.read().splitlines(), dtype=float)
 
-        self.train_set = {
-            "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-            "labels": train_labels,
-            "settings": train_settings,
-            "weights": train_weights,
-            "process_flags": train_process_flags,
-        }
+        if PARQUET:
+            self.train_set = {
+                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
+                "labels": train_labels,
+                "settings": train_settings,
+                "weights": train_weights,
+                "process_flags": train_process_flags,
+            }
+
+        if CSV:
+            self.train_set = {
+                "data": pd.read_csv(train_data_file),
+                "labels": train_labels,
+                "settings": train_settings,
+                "weights": train_weights,
+                "process_flags": train_process_flags,
+            }
 
         del train_labels, train_settings, train_weights, train_process_flags
 
@@ -189,11 +204,11 @@ class Ingestion:
         for key in self.test_set.keys():
             self.test_set[key] = self.test_set[key].round(3)
             if CSV:
-                test_data_path = os.path.join(test_data_path, f"{key}_data.csv")
+                test_data_path = os.path.join(test_data_dir, f"{key}_data.csv")
                 self.test_set[key] = pd.read_csv(test_data_path)
 
             if PARQUET:
-                test_data_path = os.path.join(test_data_path, f"{key}_data.parquet")
+                test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
                 self.test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
 
         print("[*] Test data loaded successfully")
@@ -266,11 +281,14 @@ class Ingestion:
 
             # get bootstrapped dataset from the original test set
             pesudo_exp_data = get_bootstraped_dataset(
-                test_set, mu=set_mu, w_scale=w_scale, bkg_scale=bkg_scale, seed=seed
+                self.test_set,
+                mu=set_mu,
+                w_scale=w_scale,
+                bkg_scale=bkg_scale,
+                seed=seed,
             )
             test_set = get_systematics_dataset(
                 pesudo_exp_data,
-                mu=set_mu,
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
