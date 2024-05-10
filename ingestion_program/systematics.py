@@ -868,6 +868,7 @@ def postprocess(data):
 
     return data
 
+
 # ==================================================================================
 #  MAIN : here is defined the behaviour of this module as a main script
 # ==================================================================================
@@ -958,23 +959,28 @@ def get_bootstraped_dataset(
     w_scale=1.0,
     bkg_scale=1.0,
 ):
-    
+
     bkg_norm = LHC_NUMBERS
-    
-    bkg_norm["W"] = LHC_NUMBERS["W"] * w_scale * bkg_scale
-    bkg_norm["Z"] = LHC_NUMBERS["Z"] * bkg_scale
-    bkg_norm["Diboson"] = LHC_NUMBERS["Diboson"] * bkg_scale
-    bkg_norm["TT"] = LHC_NUMBERS["TT"] * bkg_scale
-    bkg_norm["H"] = LHC_NUMBERS["H"] * mu
-    
+    if w_scale is not None:
+        bkg_norm["W"] = int(LHC_NUMBERS["W"] * w_scale * bkg_scale)
+
+    if bkg_scale is not None:
+        bkg_norm["Z"] = int(LHC_NUMBERS["Z"] * bkg_scale)
+        bkg_norm["Diboson"] = int(LHC_NUMBERS["Diboson"] * bkg_scale)
+        bkg_norm["TT"] = int(LHC_NUMBERS["TT"] * bkg_scale)
+
+    bkg_norm["H"] = int(LHC_NUMBERS["H"] * mu)
+
     pseudo_data = []
     for key in test_set.keys():
-        test_set[key] = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+        test_set[key] = test_set[key].sample(
+            n=bkg_norm[key], replace=True, random_state=seed
+        )
         pseudo_data.append(test_set[key])
-        
+
     pseudo_data = pd.concat(pseudo_data)
 
-    pseudo_data = pseudo_data.sample(frac=1).reset_index(drop=True, random_state=seed)
+    pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     return pseudo_data
 
@@ -994,14 +1000,12 @@ def get_systematics_dataset(
         tes=tes,
         jes=jes,
         soft_met=soft_met,
-    )
+    ).data
 
     # Apply weight scaling factor mu to the data
 
-    data_syst.pop("labels")
-    data_syst.pop("process_flags")
-    weights = data_syst.pop("weights")
-
     del data
+
+    weights = np.ones(data_syst.shape[0])
 
     return {"data": data_syst, "weights": weights}
