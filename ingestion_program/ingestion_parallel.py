@@ -217,7 +217,8 @@ class SharedTestSet:
     def __getitem__(self, column=None):
         out_data = {}
         for key in self._keys:
-            out_data[key] = self._data[key][column]
+            temp_key = f"{key}_{column}"
+            out_data[key] = self._data[temp_key]
         return out_data
         # context manager to close the shared memory
 
@@ -229,9 +230,6 @@ class SharedTestSet:
             sm_block.close()
             if self._owner:
                 sm_block.unlink()
-
-    def keys(self):
-        return self._keys
 
     def asdict(self):
         def _asdict(array):
