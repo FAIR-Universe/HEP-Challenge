@@ -155,6 +155,7 @@ class SharedTestSet:
         self._data = {}
         self._sm = []
         self._owner = False
+        self._keys = []
 
         if arrays is not None:
             self._load_arrays(arrays)
@@ -197,6 +198,7 @@ class SharedTestSet:
 
         # data
         for key in data_set.keys():
+            self._keys.append(key)
             d = {}
             data = data_set[key]
             for column in data.columns:
@@ -225,6 +227,9 @@ class SharedTestSet:
             sm_block.close()
             if self._owner:
                 sm_block.unlink()
+
+    def keys(self):
+        return self._keys
 
     def asdict(self):
         def _asdict(array):
