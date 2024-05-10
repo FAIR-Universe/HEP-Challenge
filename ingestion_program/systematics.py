@@ -946,7 +946,7 @@ def reweight(data, crosssection_dict=DICT_CROSSSECTION):
         process_list, crossection_list, number_of_events
     ):
         weight_process = crossection * LUMINOCITY / number
-        data.loc[data.Process_flag == process, "Weight"] = weight_process
+        data.loc[data["Process_flag"] == process, "Weight"] = weight_process
 
     return data
 
