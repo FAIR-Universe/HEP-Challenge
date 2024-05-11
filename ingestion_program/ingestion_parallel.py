@@ -156,6 +156,7 @@ class SharedTestSet:
         self._sm = []
         self._owner = False
         self._keys = []
+        self._columns = []
 
         if arrays is not None:
             self._load_arrays(arrays)
@@ -203,7 +204,7 @@ class SharedTestSet:
             data = data_set[key]
             for column in data.columns:
                 value = data[column]
-                
+                self._columns.append(column)
                 new_column = f"{key}_" + column
                 
                 size = value.nbytes
@@ -213,12 +214,14 @@ class SharedTestSet:
 
             self._data[key] = pd.DataFrame(d, copy=False)
 
+    def keys(self):
+        return self._keys
 
-    def __getitem__(self, column=None):
-        out_data = {}
-        for key in self._keys:
-            temp_key = f"{key}_{column}"
-            out_data[key] = self._data[temp_key]
+    def __getitem__(self, key=None):
+        out_data = pd.DataFrame()
+        for column in self._columns:
+            new_column = f"{key}_{column}"
+            out_data[column] = self._data[new_column]
         return out_data
         # context manager to close the shared memory
 
