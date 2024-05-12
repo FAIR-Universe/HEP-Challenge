@@ -355,8 +355,8 @@ class Ingestion:
         train_weights_file = os.path.join(
             self.input_dir, "train", "weights", "data.weights"
         )
-        train_process_flags_file = os.path.join(
-            self.input_dir, "train", "process_flags", "data.process_flags"
+        train_detailed_labels_file = os.path.join(
+            self.input_dir, "train", "detailed_labels", "data.detailed_labels"
         )
 
         # read train labels
@@ -372,8 +372,8 @@ class Ingestion:
             train_weights = np.array(f.read().splitlines(), dtype=float)
 
         # read train process flags
-        with open(train_process_flags_file) as f:
-            train_process_flags = np.array(f.read().splitlines(), dtype=float)
+        with open(train_detailed_labels_file) as f:
+            train_detailed_labels = f.read().splitlines()
 
         if PARQUET:
             train_data_file = os.path.join(
@@ -384,7 +384,7 @@ class Ingestion:
                 "labels": train_labels,
                 "settings": train_settings,
                 "weights": train_weights,
-                "process_flags": train_process_flags,
+                "detailed_labels": train_detailed_labels,
             }
 
         if CSV:
@@ -395,10 +395,10 @@ class Ingestion:
                 "labels": train_labels,
                 "settings": train_settings,
                 "weights": train_weights,
-                "process_flags": train_process_flags,
+                "detailed_labels": train_detailed_labels,
             }
 
-        del train_labels, train_settings, train_weights, train_process_flags
+        del train_labels, train_settings, train_weights, train_detailed_labels
 
         print(self.train_set["data"].info(verbose=False, memory_usage="deep"))
         print("[*] Train data loaded successfully")

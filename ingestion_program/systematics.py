@@ -60,15 +60,12 @@ soft_met : 3 GeV
 __version__ = "4.0"
 __author__ = "David Rousseau, and Victor Estrade "
 
-import sys
-import os
-import gzip
+
 import copy
 import pandas as pd
 import numpy as np
-from numpy import sin, cos, cosh, sinh, sqrt, exp
-from numpy.random import RandomState
-from config import LUMINOCITY, DICT_CROSSSECTION, LHC_NUMBERS
+from config import LHC_NUMBERS
+from derived_quantities import DER_data
 
 
 # ==================================================================================
@@ -284,7 +281,7 @@ class V4:
 # ==================================================================================
 
 
-def w_bkg_weight_norm(data, systBkgNorm):
+def w_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     """
     Apply a scaling to the weight. For W background
 
@@ -295,37 +292,11 @@ def w_bkg_weight_norm(data, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    data["Weight"] = (data["Weight"] * systBkgNorm).where(
-        (data["process_flags"] >= 222 and data["process_flags"] <= 254),
-        other=data["Weight"],
-    )
-    return data
+    weights = (weights * systBkgNorm).where((detailedlabel == "W"), other=weights)
+    return weights
 
 
-def w_bkg_crossection_norm(crossection_list, systBkgNorm):
-    """
-    Apply a scaling to the Crosssection. For W background
-
-    Args
-    ----
-        crossection_list: the dataset should be a pandas.DataFrame like object.
-            This function will modify the given data inplace.
-
-    """
-    # scale the weight, arbitrary but reasonable value
-    crossection_list["crosssection"] = (
-        crossection_list["crosssection"] * systBkgNorm
-    ).where(
-        (
-            crossection_list["process_flags"] >= 222
-            and crossection_list["process_flags"] <= 254
-        ),
-        other=crossection_list["crosssection"],
-    )
-    return crossection_list
-
-
-def all_bkg_weight_norm(data, systBkgNorm):
+def all_bkg_weight_norm(weights, label, systBkgNorm):
     """
     Apply a scaling to the weight.
 
@@ -336,10 +307,8 @@ def all_bkg_weight_norm(data, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    data["Weight"] = (data["Weight"] * systBkgNorm).where(
-        data["Label"] == 0, other=data["Weight"]
-    )
-    return data
+    weights = (weights * systBkgNorm).where(label == 0, other=weights)
+    return weights
 
 
 def all_bkg_crossection_norm(crossection_list, systBkgNorm):
@@ -391,7 +360,7 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
     vmet = V4()  # met 4-vector
     vmet.setPtEtaPhiM(data["PRI_met"], 0.0, data["PRI_met_phi"], 0.0)  # met mass zero,
-    #     met_sumet=data["PRI_met_sumet"]
+    # met_sumet=data["PRI_met_sumet"]
 
     if systTauEnergyScale != 1.0:
         # scale tau energy scale, arbitrary but reasonable value
@@ -414,8 +383,8 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
         vmet.e = vmet.eWithM(0.0)
 
         # met_sum_et is increased if energy scale increased
-        tauDeltaMinus = vtau.pt()
-    #         met_sumet+= (systTauEnergyScale-1)/systTauEnergyScale *tauDeltaMinus
+        # tauDeltaMinus = vtau.pt()
+        # met_sumet+= (systTauEnergyScale-1)/systTauEnergyScale *tauDeltaMinus
 
     # scale jet energy scale, arbitrary but reasonable value
 
@@ -435,10 +404,9 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
         data["PRI_jet_all_pt"] *= systJetEnergyScale
 
-        jet_all_pt = data["PRI_jet_all_pt"]
-
-        # met_sum_et is increased if energy scale increased
-        #         met_sumet+= (systJetEnergyScale-1)/systJetEnergyScale *jet_all_pt
+        # jet_all_pt = data["PRI_jet_all_pt"]
+        # # met_sum_et is increased if energy scale increased
+        # met_sumet+= (systJetEnergyScale-1)/systJetEnergyScale *jet_all_pt
 
         # first jet if it exists
         vj1 = V4()
@@ -519,333 +487,6 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
     return data
 
 
-def calcul_int(data):
-
-    # Definition of the x and y components of the hadron's momentum
-    data["had_px"] = data.PRI_had_pt * cos(data.PRI_had_phi)
-    data["had_py"] = data.PRI_had_pt * sin(data.PRI_had_phi)
-    data["had_pz"] = data.PRI_had_pt * sinh(data.PRI_had_eta)
-    data["p_had"] = data.PRI_had_pt * cosh(data.PRI_had_eta)
-
-    # Definition of the x and y components of the lepton's momentum
-    data["lep_px"] = data.PRI_lep_pt * cos(data.PRI_lep_phi)
-    data["lep_py"] = data.PRI_lep_pt * sin(data.PRI_lep_phi)
-    data["lep_pz"] = data.PRI_lep_pt * sinh(data.PRI_lep_eta)
-    data["p_lep"] = data.PRI_lep_pt * cosh(data.PRI_lep_eta)
-
-    # Definition of the x and y components of the neutrinos's momentum (MET)
-    data["met_x"] = data.PRI_met * cos(data.PRI_met_phi)
-    data["met_y"] = data.PRI_met * sin(data.PRI_met_phi)
-
-    # Definition of the x and y components of the leading jet's momentum
-    data["jet_leading_px"] = (
-        data.PRI_jet_leading_pt * cos(data.PRI_jet_leading_phi) * (data.PRI_n_jets >= 1)
-    )  # = 0 if PRI_n_jets == 0
-    data["jet_leading_py"] = (
-        data.PRI_jet_leading_pt * sin(data.PRI_jet_leading_phi) * (data.PRI_n_jets >= 1)
-    )
-    data["jet_leading_pz"] = (
-        data.PRI_jet_leading_pt
-        * sinh(data.PRI_jet_leading_eta)
-        * (data.PRI_n_jets >= 1)
-    )
-    data["p_jet_leading"] = (
-        data.PRI_jet_leading_pt
-        * cosh(data.PRI_jet_leading_eta)
-        * (data.PRI_n_jets >= 1)
-    )
-
-    # Definition of the x and y components of the subleading jet's momentum
-    data["jet_subleading_px"] = (
-        data.PRI_jet_subleading_pt
-        * cos(data.PRI_jet_subleading_phi)
-        * (data.PRI_n_jets >= 2)
-    )  # = 0 if PRI_n_jets <= 1
-    data["jet_subleading_py"] = (
-        data.PRI_jet_subleading_pt
-        * sin(data.PRI_jet_subleading_phi)
-        * (data.PRI_n_jets >= 2)
-    )
-    data["jet_subleading_pz"] = (
-        data.PRI_jet_subleading_pt
-        * sinh(data.PRI_jet_subleading_eta)
-        * (data.PRI_n_jets >= 2)
-    )
-    data["p_jet_subleading"] = (
-        data.PRI_jet_subleading_pt
-        * cosh(data.PRI_jet_subleading_eta)
-        * (data.PRI_n_jets >= 2)
-    )
-
-    return data
-
-
-# calcul_int(data)
-# display(data.head(10))
-
-
-def f_DER_mass_transverse_met_lep(data):
-    """
-    Calculate the transverse mass between the MET and the lepton
-    Parameters: data (dataframe)
-    """
-    data["calcul_int"] = (
-        (data.PRI_met + data.PRI_lep_pt) ** 2
-        - (data.met_x + data.lep_px) ** 2
-        - (data.met_y + data.lep_py) ** 2
-    )
-    data["DER_mass_transverse_met_lep"] = sqrt(data.calcul_int * (data.calcul_int >= 0))
-    del data["calcul_int"]
-    return data
-
-
-def f_DER_mass_vis(data):
-    """
-    Calculate the invariant mass of the hadron and the lepton
-    Parameters: data (dataframe)
-    """
-
-    data["DER_mass_vis"] = sqrt(
-        (data.p_lep + data.p_had) ** 2
-        - (data.lep_px + data.had_px) ** 2
-        - (data.lep_py + data.had_py) ** 2
-        - (data.lep_pz + data.had_pz) ** 2
-    )
-    return data
-
-
-def f_DER_pt_h(data):
-    """
-    Calculate the transverse momentum of the hadronic system
-    Parameters: data (dataframe)
-    """
-
-    data["DER_pt_h"] = sqrt(
-        (data.had_px + data.lep_px + data.met_x) ** 2
-        + (data.had_py + data.lep_py + data.met_y) ** 2
-    )
-    return data
-
-
-def f_DER_deltaeta_jet_jet(data):
-    """
-    Calculate the absolute value of the difference of the pseudorapidity of the two jets
-    Parameters: data (dataframe)
-    """
-
-    data["DER_deltaeta_jet_jet"] = abs(
-        data.PRI_jet_subleading_eta - data.PRI_jet_leading_eta
-    ) * (data.PRI_n_jets >= 2) - 7 * (data.PRI_n_jets < 2)
-    return data
-
-
-from numpy import sqrt
-
-
-# undefined if PRI_n_jets <= 1:
-def f_DER_mass_jet_jet(data):
-    """
-    Calculate the invariant mass of the two jets
-    Parameters: data (dataframe)
-    """
-
-    data["calcul_int"] = (
-        (data.p_jet_leading + data.p_jet_subleading) ** 2
-        - (data.jet_leading_px + data.jet_subleading_px) ** 2
-        - (data.jet_leading_py + data.jet_subleading_py) ** 2
-        - (data.jet_leading_pz + data.jet_subleading_pz) ** 2
-    )
-    data["DER_mass_jet_jet"] = sqrt(data.calcul_int * (data.calcul_int >= 0)) * (
-        data.PRI_n_jets >= 2
-    ) - 7 * (data.PRI_n_jets <= 1)
-
-    del data["calcul_int"]
-    return data
-
-
-def f_DER_prodeta_jet_jet(data):
-    """
-    Calculate the product of the pseudorapidities of the two jets
-    Parameters: data (dataframe)
-    """
-
-    data["DER_prodeta_jet_jet"] = (
-        data.PRI_jet_leading_eta * data.PRI_jet_subleading_eta * (data.PRI_n_jets >= 2)
-        - 7 * (data.PRI_n_jets <= 1)
-    )
-    return data
-
-
-def f_DER_deltar_had_lep(data):
-    data["difference2_eta"] = (data.PRI_lep_eta - data.PRI_had_eta) ** 2
-    data["difference2_phi"] = (
-        np.abs(
-            np.mod(data.PRI_lep_phi - data.PRI_had_phi + 3 * np.pi, 2 * np.pi) - np.pi
-        )
-    ) ** 2
-    data["DER_deltar_had_lep"] = sqrt(data.difference2_eta + data.difference2_phi)
-
-    del data["difference2_eta"]
-    del data["difference2_phi"]
-    return data
-
-
-def f_DER_pt_tot(data):
-    """
-    Calculate the total transverse momentum
-    Parameters: data (dataframe)
-    """
-    data["DER_pt_tot"] = sqrt(
-        (
-            data.had_px
-            + data.lep_px
-            + data.met_x
-            + data.jet_leading_px
-            + data.jet_subleading_px
-        )
-        ** 2
-        + (
-            data.had_py
-            + data.lep_py
-            + data.met_y
-            + data.jet_leading_py
-            + data.jet_subleading_py
-        )
-        ** 2
-    )
-    return data
-
-
-def f_DER_sum_pt(data):
-    """
-    Calculate the sum of the transverse momentum of the lepton, the hadron and the jets
-    Parameters: data (dataframe)
-    """
-
-    data["DER_sum_pt"] = data.PRI_had_pt + data.PRI_lep_pt + data.PRI_jet_all_pt
-    return data
-
-
-def f_DER_pt_ratio_lep_had(data):
-    """
-    Calculate the ratio of the transverse momentum of the lepton and the hadron
-    Parameters: data (dataframe)
-    """
-    data["DER_pt_ratio_lep_had"] = data.PRI_lep_pt / data.PRI_had_pt
-    return data
-
-
-def f_DER_met_phi_centrality(data):
-    """
-    Calculate the centrality of the MET
-    Parameters: data (dataframe)
-    """
-
-    def A(met, lep, had):
-        return sin(met - lep) * np.sign(sin(had - lep))
-
-    def B(met, lep, had):
-        return sin(had - met) * np.sign(sin(had - lep))
-
-    data["A"] = A(data.PRI_met_phi, data.PRI_lep_phi, data.PRI_had_phi)
-    data["B"] = B(data.PRI_met_phi, data.PRI_lep_phi, data.PRI_had_phi)
-    data["num"] = data.A + data.B
-    data["denum"] = sqrt(data.A**2 + data.B**2)
-
-    data["DER_met_phi_centrality"] = data.num / (data.denum + (data.denum == 0)) * (
-        data.denum != 0
-    ) - 7 * (data.denum == 0)
-    epsilon = 0.0001
-    mask = data.denum == 0
-
-    data.loc[mask, "A"] = A(
-        data.PRI_met_phi, data.PRI_lep_phi + epsilon, data.PRI_had_phi
-    )
-    data.loc[mask, "B"] = B(
-        data.PRI_met_phi, data.PRI_lep_phi + epsilon, data.PRI_had_phi
-    )
-    data.loc[mask, "num"] = data.A + data.B
-    data.loc[mask, "denum"] = sqrt(data.A**2 + data.B**2)
-    data.loc[mask, "DER_met_phi_centrality"] = data.num / (
-        data.denum + (data.denum == 0)
-    ) * (data.denum != 0) - 7 * (data.denum == 0)
-
-    del data["A"]
-    del data["B"]
-    del data["num"]
-    del data["denum"]
-    return data
-
-
-def f_DER_lep_eta_centrality(data):
-    """
-    Calculate the centrality of the lepton
-    Parameters: data (dataframe)
-    """
-
-    data["difference"] = (data.PRI_jet_leading_eta - data.PRI_jet_subleading_eta) ** 2
-    data["moyenne"] = (data.PRI_jet_leading_eta + data.PRI_jet_subleading_eta) / 2
-
-    data["DER_lep_eta_centrality"] = exp(
-        -4 / (data.difference) * ((data.PRI_lep_eta - data.moyenne) ** 2)
-    ) * (data.PRI_n_jets >= 2) - 7 * (data.PRI_n_jets <= 1)
-
-    del data["difference"]
-    del data["moyenne"]
-
-    return data
-
-
-def f_del_DER(data):
-    """
-    Delete all the unnecessary columns that were used to calculate the DER variables
-    Parameters: data (dataframe)
-    """
-    del data["had_px"]
-    del data["had_py"]
-    del data["had_pz"]
-    del data["p_had"]
-    del data["lep_px"]
-    del data["lep_py"]
-    del data["lep_pz"]
-    del data["p_lep"]
-    del data["met_x"]
-    del data["met_y"]
-    del data["jet_leading_px"]
-    del data["jet_leading_py"]
-    del data["jet_leading_pz"]
-    del data["p_jet_leading"]
-    del data["jet_subleading_px"]
-    del data["jet_subleading_py"]
-    del data["jet_subleading_pz"]
-    del data["p_jet_subleading"]
-
-    return data
-
-
-def DER_data(data):
-    """
-    data is supposed to be clean (no Weight, no eventId etc...)
-    This function directly modifies the dataframe data so make sure to make a copy if
-    you need to keep data
-    """
-    data = calcul_int(data)
-    data = f_DER_mass_transverse_met_lep(data)
-    data = f_DER_mass_vis(data)
-    data = f_DER_pt_h(data)
-    data = f_DER_deltaeta_jet_jet(data)
-    data = f_DER_mass_jet_jet(data)
-    data = f_DER_prodeta_jet_jet(data)
-    data = f_DER_deltar_had_lep(data)
-    data = f_DER_pt_tot(data)
-    data = f_DER_sum_pt(data)
-    data = f_DER_pt_ratio_lep_had(data)
-    data = f_DER_met_phi_centrality(data)
-    data = f_DER_lep_eta_centrality(data)
-    data = f_del_DER(data)
-    return data
-
-
 def postprocess(data):
 
     data = data.drop(data[data.PRI_had_pt < 26].index)
@@ -854,86 +495,55 @@ def postprocess(data):
 
     return data
 
+def systematics(
+    data_set=None,
+    tes=1.0,
+    jes=1.0,
+    soft_met=1.0,
+    seed=31415,
+    w_scale=None,
+    bkg_scale=None,
+    verbose=0,
+):
+    """
+    Params:
+    -------
+    data:
+        dataframe
+    tes:
+        between 0.9 and 1.1, default: 1.0
+        1.0 means no systemtics
+    jes:
+        default: 1.0
+    soft_met:
+        default: 1.0
+    w_scale:
+        default: None
+    bkg_scale:
+        default: None
+    """
 
-# ==================================================================================
-#  MAIN : here is defined the behaviour of this module as a main script
-# ==================================================================================
-class Systematics:
+    if w_scale is not None:
+        if "weights" in data_set.keys():
+            print("W bkg weight rescaling :", w_scale)
+            data_set["weights"] = w_bkg_weight_norm(data_set["weights"],data_set["detailedlabel"], w_scale)
 
-    def __init__(
-        self,
-        data=None,
-        tes=1.0,
-        jes=1.0,
-        soft_met=1.0,
-        seed=31415,
-        w_scale=None,
-        bkg_scale=None,
-        verbose=0,
-    ):
-        """
-        Params:
-        -------
-        data:
-            dataframe
-        tes:
-            between 0.9 and 1.1, default: 1.0
-            1.0 means no systemtics
-        jes:
-            default: 1.0
-        soft_met:
-            default: 1.0
-        w_scale:
-            default: None
-        bkg_scale:
-            default: None
-        """
+    if bkg_scale is not None:
+        if "weights" in data_set.keys():
+            print("All bkg weight rescaling :", bkg_scale)
+            data_set["weights"] = all_bkg_weight_norm(data_set["weights"],data_set["label"], bkg_scale)
 
-        self.data = data
-        self.tes = tes
-        self.jes = jes
-        self.soft_met = soft_met
-        self.w_scale = w_scale
-        self.bkg_scale = bkg_scale
-
-        if self.w_scale is not None:
-            if "weights" in self.data.columns:
-                print("W bkg weight rescaling :", self.w_scale)
-                self.data = w_bkg_weight_norm(self.data, self.w_scale)
-
-        if self.bkg_scale is not None:
-            if "weights" in self.data.columns:
-                print("All bkg weight rescaling :", self.bkg_scale)
-                self.data = all_bkg_weight_norm(self.data, self.bkg_scale)
-
-        if verbose > 0:
-            print("Tau energy rescaling :", self.tes)
-        self.data = mom4_manipulate(
-            data=self.data,
-            systTauEnergyScale=self.tes,
-            systJetEnergyScale=self.jes,
-            soft_met=self.soft_met,
-            seed=seed,
-        )
-        self.data = postprocess(self.data)
-        self.data = DER_data(self.data)
-
-
-# ==================================================================================
-#
-# ==================================================================================
-def reweight(data, crosssection_dict=DICT_CROSSSECTION):
-    # Temporary fix for the reweighting issue
-
-    crossection_list = crosssection_dict["crosssection"]
-    process_list = crosssection_dict["process_flags"]
-    number_of_events = crosssection_dict["number"]
-
-    for process, crossection, number in zip(
-        process_list, crossection_list, number_of_events
-    ):
-        weight_process = crossection * LUMINOCITY / number
-        data.loc[data["Process_flag"] == process, "Weight"] = weight_process
+    if verbose > 0:
+        print("Tau energy rescaling :", tes)
+    data = mom4_manipulate(
+        data=data,
+        systTauEnergyScale=tes,
+        systJetEnergyScale=jes,
+        soft_met=soft_met,
+        seed=seed,
+    )
+    data = postprocess(data)
+    data = DER_data(data)
 
     return data
 
