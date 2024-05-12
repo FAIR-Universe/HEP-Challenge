@@ -305,27 +305,24 @@ class Model():
         holdout_weights[holdout_labels == 1] *= signal_weights / holdout_signal_weights
         holdout_weights[holdout_labels == 0] *= background_weights / holdout_background_weights
 
-        train_df = train_df.copy()
-        train_df["weights"] = train_weights
-        train_df["labels"] = train_labels
-
-        train_df = self.systematics(
-            data=train_df.copy(),
-            tes=1.0
-        ).data
-
-        train_weights = train_df.pop('weights')
-        train_labels = train_df.pop('labels')
         
-
-        self.train_df = train_df
-
         self.train_set = {
             "data": train_df,
             "labels": train_labels,
             "weights": train_weights,
             "settings": self.train_set["settings"]
         }
+
+        self.train_set = self.systematics(
+        data_set=self.train_set,
+        tes=1.0,
+        jes=1.0,
+        )
+        
+        print(self.train_set['data'].columns)
+
+        train_weights = self.train_set['weights']
+        train_labels = self.train_set['labels']
 
         self.holdout = {
                 "data": holdout_df,
@@ -350,7 +347,6 @@ class Model():
 
         weights_train = self.train_set["weights"].copy()
         train_labels = self.train_set["labels"].copy()
-        train_data = self.train_set["data"].copy()
         class_weights_train = (weights_train[train_labels == 0].sum(), weights_train[train_labels == 1].sum())
 
         for i in range(len(class_weights_train)):  # loop on B then S target
@@ -358,14 +354,16 @@ class Model():
             weights_train[train_labels == i] *= max(class_weights_train) / class_weights_train[i]
             # test dataset : increase test weight to compensate for sampling
 
+        print(self.train_set['data'].columns)
+
         print("[*] --- Training Model")
-        train_data = self.scaler.fit_transform(train_data)
+        train_data_sc = self.scaler.fit_transform(self.train_set["data"])
         train_labels = np.array(train_labels).ravel()
         weights_train = np.array(weights_train).ravel()
 
-        print("[*] --- shape of train tes data", train_data.shape)
+        print("[*] --- shape of train tes data", train_data_sc.shape)
 
-        self._fit(train_data, train_labels, weights_train)
+        self._fit(train_data_sc, train_labels, weights_train)
 
         del self.train_set
 
@@ -449,19 +447,15 @@ class Model():
 
     def mu_hat_calc(self):
 
-        X_holdout = self.holdout['data'].copy()
-        X_holdout['weights'] = self.holdout['weights'].copy()
-        X_holdout['labels'] = self.holdout['labels'].copy()
-
         holdout_post = self.systematics(
-            data=X_holdout.copy(),
-            tes=1.0
-        ).data
+            data_set=self.holdout,
+            tes=1.0,
+            jes=1.0,
+        )
 
-        label_holdout = holdout_post.pop('labels')
-        weights_holdout  = holdout_post.pop('weights')
+        weights_holdout  = holdout_post['weights']
 
-        X_holdout_sc = self.scaler.transform(holdout_post)
+        X_holdout_sc = self.scaler.transform(holdout_post['data'])
         holdout_array = self._return_score(X_holdout_sc)
         print("[*] --- Predicting Holdout set done")
         print("[*] --- score = ", holdout_array)
@@ -509,20 +503,16 @@ class Model():
 
     def nominal_histograms(self,theta):
 
-        X_holdout = self.holdout['data'].copy()
-        X_holdout['weights'] = self.holdout['weights'].copy()
-        X_holdout['labels'] = self.holdout['labels'].copy()
-
         holdout_syst = self.systematics(
-            data=X_holdout.copy(),
-            tes=theta
-        ).data
+            data_set=self.holdout,
+            tes=theta,
+            jes=1.0,
+        )
 
+        label_holdout = holdout_syst['labels']
+        weights_holdout = holdout_syst['weights']
 
-        label_holdout = holdout_syst.pop('labels')
-        weights_holdout = holdout_syst.pop('weights')
-
-        X_holdout_sc = self.scaler.transform(holdout_syst)
+        X_holdout_sc = self.scaler.transform(holdout_syst['data'])
         holdout_val = self._return_score(X_holdout_sc)
 
         weights_holdout_signal = weights_holdout[label_holdout == 1]

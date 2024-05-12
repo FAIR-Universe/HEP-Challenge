@@ -487,13 +487,24 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
     return data
 
 
-def postprocess(data):
+def postprocess(data_set):
 
+    data = data_set["data"]
+    for key in data_set.keys():
+        if key is not "data":
+            data[key] = data_set[key]
+    
     data = data.drop(data[data.PRI_had_pt < 26].index)
     data = data.drop(data[data.PRI_lep_pt < 20].index)
     # data = data.drop(data[data.PRI_met>70].index)
+    
+    new_data = {}
+    for key in data_set.keys():
+        if key is not "data":
+            new_data[key] = data.pop(key)
+    new_data["data"] = data
 
-    return data
+    return new_data
 
 def systematics(
     data_set=None,
@@ -536,16 +547,17 @@ def systematics(
     if verbose > 0:
         print("Tau energy rescaling :", tes)
     data = mom4_manipulate(
-        data=data,
+        data=data_set["data"],
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
         soft_met=soft_met,
         seed=seed,
     )
-    data = postprocess(data)
-    data = DER_data(data)
+    
+    data_set["data"] = DER_data(data)
+    data_set = postprocess(data_set)
 
-    return data
+    return data_set
 
 
 def get_bootstraped_dataset(
@@ -587,21 +599,13 @@ def get_systematics_dataset(
     jes=1.0,
     soft_met=1.0,
 ):
+    weights = np.ones(data.shape[0])
 
-    # Apply systematics to the sampled data
-    from systematics import Systematics
-
-    data_syst = Systematics(
-        data=data,
+    data_syst = systematics(
+        data_set={"data": data, "weights": weights},
         tes=tes,
         jes=jes,
         soft_met=soft_met,
-    ).data
+    )
 
-    # Apply weight scaling factor mu to the data
-
-    del data
-
-    weights = np.ones(data_syst.shape[0])
-
-    return {"data": data_syst, "weights": weights}
+    return data_syst
