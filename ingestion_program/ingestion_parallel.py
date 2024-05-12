@@ -126,7 +126,6 @@ def _process_combination(arrays, test_settings, combination):
             )
             test_set = get_systematics_dataset(
                 pesudo_exp_data,
-                mu=set_mu,
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
