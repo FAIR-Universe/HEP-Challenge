@@ -216,9 +216,9 @@ class Ingestion:
     def init_submission(self):
         print("[*] Initializing Submmited Model")
         from model import Model
-        from systematics import Systematics
+        from systematics import systematics
 
-        self.model = Model(train_set=self.train_set, systematics=Systematics)
+        self.model = Model(train_set=self.train_set, systematics=systematics)
 
         del self.train_set
 

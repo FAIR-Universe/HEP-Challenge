@@ -444,10 +444,10 @@ class Ingestion:
         print("[*] Initializing Submmited Model")
         from model import Model
         from systematics import (
-            Systematics,
+            systematics,
         )
 
-        self.model = Model(train_set=self.train_set, systematics=Systematics)
+        self.model = Model(train_set=self.train_set, systematics=systematics)
 
         del self.train_set
 
