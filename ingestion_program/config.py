@@ -7,8 +7,8 @@ import sys
 # True when running on Codabench
 # False when running locally
 CODABENCH = False
-NUM_SETS = 2  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 2  # Total = 100
+NUM_SETS = 1  # Total = 10
+NUM_PSEUDO_EXPERIMENTS = 20  # Total = 100
 USE_SYSTEAMTICS = True  # True when using systematics
 USE_PUBLIC_DATA = False  # True when using public data
 DICT_SYSTEMATICS = {  # Systematics to use
@@ -22,8 +22,8 @@ NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
 USE_RANDOM_MUS = True
 
 LUMINOCITY = 140  # 1/fb
-INPUT_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/input_data"
-REFERENCE_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/reference_data"
+INPUT_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/input_data"
+REFERENCE_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/reference_data"
 CSV = False
 PARQUET = True
 current_path = os.path.dirname(os.path.realpath(__file__))

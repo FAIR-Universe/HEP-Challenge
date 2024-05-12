@@ -486,6 +486,16 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
     return data
 
+def make_unweighted_set(data_set):
+    keys = ["H", "Z", "W", "TT", "Diboson"]
+    unweighted_set = {}
+    for key in keys:
+        unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
+            frac=1, random_state=31415
+        )
+    
+    return unweighted_set
+    
 
 def postprocess(data_set):
 
