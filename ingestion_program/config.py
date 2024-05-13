@@ -22,8 +22,11 @@ NUM_SYSTEMATICS = len(DICT_SYSTEMATICS.values())
 USE_RANDOM_MUS = True
 
 LUMINOCITY = 140  # 1/fb
-INPUT_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/input_data"
-REFERENCE_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/reference_data"
+# INPUT_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/input_data"
+INPUT_DIR = "/home/chakkappai/Work/Fair-Universe/trial_data_set/input_data"
+# REFERENCE_DIR = "/global/cfs/cdirs/m4287/hep/Delphes_PYTHIA8_output/challenge_data/reference_data"
+REFERENCE_DIR = "/home/chakkappai/Work/Fair-Universe/trial_data_set/reference_data"
+
 CSV = False
 PARQUET = True
 current_path = os.path.dirname(os.path.realpath(__file__))
