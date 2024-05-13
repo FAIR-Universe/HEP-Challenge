@@ -486,6 +486,7 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
     return data
 
+
 def make_unweighted_set(data_set):
     keys = ["H", "Z", "W", "TT", "Diboson"]
     unweighted_set = {}
@@ -493,28 +494,18 @@ def make_unweighted_set(data_set):
         unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
             frac=1, random_state=31415
         )
-    
+
     return unweighted_set
-    
 
-def postprocess(data_set):
 
-    data = data_set["data"]
-    for key in data_set.keys():
-        if key is not "data":
-            data[key] = data_set[key]
-    
+def postprocess(data):
+
     data = data.drop(data[data.PRI_had_pt < 26].index)
     data = data.drop(data[data.PRI_lep_pt < 20].index)
     # data = data.drop(data[data.PRI_met>70].index)
-    
-    new_data = {}
-    for key in data_set.keys():
-        if key is not "data":
-            new_data[key] = data.pop(key)
-    new_data["data"] = data
 
-    return new_data
+    return data
+
 
 def systematics(
     data_set=None,
@@ -547,27 +538,41 @@ def systematics(
     if w_scale is not None:
         if "weights" in data_set.keys():
             print("W bkg weight rescaling :", w_scale)
-            data_set["weights"] = w_bkg_weight_norm(data_set["weights"],data_set["detailedlabel"], w_scale)
+            data_set["weights"] = w_bkg_weight_norm(
+                data_set["weights"], data_set["detailedlabel"], w_scale
+            )
 
     if bkg_scale is not None:
         if "weights" in data_set.keys():
             print("All bkg weight rescaling :", bkg_scale)
-            data_set["weights"] = all_bkg_weight_norm(data_set["weights"],data_set["label"], bkg_scale)
+            data_set["weights"] = all_bkg_weight_norm(
+                data_set["weights"], data_set["label"], bkg_scale
+            )
 
     if verbose > 0:
         print("Tau energy rescaling :", tes)
     data = mom4_manipulate(
-        data=data_set["data"],
+        data=data_set["data"].copy(),
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
         soft_met=soft_met,
         seed=seed,
     )
-    
-    data_set["data"] = DER_data(data)
-    data_set = postprocess(data_set)
 
-    return data_set
+    df = DER_data(data)
+    for key in data_set.keys():
+        if key is not "data":
+            df[key] = data_set[key]
+
+    data_syst = postprocess(df)
+
+    data_syst_set = {}
+    for key in data_set.keys():
+        if key is not "data":
+            data_syst_set[key] = data_syst.pop(key)
+    data_syst_set["data"] = data_syst
+
+    return data_syst_set
 
 
 def get_bootstraped_dataset(
