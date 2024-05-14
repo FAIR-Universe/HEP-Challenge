@@ -421,11 +421,11 @@ class Ingestion:
                 self.test_settings = json.load(f)
 
         self.test_set = {
-            "Z": pd.DataFrame(),
-            "W": pd.DataFrame(),
-            "Diboson": pd.DataFrame(),
-            "TT": pd.DataFrame(),
-            "H": pd.DataFrame(),
+            "ztautau": pd.DataFrame(),
+            "wjets": pd.DataFrame(),
+            "diboson": pd.DataFrame(),
+            "ttbar": pd.DataFrame(),
+            "htautau": pd.DataFrame(),
         }
 
         for key in self.test_set.keys():
