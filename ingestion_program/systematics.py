@@ -571,6 +571,9 @@ def systematics(
         if key is not "data":
             data_syst_set[key] = data_syst.pop(key)
     data_syst_set["data"] = data_syst
+    
+    print("at the end of systematics")
+    print(data_syst_set["data"].columns)
 
     return data_syst_set
 
@@ -596,12 +599,14 @@ def get_bootstraped_dataset(
 
     pseudo_data = []
     for key in test_set.keys():
-        test_set[key] = test_set[key].sample(
+        pseudo_data.append(test_set[key].sample(
             n=bkg_norm[key], replace=True, random_state=seed
-        )
-        pseudo_data.append(test_set[key])
+        ))
 
     pseudo_data = pd.concat(pseudo_data)
+    
+    print("at the end of get_bootstraped_dataset")
+    print(pseudo_data.columns)
 
     pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
 
@@ -622,5 +627,8 @@ def get_systematics_dataset(
         jes=jes,
         soft_met=soft_met,
     )
+    
+    print("at the end of get_systematics_dataset")
+    print(data_syst["data"].columns)
 
     return data_syst
