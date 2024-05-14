@@ -292,7 +292,7 @@ def w_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    weights = (weights * systBkgNorm).where((detailedlabel == "W"), other=weights)
+    weights = (weights * systBkgNorm).where((detailedlabel == "wjets"), other=weights)
     return weights
 
 
@@ -488,7 +488,7 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
 
 def make_unweighted_set(data_set):
-    keys = ["H", "Z", "W", "TT", "Diboson"]
+    keys = ["htautau", "ztautau", "wjets", "ttbar", "diboson"]
     unweighted_set = {}
     for key in keys:
         unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
@@ -585,14 +585,14 @@ def get_bootstraped_dataset(
 
     bkg_norm = LHC_NUMBERS
     if w_scale is not None:
-        bkg_norm["W"] = int(LHC_NUMBERS["W"] * w_scale * bkg_scale)
+        bkg_norm["wjets"] = int(LHC_NUMBERS["wjets"] * w_scale * bkg_scale)
 
     if bkg_scale is not None:
-        bkg_norm["Z"] = int(LHC_NUMBERS["Z"] * bkg_scale)
-        bkg_norm["Diboson"] = int(LHC_NUMBERS["Diboson"] * bkg_scale)
-        bkg_norm["TT"] = int(LHC_NUMBERS["TT"] * bkg_scale)
+        bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
+        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * bkg_scale)
+        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * bkg_scale)
 
-    bkg_norm["H"] = int(LHC_NUMBERS["H"] * mu)
+    bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
 
     pseudo_data = []
     for key in test_set.keys():

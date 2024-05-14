@@ -135,15 +135,15 @@ class Dataset_visualise:
         detailed_label = np.array(self.detailed_label)
 
         hist_s, bins = np.histogram(
-            field[detailed_label == "H"],
+            field[detailed_label == "htautau"],
             bins=bins,
-            weights=self.weights[detailed_label == "H"],
+            weights=self.weights[detailed_label == "htautau"],
         )
 
         hist_b = np.zeros(len(hist_s))
 
         for key in self.keys:
-            if key is not "H":
+            if key is not "htautau":
                 hist, bins = np.histogram(
                     field[detailed_label == key],
                     bins=bins,
