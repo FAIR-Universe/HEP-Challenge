@@ -36,11 +36,19 @@ with open(cross_section_path) as json_file:
     DICT_CROSSSECTION = json.load(json_file)
     
 LHC_NUMBERS= {
-        "ztautau":2569787,
+        "ztautau":7306659,
         "wjets": 2964267,
         "diboson": 9220,
         "ttbar": 320318,
         "htautau": 9220,
     }
+
+weights = {
+    "ztautau": 7306660,
+    "wjets": 3812700,
+    "diboson": 2398564,
+    "ttbar": 616017,
+    "htautau": 285
+}
 
 
