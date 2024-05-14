@@ -37,7 +37,7 @@ with open(cross_section_path) as json_file:
     
 LHC_NUMBERS= {
         "ztautau":2569787,
-        "wjets": 29667,
+        "wjets": 2964267,
         "diboson": 9220,
         "ttbar": 320318,
         "htautau": 9220,
