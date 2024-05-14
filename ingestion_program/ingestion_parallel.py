@@ -428,7 +428,7 @@ class Ingestion:
             "htautau": pd.DataFrame(),
         }
 
-        for key in self.test_set.keys():
+        for key in LHC_NUMBERS.keys():
             self.test_set[key] = self.test_set[key].round(3)
             if CSV:
                 test_data_file = os.path.join(test_data_dir, f"{key}_data.csv")
