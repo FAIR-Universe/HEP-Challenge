@@ -34,7 +34,7 @@ parser.add_argument("--submission",
 parser.add_argument("--codabench",
                     help="True when running on Codabench",
                     action="store_true",
-)                    
+)                     
 args = parser.parse_args()
 
 if not args.codabench:
@@ -75,7 +75,7 @@ if USE_PUBLIC_DATASET:
     from datasets import Neurips2024_public_dataset as public_dataset
     data = public_dataset()
 else:
-    data = Data(INPUT_DIR)
+    data = Data(input_dir)
 
 ingestion = Ingestion(data)
 
