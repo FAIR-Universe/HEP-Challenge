@@ -1,1 +1,1 @@
-command: python3 score.py
+command: python3 run_scoring.py --codabench
