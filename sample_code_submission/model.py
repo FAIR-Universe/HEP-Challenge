@@ -70,7 +70,7 @@ class Model():
 
     def __init__(
             self,
-            train_set=None,
+            get_train_set=None,
             systematics=None
     ):
         """
@@ -103,15 +103,14 @@ class Model():
         if os.path.exists(module_file):
             self.model_exists = True
             self._read_settings()
-            self.model = PyTorchModel(n_cols=train_set["data"].shape[1])
+            self.model = PyTorchModel(n_cols=28) # 28 is the number of features
             self.model.load_state_dict(torch.load(module_file))
             self.model.to(self.device)
-            del train_set
             del systematics
 
         else:
             self.model_exists = False
-            self.train_set = train_set
+            self.train_set = get_train_set()
             self.systematics = systematics
             self.threshold = 0.8
             self.bins = 30
