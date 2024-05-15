@@ -21,15 +21,12 @@ config_path = os.path.join(parent_path, "ingestion_program")
 sys.path.append(parent_path)
 sys.path.append(config_path)
 
-from config import CODABENCH, NUM_SETS, USE_RANDOM_MUS
-
 
 class Scoring:
     def __init__(self):
         # Initialize class variables
         self.start_time = None
         self.end_time = None
-        self.test_settings = None
         self.ingestion_results = None
 
         self.scores_dict = {}
@@ -56,88 +53,29 @@ class Scoring:
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
-    def set_directories(self):
-
-        # set default directories for Codabench
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        root_dir_name = os.path.dirname(module_dir)
-        output_dir_name = "scoring_output"
-        reference_dir_name = "reference_data"
-        predictions_dir_name = "sample_result_submission"
-        score_file_name = "scores.json"
-        html_file_name = "detailed_results.html"
-
-        if CODABENCH:
-            root_dir_name = "/app"
-            input_dir_name = os.path.join(root_dir_name, "input")
-            output_dir_name = os.path.join(root_dir_name, "output")
-            reference_dir_name = os.path.join(input_dir_name, "ref")
-            predictions_dir_name = os.path.join(input_dir_name, "res")
-
-        # Directory to output computed score into
-        self.output_dir = os.path.join(root_dir_name, output_dir_name)
-        # reference data (test labels)
-        temp_root = "/home/chakkappai/Work/Fair-Universe/trial_data_set/"
-        self.reference_dir = os.path.join(temp_root, reference_dir_name)
-        # submitted/predicted labels
-        self.prediction_dir = os.path.join(root_dir_name, predictions_dir_name)
-
-        # In case predictions dir and output dir are provided as args
-        if len(sys.argv) > 1:
-            self.output_dir = sys.argv[1]
-
-        if len(sys.argv) > 2:
-            self.prediction_dir = sys.argv[2]
-
-        print(f"[*] -- OutPut Directory : {self.output_dir}")
-        print(f"[*] -- Prediction Directory : {self.prediction_dir}")
-
-        # score file to write score into
-        self.score_file = os.path.join(self.output_dir, score_file_name)
-        # html file to write score and figures into
-        self.html_file = os.path.join(self.output_dir, html_file_name)
-
-        # Add to path
-        sys.path.append(self.reference_dir)
-        sys.path.append(self.output_dir)
-        sys.path.append(self.prediction_dir)
-
-    def load_test_settings(self):
-        print("[*] Reading test settings")
-        if USE_RANDOM_MUS:
-            settings_file = os.path.join(self.prediction_dir, "random_mu.json")
-        else:
-            settings_file = os.path.join(self.reference_dir, "settings", "data.json")
-
-        with open(settings_file) as f:
-            self.test_settings = json.load(f)
-
-        print("[✔]")
-
-    def load_ingestion_duration(self):
+    def load_ingestion_duration(self,ingestion_duration_file):
         print("[*] Reading ingestion duration")
-        ingestion_duration_file = os.path.join(
-            self.prediction_dir, "ingestion_duration.json"
-        )
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
 
         print("[✔]")
 
-    def load_ingestion_results(self):
+    def load_ingestion_results(self, prediction_dir):
         print("[*] Reading predictions")
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
-        for i in range(0, NUM_SETS):
-            results_file = os.path.join(
-                self.prediction_dir, "result_" + str(i) + ".json"
-            )
-            with open(results_file) as f:
-                self.ingestion_results.append(json.load(f))
+        for file in os.listdir(prediction_dir):
+            if file.startswith("result_"):
+                results_file = os.path.join(prediction_dir, file)
+                with open(results_file) as f:
+                    self.ingestion_results.append(json.load(f))
+        
+        self.score_file = os.path.join(prediction_dir, "scores.json")
+        self.html_file = os.path.join(prediction_dir, "detailed_results.html")
 
         print("[✔]")
 
-    def compute_scores(self):
+    def compute_scores(self, test_settings):
         print("[*] Computing scores")
 
         # loop over ingestion results
@@ -145,7 +83,7 @@ class Scoring:
         all_p16s, all_p84s, all_mus = [], [], []
 
         for i, (ingestion_result, mu) in enumerate(
-            zip(self.ingestion_results, self.test_settings["ground_truth_mus"])
+            zip(self.ingestion_results, test_settings["ground_truth_mus"])
         ):
 
             mu_hats = ingestion_result["mu_hats"]
@@ -312,17 +250,13 @@ if __name__ == "__main__":
     print("### Scoring Program")
     print("############################################\n")
 
+
     # Init scoring
     scoring = Scoring()
-
-    # Set directories
-    scoring.set_directories()
 
     # Start timer
     scoring.start_timer()
 
-    # Load test settings
-    scoring.load_test_settings()
 
     # Load ingestion duration
     scoring.load_ingestion_duration()

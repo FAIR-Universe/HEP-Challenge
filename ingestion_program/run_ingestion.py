@@ -52,18 +52,16 @@ test_settings = TEST_SETTINGS.copy()
 
 if USE_RANDOM_MUS:
     test_settings[ "ground_truth_mus"] = (np.random.uniform(0.1, 3, test_settings["num_of_sets"])).tolist()
-    
-    random_settings_file = os.path.join(output_dir, "random_mu.json")
+    test_settings["random_mu"] = True
+    random_settings_file = os.path.join(output_dir, "test_settings.json")
     with open(random_settings_file, "w") as f:
         json.dump(test_settings, f)
 else:
     test_settings_file = os.path.join(input_dir, "test", "settings", "data.json")
     with open(test_settings_file) as f:
-        test_settings = json.load(f)
-        
-print(test_settings)
-print(TEST_SETTINGS)
-        
+        ground_truth_mus = json.load(f)    
+    test_settings[ "ground_truth_mus"] = ground_truth_mus["ground_truth_mus"]
+
 sys.path.append(program_dir)
 sys.path.append(submission_dir)
 
