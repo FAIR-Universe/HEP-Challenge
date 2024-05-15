@@ -1,14 +1,1 @@
-{
-    "systematics": {
-        "tes": true,
-        "jes": false,
-        "soft_met": false,
-        "w_scale": false,
-        "bkg_scale": false
-    },
-    "num_pseudo_experiments": 1,
-    "num_of_sets": 1,
-    "ground_truth_mus": [
-        2.990425873038092
-    ]
-}
+{"systematics": {"tes": true, "jes": false, "soft_met": false, "w_scale": false, "bkg_scale": false}, "num_pseudo_experiments": 2, "num_of_sets": 2, "ground_truth_mus": [2.7560614501729233, 2.2235028796912224]}

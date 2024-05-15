@@ -45,10 +45,10 @@ class Ingestion:
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
-    def save_duration(self):
+    def save_duration(self, output_dir=None):
         duration = self.get_duration()
         duration_in_mins = int(duration.total_seconds() / 60)
-        duration_file = os.path.join(self.output_dir, "ingestion_duration.json")
+        duration_file = os.path.join(output_dir, "ingestion_duration.json")
         if duration is not None:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
@@ -58,12 +58,10 @@ class Ingestion:
         print("[*] Loading Train data")
         self.data.load_train_set()
         self.train_set = self.data.get_train_set()
-        print("[*] Train data loaded successfully")
         
     def load_test_set(self):
         print("[*] Loading Test data")
         self.data.load_test_set()
-        print("[*] Test data loaded successfully")
 
     def init_submission(self,Model):
         print("[*] Initializing Submmited Model")
@@ -172,7 +170,8 @@ class Ingestion:
                 "p16": p16,
                 "p84": p84,
             }
-            result_file = os.path.join(output_dir, "result_" + str(i) + ".json")
+                        
+            result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
             with open(result_file, "w") as f:
                 f.write(json.dumps(ingestion_result_dict, indent=4))
 

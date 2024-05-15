@@ -28,6 +28,7 @@ class Scoring:
         self.start_time = None
         self.end_time = None
         self.ingestion_results = None
+        self.ingestion_duration = None
 
         self.scores_dict = {}
 
@@ -60,11 +61,12 @@ class Scoring:
 
         print("[✔]")
 
-    def load_ingestion_results(self, prediction_dir = None,ingestion_result_dict = None):
+    def load_ingestion_results(self, prediction_dir = "./",ingestion_result_dict = None):
         print("[*] Reading predictions")
         self.ingestion_results = []
         if ingestion_result_dict is not None:
             for key in ingestion_result_dict.keys():
+                print(f"[*] test: {ingestion_result_dict[key]}")
                 self.ingestion_results.append(ingestion_result_dict[key])
         else:
             # loop over sets (1 set = 1 value of mu)
@@ -85,11 +87,14 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
+        print("[*] ",self.ingestion_results)
+        print("[*] ",test_settings["ground_truth_mus"])
 
-        for i, (ingestion_result, mu) in enumerate(
-            zip(self.ingestion_results, test_settings["ground_truth_mus"])
-        ):
-
+        for i in range(len(self.ingestion_results)):
+            ingestion_result = self.ingestion_results[i]
+            mu = test_settings["ground_truth_mus"][i]
+            
+            print(f"[*] mu_hats: {ingestion_result}")
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]
             p16s = ingestion_result["p16"]

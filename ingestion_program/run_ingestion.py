@@ -96,7 +96,7 @@ ingestion.load_test_set()
 ingestion.predict_submission(test_settings)
 
 # save result
-ingestion.save_result()
+ingestion.save_result(output_dir)
 
 # Stop timer
 ingestion.stop_timer()
@@ -105,5 +105,5 @@ ingestion.stop_timer()
 ingestion.show_duration()
 
 # Save duration
-ingestion.save_duration()
+ingestion.save_duration(output_dir)
 
