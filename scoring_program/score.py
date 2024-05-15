@@ -60,15 +60,19 @@ class Scoring:
 
         print("[✔]")
 
-    def load_ingestion_results(self, prediction_dir):
+    def load_ingestion_results(self, prediction_dir = None,ingestion_result_dict = None):
         print("[*] Reading predictions")
         self.ingestion_results = []
-        # loop over sets (1 set = 1 value of mu)
-        for file in os.listdir(prediction_dir):
-            if file.startswith("result_"):
-                results_file = os.path.join(prediction_dir, file)
-                with open(results_file) as f:
-                    self.ingestion_results.append(json.load(f))
+        if ingestion_result_dict is not None:
+            for key in ingestion_result_dict.keys():
+                self.ingestion_results.append(ingestion_result_dict[key])
+        else:
+            # loop over sets (1 set = 1 value of mu)
+            for file in os.listdir(prediction_dir):
+                if file.startswith("result_"):
+                    results_file = os.path.join(prediction_dir, file)
+                    with open(results_file) as f:
+                        self.ingestion_results.append(json.load(f))
         
         self.score_file = os.path.join(prediction_dir, "scores.json")
         self.html_file = os.path.join(prediction_dir, "detailed_results.html")
