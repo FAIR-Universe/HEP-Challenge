@@ -1,1 +1,1 @@
-command: python3 ingestion.py
+command: python3 run_competetion.py --codabench 
