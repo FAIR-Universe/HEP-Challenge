@@ -14,7 +14,7 @@ TEST_SETTINGS = {
     "w_scale": False,
     "bkg_scale": False,
 },
-"num_pseudo_experiments" : 1 ,"num_of_sets" : 1}  # Number of sets to use
+"num_pseudo_experiments" : 1 ,"num_of_sets" : 10}  # Number of sets to use
 
 USE_RANDOM_MUS = True
 
