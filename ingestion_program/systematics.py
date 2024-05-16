@@ -538,7 +538,7 @@ def systematics(
         if "weights" in data_set.keys():
             print("W bkg weight rescaling :", w_scale)
             data_set["weights"] = w_bkg_weight_norm(
-                data_set["weights"], data_set["detailedlabel"], w_scale
+                data_set["weights"], data_set["detailed_labels"], w_scale
             )
 
     if bkg_scale is not None:
@@ -603,9 +603,12 @@ def get_bootstraped_dataset(
 
     pseudo_data = []
     for key in test_set.keys():
-        pseudo_data.append(test_set[key].sample(
+        temp = (test_set[key].sample(
             n=bkg_norm[key], replace=True, random_state=seed
         ))
+        print(f" for set {key} lenth = {len(temp)}" )
+        pseudo_data.append(temp)
+              
 
     pseudo_data = pd.concat(pseudo_data)
 

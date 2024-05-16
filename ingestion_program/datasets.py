@@ -120,12 +120,18 @@ class Data:
         print("[*] Test data loaded successfully")
 
     def generate_psuedo_exp_data(
-        self, set_mu, w_scale, bkg_scale, tes, jes, soft_met, seed
+        self,
+        set_mu=1,
+        tes=1.0,
+        jes=1.0,
+        soft_met=1.0,
+        w_scale=None,
+        bkg_scale=None,
+        seed=42,
     ):
         from systematics import get_bootstraped_dataset, get_systematics_dataset
 
         # get bootstrapped dataset from the original test set
-
         pesudo_exp_data = get_bootstraped_dataset(
             self.__test_set,
             mu=set_mu,

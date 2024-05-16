@@ -25,6 +25,13 @@ class Dataset_visualise:
         print(f"[*] --- Dataset name : {self.name}")
         print(f"[*] --- Number of events : {self.dfall.shape[0]}")
         print(f"[*] --- Number of features : {self.dfall.shape[1]}")
+        
+        detailed_label = np.array(self.detailed_label)
+
+        for key in self.keys:
+            weight_keys =  self.weights[detailed_label == key]
+            print("  ", key ," ",weight_keys.sum())
+            
         print(
             f"[*] --- Number of signal events : {self.dfall[self.target==1].shape[0]}"
         )

@@ -67,13 +67,13 @@ parser.add_argument(
     "--num-pseudo-experiments",
     type=int,
     help="Number of pseudo experiments",
-    default=1,
+    default=2,
 )
 parser.add_argument(
     "--num-of-sets",
     type=int,
     help="Number of sets",
-    default=10,
+    default=5,
 )
 
 
