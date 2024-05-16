@@ -64,7 +64,6 @@ __author__ = "David Rousseau, and Victor Estrade "
 import copy
 import pandas as pd
 import numpy as np
-from config import LHC_NUMBERS
 from derived_quantities import DER_data
 
 
@@ -574,6 +573,14 @@ def systematics(
 
     return data_syst_set
 
+
+LHC_NUMBERS = {
+    "ztautau": 7306660,
+    "wjets": 3812700,
+    "diboson": 2398564,
+    "ttbar": 616017,
+    "htautau": 285
+}
 
 def get_bootstraped_dataset(
     test_set,

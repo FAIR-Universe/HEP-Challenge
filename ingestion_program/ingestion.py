@@ -7,6 +7,7 @@ from datetime import datetime as dt
 import json
 from itertools import product
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -53,22 +54,18 @@ class Ingestion:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
+    def load_train_set(self):   
+         self.data.load_train_set()
+         return self.data.get_train_set()
 
-    def load_train_set(self):
-        print("[*] Loading Train data")
-        self.data.load_train_set()
-        self.train_set = self.data.get_train_set()
-        
-    def load_test_set(self):
-        print("[*] Loading Test data")
-        self.data.load_test_set()
-
-    def init_submission(self,Model):
+    def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
         from systematics import systematics
-        self.model = Model(get_train_set=self.data.get_test_set(), systematics=systematics)
+
+        self.model = Model(
+            get_train_set=self.load_train_set(), systematics=systematics
+        )
         self.data.delete_train_set()
-        
 
     def fit_submission(self):
         print("[*] Calling fit method of submitted model")
@@ -76,7 +73,7 @@ class Ingestion:
 
     def predict_submission(self, test_settings):
         print("[*] Calling predict method of submitted model")
-        
+
         dict_systematics = test_settings["systematics"]
         num_pseudo_experiments = test_settings["num_pseudo_experiments"]
         num_of_sets = test_settings["num_of_sets"]
@@ -89,8 +86,8 @@ class Ingestion:
         # create a product of set and test set indices all combinations of tuples
         all_combinations = list(product(set_indices, test_set_indices))
         # randomly shuffle all combinations of indices
-        np.random.shuffle(all_combinations)     
-        
+        np.random.shuffle(all_combinations)
+
         self.results_dict = {}
         for set_index, test_set_index in all_combinations:
             # random tes value (one per test set)
@@ -122,21 +119,8 @@ class Ingestion:
             # get mu value of set from test settings
             set_mu = test_settings["ground_truth_mus"][set_index]
 
-            from systematics import get_bootstraped_dataset, get_systematics_dataset
-
-            # get bootstrapped dataset from the original test set
-            pesudo_exp_data = get_bootstraped_dataset(
-                self.data.get_test_set(),
-                mu=set_mu,
-                w_scale=w_scale,
-                bkg_scale=bkg_scale,
-                seed=seed,
-            )
-            test_set = get_systematics_dataset(
-                pesudo_exp_data,
-                tes=tes,
-                jes=jes,
-                soft_met=soft_met,
+            test_set = self.data.generate_psuedo_exp_data(
+                set_mu, w_scale, bkg_scale, tes, jes, soft_met, seed
             )
 
             predicted_dict = self.model.predict(test_set)
@@ -150,7 +134,7 @@ class Ingestion:
                 self.results_dict[set_index] = []
             self.results_dict[set_index].append(predicted_dict)
 
-    def save_result(self, output_dir=None):
+    def compute_result(self):
         print("[*] Saving ingestion result")
 
         # loop over sets
@@ -170,10 +154,13 @@ class Ingestion:
                 "p16": p16,
                 "p84": p84,
             }
-                        
+            self.results_dict[key] = ingestion_result_dict
+
+    def save_result(self, output_dir=None):
+        for key in self.results_dict.keys():
             result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
             with open(result_file, "w") as f:
-                f.write(json.dumps(ingestion_result_dict, indent=4))
+                f.write(json.dumps(self.results_dict[key], indent=4))
 
 
 if __name__ == "__main__":

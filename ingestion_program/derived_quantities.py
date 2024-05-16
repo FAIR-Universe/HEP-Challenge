@@ -64,7 +64,6 @@ __author__ = "David Rousseau, and Victor Estrade "
 import pandas as pd
 import numpy as np
 from numpy import sin, cos, cosh, sinh, sqrt, exp
-from config import LUMINOCITY, DICT_CROSSSECTION, LHC_NUMBERS
 
 
 def calcul_int(data):

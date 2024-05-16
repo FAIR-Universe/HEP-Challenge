@@ -173,39 +173,35 @@ class Dataset_visualise:
         plt.show()
 
 
-def pair_plots_syst(df, df_syst, sample_size=10, columns=None):
-    if columns == None:
-        columns = df.columns
-    else:
-        columns = columns
-    df_sample = df[columns].copy()
-    df_sample_syst = df_syst[columns].copy()
+    def pair_plots_syst(self, df_syst, sample_size=10):
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
 
-    df_sample = df_sample.sample(n=sample_size)
-    df_sample["syst"] = False
+        df_sample = df_sample.sample(n=sample_size)
+        df_sample["syst"] = False
 
-    df_sample_syst = df_sample_syst.sample(n=sample_size)
-    df_sample_syst["syst"] = True
+        df_sample_syst = df_sample_syst.sample(n=sample_size)
+        df_sample_syst["syst"] = True
 
-    frames = [df_sample, df_sample_syst]
-    del df_sample
-    df_sample = pd.concat(frames)
+        frames = [df_sample, df_sample_syst]
+        del df_sample
+        df_sample = pd.concat(frames)
 
-    sns.set_theme(rc={"figure.figsize": (16, 14)}, style="whitegrid")
+        sns.set_theme(rc={"figure.figsize": (16, 14)}, style="whitegrid")
 
-    ax = sns.PairGrid(df_sample, hue="syst")
-    ax.map_upper(sns.scatterplot, alpha=0.5, size=0.3)
-    ax.map_lower(sns.kdeplot, fill=True, levels=5, alpha=0.5)  # Change alpha value here
-    ax.map_diag(
-        sns.histplot,
-        alpha=0.3,
-        bins=25,
-    )  # Change alpha value here
-    ax.add_legend(title="Legend", labels=["syst", "no_syst"], fontsize=12)
+        ax = sns.PairGrid(df_sample, hue="syst")
+        ax.map_upper(sns.scatterplot, alpha=0.5, size=0.3)
+        ax.map_lower(sns.kdeplot, fill=True, levels=5, alpha=0.5)  # Change alpha value here
+        ax.map_diag(
+            sns.histplot,
+            alpha=0.3,
+            bins=25,
+        )  # Change alpha value here
+        ax.add_legend(title="Legend", labels=["syst", "no_syst"], fontsize=12)
 
-    ax.figure.suptitle("Pair plots of features between syst and no_syst")
-    plt.show()
-    plt.close()
+        ax.figure.suptitle("Pair plots of features between syst and no_syst")
+        plt.show()
+        plt.close()
 
 
 def Z_curve(score, labels, weights):  ## work in progress
