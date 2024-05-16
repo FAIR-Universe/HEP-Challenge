@@ -54,17 +54,15 @@ class Ingestion:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
-    def load_train_set(self):   
-         self.data.load_train_set()
-         return self.data.get_train_set()
+    def load_train_set(self):
+        self.data.load_train_set()
+        return self.data.get_train_set()
 
     def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
         from systematics import systematics
 
-        self.model = Model(
-            get_train_set=self.load_train_set(), systematics=systematics
-        )
+        self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
         self.data.delete_train_set()
 
     def fit_submission(self):
@@ -120,7 +118,13 @@ class Ingestion:
             set_mu = test_settings["ground_truth_mus"][set_index]
 
             test_set = self.data.generate_psuedo_exp_data(
-                set_mu, w_scale, bkg_scale, tes, jes, soft_met, seed
+                set_mu=set_mu,
+                tes=tes,
+                jes=jes,
+                soft_met=soft_met,
+                w_scale=w_scale,
+                bkg_scale=bkg_scale,
+                seed=42,
             )
 
             predicted_dict = self.model.predict(test_set)
