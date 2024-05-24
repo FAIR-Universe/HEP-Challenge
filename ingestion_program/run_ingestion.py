@@ -1,10 +1,9 @@
 import sys
 
 sys.path.append("..")
-from ingestion import Ingestion
+from ingestion_parallel import Ingestion
 
 from datasets import Data
-from config import *
 import argparse
 import pathlib
 import os

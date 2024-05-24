@@ -150,6 +150,9 @@ class Data:
 
     def get_train_set(self):
         return self.__train_set
+    
+    def get_test_set(self):
+        return self.__test_set
 
     def delete_train_set(self):
         del self.__train_set

@@ -17,20 +17,6 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
-# Load config
-INPUT_DIR = None
-
-from config import (
-    NUM_SETS,
-    NUM_PSEUDO_EXPERIMENTS,
-    USE_SYSTEAMTICS,
-    DICT_SYSTEMATICS,
-    USE_RANDOM_MUS,
-    CODABENCH,
-    INPUT_DIR,
-    CSV,
-    PARQUET,
-)
 
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
@@ -75,60 +61,52 @@ _model = None
 # to avoid pickling the instance and all its associated data.
 def _process_combination(arrays, test_settings, combination):
     print("[*] Processing combination")
-
+    dict_systematics = test_settings["systematics"]
+    num_pseudo_experiments = test_settings["num_pseudo_experiments"]
+    
     try:
         # Setup shared memory for the test set
         with SharedTestSet(arrays=arrays) as test_set:
             set_index, test_set_index = combination
 
             # random tes value (one per test set)
-            if USE_SYSTEAMTICS:
-                # random tes value (one per test set)
-                if DICT_SYSTEMATICS["tes"]:
-                    tes = np.random.uniform(0.9, 1.1)
-                else:
-                    tes = 1.0
-                if DICT_SYSTEMATICS["jes"]:
-                    jes = np.random.uniform(0.9, 1.1)
-                else:
-                    jes = 1.0
-                if DICT_SYSTEMATICS["soft_met"]:
-                    soft_met = np.random.uniform(1.0, 5)
-                else:
-                    soft_met = 1.0
-
-                if DICT_SYSTEMATICS["w_scale"]:
-                    w_scale = np.random.uniform(0.5, 2)
-                else:
-                    w_scale = None
-
-                if DICT_SYSTEMATICS["bkg_scale"]:
-                    bkg_scale = np.random.uniform(0.5, 2)
-                else:
-                    bkg_scale = None
-
+            # random tes value (one per test set)
+            if dict_systematics["tes"]:
+                tes = np.random.uniform(0.9, 1.1)
             else:
                 tes = 1.0
+            if dict_systematics["jes"]:
+                jes = np.random.uniform(0.9, 1.1)
+            else:
                 jes = 1.0
+            if dict_systematics["soft_met"]:
+                soft_met = np.random.uniform(1.0, 5)
+            else:
                 soft_met = 1.0
-                w_scale = (None,)
-                bkg_scale = (None,)
 
-            seed = (set_index * NUM_PSEUDO_EXPERIMENTS) + test_set_index
+            if dict_systematics["w_scale"]:
+                w_scale = np.random.uniform(0.5, 2)
+            else:
+                w_scale = None
+
+            if dict_systematics["bkg_scale"]:
+                bkg_scale = np.random.uniform(0.5, 2)
+            else:
+                bkg_scale = None
+
+            seed = (set_index * num_pseudo_experiments) + test_set_index
             # get mu value of set from test settings
             set_mu = test_settings["ground_truth_mus"][set_index]
 
-            from systematics import get_bootstraped_dataset, get_systematics_dataset
-
             # get bootstrapped dataset from the original test set
-            pesudo_exp_data = get_bootstraped_dataset(
-                test_set, mu=set_mu, w_scale=w_scale, bkg_scale=bkg_scale, seed=seed
-            )
-            test_set = get_systematics_dataset(
-                pesudo_exp_data,
+            test_set = test_set.data.generate_psuedo_exp_data(
+                set_mu=set_mu,
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
+                w_scale=w_scale,
+                bkg_scale=bkg_scale,
+                seed=seed,
             )
             # print(f"[*] Predicting process with seed {seed}")
             predicted_dict = {}
@@ -215,6 +193,30 @@ class SharedTestSet:
 
     def keys(self):
         return self._keys
+    
+    def generate_psuedo_exp_data(self, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, w_scale=None, bkg_scale=None, seed=42):
+        
+        from systematics import get_bootstraped_dataset, get_systematics_dataset
+
+        # get bootstrapped dataset from the original test set
+        pesudo_exp_data = get_bootstraped_dataset(
+            self._data,
+            mu=set_mu,
+            w_scale=w_scale,
+            bkg_scale=bkg_scale,
+            seed=seed,
+        )
+        test_set = get_systematics_dataset(
+            pesudo_exp_data,
+            tes=tes,
+            jes=jes,
+            soft_met=soft_met,
+        )
+        
+        return test_set
+
+    # def __getitem__(self, key):
+    #     return self._data[key]
 
     def __getitem__(self, key=None):
         out_data = pd.DataFrame()
@@ -263,12 +265,13 @@ class SharedTestSet:
 # Ingestion Class
 # ------------------------------------------
 class Ingestion:
-    def __init__(self):
+    def __init__(self, data=None):
+
         # Initialize class variables
         self.start_time = None
         self.end_time = None
         self.model = None
-        self.train_set = None
+        self.data = data
 
     def start_timer(self):
         self.start_time = dt.now()
@@ -300,168 +303,38 @@ class Ingestion:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
-    def set_directories(self):
-        # set default directories
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-
-        root_dir_name = os.path.dirname(module_dir)
-
-        input_data_dir_name = "input_data"
-        output_dir_name = "sample_result_submission"
-        program_dir_name = "ingestion_program"
-        submission_dir_name = "sample_code_submission"
-
-        if CODABENCH:
-            root_dir_name = "/app"
-            input_data_dir_name = "input_data"
-            output_dir_name = "output"
-            program_dir_name = "program"
-            submission_dir_name = "ingested_program"
-
-        # Input data directory to read training and test data from
-        if INPUT_DIR is not None:
-            self.input_dir = INPUT_DIR
-        else:
-            self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
-
-        # Output data directory to write predictions to
-        self.output_dir = os.path.join(root_dir_name, output_dir_name)
-        # Program directory
-        self.program_dir = os.path.join(root_dir_name, program_dir_name)
-        # Directory to read submitted submissions from
-        self.submission_dir = os.path.join(root_dir_name, submission_dir_name)
-
-        # In case submission dir and output dir are provided as args
-        if len(sys.argv) > 1:
-            self.submission_dir = sys.argv[1]
-        if len(sys.argv) > 2:
-            self.output_dir = sys.argv[2]
-
-        # Add to path
-        sys.path.append(self.input_dir)
-        sys.path.append(self.output_dir)
-        sys.path.append(self.program_dir)
-        sys.path.append(self.submission_dir)
-
     def load_train_set(self):
-        print("[*] Loading Train data")
-        train_labels_file = os.path.join(
-            self.input_dir, "train", "labels", "data.labels"
-        )
-        train_settings_file = os.path.join(
-            self.input_dir, "train", "settings", "data.json"
-        )
-        train_weights_file = os.path.join(
-            self.input_dir, "train", "weights", "data.weights"
-        )
-        train_detailed_labels_file = os.path.join(
-            self.input_dir, "train", "detailed_labels", "data.detailed_labels"
-        )
-
-        # read train labels
-        with open(train_labels_file, "r") as f:
-            train_labels = np.array(f.read().splitlines(), dtype=float)
-
-        # read train settings
-        with open(train_settings_file) as f:
-            train_settings = json.load(f)
-
-        # read train weights
-        with open(train_weights_file) as f:
-            train_weights = np.array(f.read().splitlines(), dtype=float)
-
-        # read train process flags
-        with open(train_detailed_labels_file) as f:
-            train_detailed_labels = f.read().splitlines()
-
-        if PARQUET:
-            train_data_file = os.path.join(
-                self.input_dir, "train", "data", "data.parquet"
-            )
-            self.train_set = {
-                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-                "labels": train_labels,
-                "settings": train_settings,
-                "weights": train_weights,
-                "detailed_labels": train_detailed_labels,
-            }
-
-        if CSV:
-            train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
-
-            self.train_set = {
-                "data": pd.read_csv(train_data_file),
-                "labels": train_labels,
-                "settings": train_settings,
-                "weights": train_weights,
-                "detailed_labels": train_detailed_labels,
-            }
-
-        del train_labels, train_settings, train_weights, train_detailed_labels
-
-        print(self.train_set["data"].info(verbose=False, memory_usage="deep"))
-        print("[*] Train data loaded successfully")
-
+        self.data.load_train_set()
+        return self.data.get_train_set()
+    
     def load_test_set(self):
-        print("[*] Loading Test data")
+        self.data.load_test_set()
+        self.test_set = self.data.get_test_set()
 
-        test_data_dir = os.path.join(self.input_dir, "test", "data")
-        test_settings_file = os.path.join(test_data_dir, "settings", "data.json")
-
-        # read test settings
-        if USE_RANDOM_MUS:
-            self.test_settings = {
-                "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
-            }
-            random_settings_file = os.path.join(self.output_dir, "random_mu.json")
-            with open(random_settings_file, "w") as f:
-                json.dump(self.test_settings, f)
-        else:
-            with open(test_settings_file) as f:
-                self.test_settings = json.load(f)
-
-        self.test_set = {
-            "ztautau": pd.DataFrame(),
-            "wjets": pd.DataFrame(),
-            "diboson": pd.DataFrame(),
-            "ttbar": pd.DataFrame(),
-            "htautau": pd.DataFrame(),
-        }
-
-        for key in LHC_NUMBERS.keys():
-            self.test_set[key] = self.test_set[key].round(3)
-            if CSV:
-                test_data_file = os.path.join(test_data_dir, f"{key}_data.csv")
-                self.test_set[key] = pd.read_csv(test_data_file)
-
-            if PARQUET:
-                test_data_file = os.path.join(test_data_dir, f"{key}_data.parquet")
-                self.test_set[key] = pd.read_parquet(test_data_file, engine="pyarrow")
-
-        print("[*] Test data loaded successfully")
-
-    def init_submission(self):
+    def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
-        from model import Model
         from systematics import (
             systematics,
         )
 
-        self.model = Model(train_set=self.train_set, systematics=systematics)
-
-        del self.train_set
+        self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
+        self.data.delete_train_set()
 
     def fit_submission(self):
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
-    def predict_submission(self):
+    def predict_submission(self, test_settings):
         print("[*] Calling predict method of submitted model")
+        self.load_test_set()
+
+        num_pseudo_experiments = test_settings["num_pseudo_experiments"]
+        num_of_sets = test_settings["num_of_sets"]
 
         # get set indices
-        set_indices = np.arange(0, NUM_SETS)
+        set_indices = np.arange(0, num_of_sets)
         # get test set indices per set
-        test_set_indices = np.arange(0, NUM_PSEUDO_EXPERIMENTS)
+        test_set_indices = np.arange(0, num_pseudo_experiments)
 
         # create a product of set and test set indices all combinations of tuples
         all_combinations = list(product(set_indices, test_set_indices))
@@ -520,12 +393,12 @@ class Ingestion:
 
         print("[*] All processes done")
 
-    def save_result(self):
+    def compute_result(self):
         print("[*] Saving ingestion result")
 
         # loop over sets
-        for i in range(0, NUM_SETS):
-            set_result = self.results_dict[i]
+        for key in self.results_dict.keys():
+            set_result = self.results_dict[key]
             set_result.sort(key=lambda x: x["test_set_index"])
             mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
             for test_set_dict in set_result:
@@ -540,10 +413,13 @@ class Ingestion:
                 "p16": p16,
                 "p84": p84,
             }
-            result_file = os.path.join(self.output_dir, "result_" + str(i) + ".json")
-            with open(result_file, "w") as f:
-                f.write(json.dumps(ingestion_result_dict, indent=4))
+            self.results_dict[key] = ingestion_result_dict
 
+    def save_result(self, output_dir=None):
+        for key in self.results_dict.keys():
+            result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
+            with open(result_file, "w") as f:
+                f.write(json.dumps(self.results_dict[key], indent=4))
 
 if __name__ == "__main__":
     print("############################################")
