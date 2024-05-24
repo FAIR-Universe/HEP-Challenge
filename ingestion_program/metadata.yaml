@@ -6,4 +6,4 @@ command: python3 run_ingestion.py \
 --use-w-scale \
 --use-bkg-scale \
 --num-sets 1 \
---num-pseudo 100 \
+--num-pseudo 100

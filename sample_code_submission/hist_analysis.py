@@ -58,7 +58,7 @@ def compute_result(N_obs,asimov_dict=None,sigma_mu_hat=0.0,SYST=False,PLOT=False
         result = Minuit(NLL, mu=1.0, alpha=1.0)
 
         result.errordef = Minuit.LIKELIHOOD
-        plt.show()
+        # plt.show()
         result.migrad()
         alpha = result.values['alpha']
 
@@ -74,7 +74,7 @@ def compute_result(N_obs,asimov_dict=None,sigma_mu_hat=0.0,SYST=False,PLOT=False
         _, ax = plt.subplots()
         result.draw_mnprofile("mu")
         hep.atlas.text(loc=1, text='Internal')
-        plt.show()
+        # plt.show()
         
         result.draw_mnmatrix(cl=[1,2])
 
@@ -118,7 +118,7 @@ def plot_score(test_hist,hist_s,hist_b,mu_hat,bins,threshold=0,save_path=f"XGB_s
     ax.set_yscale('log')
     plot_file = os.path.join(save_path)
     # plt.savefig(plot_file)
-    plt.show()
+    # plt.show()
     plt.close()
 
 

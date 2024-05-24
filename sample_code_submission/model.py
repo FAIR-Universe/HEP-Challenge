@@ -453,7 +453,7 @@ class Model():
             save_path = os.path.join(submissions_dir, "plots/")
             plot_file = os.path.join(save_path, f"NN_s_{i}.png")
             plt.savefig(plot_file)
-            plt.show()
+            # plt.show()
 
             _, ax = plt.subplots()
 
@@ -467,7 +467,7 @@ class Model():
             save_path = os.path.join(submissions_dir, "plots/")
             plot_file = os.path.join(save_path, f"NN_b_{i}.png")
             plt.savefig(plot_file)
-            plt.show()
+            # plt.show()
 
 
 

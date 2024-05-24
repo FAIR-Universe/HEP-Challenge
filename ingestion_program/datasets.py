@@ -11,22 +11,18 @@ test_set_settings = None
 
 class Data:
 
-    def __init__(self, input_dir, data_format="csv"):
+    def __init__(self, input_dir):
 
         self.__train_set = None
         self.__test_set = None
-        self.data_format = data_format
         self.input_dir = input_dir
 
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        if self.data_format == "csv":
-            train_data_file = os.path.join(self.input_dir, "train", "data", "data.csv")
-        if self.data_format == "parquet":
-            train_data_file = os.path.join(
-                self.input_dir, "train", "data", "data.parquet"
-            )
+        train_data_file = os.path.join(
+            self.input_dir, "train", "data", "data.parquet"
+        )
         train_labels_file = os.path.join(
             self.input_dir, "train", "labels", "data.labels"
         )
@@ -56,26 +52,15 @@ class Data:
         with open(train_detailed_labels_file) as f:
             train_detailed_labels = f.read().splitlines()
 
-        if self.data_format == "parquet":
-            self.__train_set = frozendict(
-                {
-                    "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-                    "labels": train_labels,
-                    "settings": train_settings,
-                    "weights": train_weights,
-                    "detailed_labels": train_detailed_labels,
-                }
-            )
-        else:
-            self.__train_set = frozendict(
-                {
-                    "data": pd.read_csv(train_data_file),
-                    "labels": train_labels,
-                    "settings": train_settings,
-                    "weights": train_weights,
-                    "detailed_labels": train_detailed_labels,
-                }
-            )
+        self.__train_set = frozendict(
+            {
+                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
+                "labels": train_labels,
+                "settings": train_settings,
+                "weights": train_weights,
+                "detailed_labels": train_detailed_labels,
+            }
+        )
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
@@ -107,13 +92,9 @@ class Data:
         }
 
         for key in test_set.keys():
-            if self.data_format == "csv":
-                test_data_path = os.path.join(test_data_dir, f"{key}_data.csv")
-                test_set[key] = pd.read_csv(test_data_path)
 
-            elif self.data_format == "parquet":
-                test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
-                test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+            test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
+            test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
 
         self.__test_set = test_set
 
@@ -173,23 +154,22 @@ parent_path = os.path.dirname(current_path)
 
 def Neurips2024_public_dataset():
 
-    file_read_loc = os.path.join(parent_path, "public_data")
     file = "public_data.zip"
-    if file not in os.listdir(file_read_loc):
+    if file not in os.listdir(parent_path):
         subprocess.run(
             [
                 "wget",
                 "-O",
-                os.path.join(file_read_loc, "public_data.zip"),
+                os.path.join(parent_path, "public_data.zip"),
                 "https://codalab.coresearch.club/my/datasets/download/0e2d7e8e-1b8b-4b3f-8b8b-3b3c5d4e4e3d",
             ]
         )
 
-    if "input_data" not in os.listdir(file_read_loc):
+    if "input_data" not in os.listdir(os.path.join(parent_path, "public_data")):
         subprocess.run(
-            ["unzip", os.path.join(file_read_loc, file), "-d", file_read_loc]
+            ["unzip", os.path.join(parent_path, file), "-d", parent_path]
         )
 
     return Data(
-        os.path.join(parent_path, "public_data", "input_data"), data_format="parquet"
+        os.path.join(parent_path, "public_data", "input_data")
     )
