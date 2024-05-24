@@ -52,14 +52,14 @@ class Scoring:
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
-    def load_ingestion_duration(self,ingestion_duration_file):
+    def load_ingestion_duration(self, ingestion_duration_file):
         print("[*] Reading ingestion duration")
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
 
         print("[✔]")
 
-    def load_ingestion_results(self, prediction_dir = "./"):
+    def load_ingestion_results(self, prediction_dir="./"):
         print("[*] Reading predictions")
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
@@ -245,39 +245,3 @@ class Scoring:
         fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
 
         self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
-
-
-if __name__ == "__main__":
-    print("############################################")
-    print("### Scoring Program")
-    print("############################################\n")
-
-
-    # Init scoring
-    scoring = Scoring()
-
-    # Start timer
-    scoring.start_timer()
-
-
-    # Load ingestion duration
-    scoring.load_ingestion_duration()
-
-    # Load ingestions results
-    scoring.load_ingestion_results()
-
-    # Compute Scores
-    scoring.compute_scores()
-
-    # Write scores
-    scoring.write_scores()
-
-    # Stop timer
-    scoring.stop_timer()
-
-    # Show duration
-    scoring.show_duration()
-
-    print("\n----------------------------------------------")
-    print("[✔] Scoring Program executed successfully!")
-    print("----------------------------------------------\n\n")

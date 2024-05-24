@@ -1,13 +1,14 @@
 import sys
 
 sys.path.append("..")
-from ingestion_parallel import Ingestion
-
+# from ingestion_parallel import Ingestion
+from ingestion import Ingestion
 from datasets import Data
 import argparse
 import pathlib
 import os
 import numpy as np
+import json
 
 module_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir_name = os.path.dirname(module_dir)
@@ -20,7 +21,7 @@ parser.add_argument(
     "-i",
     type=pathlib.Path,
     help="Input file location",
-    default=os.path.join(root_dir_name, "sample_data"),
+    default=os.path.join(root_dir_name, "input_data"),
 )
 parser.add_argument(
     "--output",
@@ -38,7 +39,7 @@ parser.add_argument(
     "--public-dataset",
     help="True when using public dataset",
     action="store_true",
-    default=True,
+    default=False,
 )
 parser.add_argument(
     "--codabench",
