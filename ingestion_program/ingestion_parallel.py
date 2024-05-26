@@ -380,7 +380,7 @@ class Ingestion:
                 func = partial(
                     _process_combination,
                     test_set_sm_arrays,
-                    self.test_settings,
+                    test_settings,
                 )
                 futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
 
