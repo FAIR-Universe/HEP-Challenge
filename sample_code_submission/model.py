@@ -79,9 +79,9 @@ class Model():
         # Intialize class variables
         self.theta_candidates = np.linspace(0.5, 1.0, 100)
         self.mu_scan = np.linspace(0, 3.92, 100)
-        self.threshold = 0.8
-        self.bins = 25
-        self.bin_nums = 25
+        self.threshold = 0.9
+        self.bins = 30
+        self.bin_nums = 30
         self.force_correction = 0
         self.plot_count = 1
         self.variable = "DER_deltar_lep_had"
