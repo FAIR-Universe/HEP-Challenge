@@ -56,7 +56,7 @@ parser.add_argument(
     type=dict,
     help="Systematics to be used",
     default={  # Systematics to use
-        "tes": True,
+        "tes": False,
         "jes": False,
         "soft_met": False,
         "w_scale": False,

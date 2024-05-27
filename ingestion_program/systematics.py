@@ -575,11 +575,11 @@ def systematics(
 
 
 LHC_NUMBERS = {
-    "ztautau": 7306660,
-    "wjets": 3812700,
-    "diboson": 2398564,
-    "ttbar": 616017,
-    "htautau": 285
+    "ztautau": 823327,
+    "wjets": 710190,
+    "diboson": 40590,
+    "ttbar": 158761,
+    "htautau": 3639,
 }
 
 def get_bootstraped_dataset(
@@ -590,7 +590,7 @@ def get_bootstraped_dataset(
     bkg_scale=1.0,
 ):
 
-    bkg_norm = LHC_NUMBERS
+    bkg_norm = LHC_NUMBERS.copy()
     if w_scale is not None:
         bkg_norm["wjets"] = int(LHC_NUMBERS["wjets"] * w_scale * bkg_scale)
 
@@ -600,6 +600,11 @@ def get_bootstraped_dataset(
         bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * bkg_scale)
 
     bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
+    
+    print(f"bkg_norm = {bkg_norm}")
+    print(f"LHC_NUMBERS = {LHC_NUMBERS}")
+    
+    
 
     pseudo_data = []
     for key in test_set.keys():
@@ -607,13 +612,14 @@ def get_bootstraped_dataset(
             n=bkg_norm[key], replace=True, random_state=seed
         ))
         print(f" for set {key} lenth = {len(temp)}" )
+        print(f" for set {key} lenth = {mu} -- {bkg_norm[key]}" )
         pseudo_data.append(temp)
               
 
     pseudo_data = pd.concat(pseudo_data)
 
     pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
-
+    
     return pseudo_data
 
 
