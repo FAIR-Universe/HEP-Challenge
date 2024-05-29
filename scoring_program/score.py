@@ -80,14 +80,11 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
-        print("[*] ",self.ingestion_results)
-        print("[*] ",test_settings["ground_truth_mus"])
 
         for i in range(len(self.ingestion_results)):
             ingestion_result = self.ingestion_results[i]
             mu = test_settings["ground_truth_mus"][i]
             
-            print(f"[*] mu_hats: {ingestion_result}")
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]
             p16s = ingestion_result["p16"]

@@ -601,9 +601,6 @@ def get_bootstraped_dataset(
 
     bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
     
-    print(f"bkg_norm = {bkg_norm}")
-    print(f"LHC_NUMBERS = {LHC_NUMBERS}")
-    
     
 
     pseudo_data = []
@@ -611,8 +608,6 @@ def get_bootstraped_dataset(
         temp = (test_set[key].sample(
             n=bkg_norm[key], replace=True, random_state=seed
         ))
-        print(f" for set {key} lenth = {len(temp)}" )
-        print(f" for set {key} lenth = {mu} -- {bkg_norm[key]}" )
         pseudo_data.append(temp)
               
 
