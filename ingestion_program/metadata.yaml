@@ -1,9 +1,12 @@
-command: python3 run_ingestion.py \
---codabench \
---use-tes \
---use-softmet \
---use-jes \
---use-w-scale \
---use-bkg-scale \
---num-sets 1 \
---num-pseudo 100
+command: python3 run_ingestion.py\
+--codabench\
+--use-random-mus\
+--systematics-tes\
+--systematics-softmet\
+--systematics-jes\
+--systematics-w-scale\
+--systematics-bkg-scale\
+--num-pseudo-experiments 100\
+--num-of-sets 1
+
+

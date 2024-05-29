@@ -99,7 +99,7 @@ def _process_combination(arrays, test_settings, combination):
             set_mu = test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = test_set.data.generate_psuedo_exp_data(
+            test_set = test_set.generate_psuedo_exp_data(
                 set_mu=set_mu,
                 tes=tes,
                 jes=jes,

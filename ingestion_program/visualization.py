@@ -13,25 +13,25 @@ class Dataset_visualise:
         self.dfall = data_set["data"]
         self.target = data_set["labels"]
         self.weights = data_set["weights"]
-        self.detailed_label = data_set["detailed_labels"]
+        self.detailed_label = np.array(data_set["detailed_labels"])
         if columns == None:
             self.columns = self.dfall.columns
         else:
             self.columns = columns
         self.name = name
         self.keys = np.unique(self.detailed_label)
+        self.weight_keys = {}
+        for key in self.keys:
+            self.weight_keys[key] = self.weights[self.detailed_label == key]
 
     def examine_dataset(self):
         print(f"[*] --- Dataset name : {self.name}")
         print(f"[*] --- Number of events : {self.dfall.shape[0]}")
         print(f"[*] --- Number of features : {self.dfall.shape[1]}")
-        
-        detailed_label = np.array(self.detailed_label)
 
         for key in self.keys:
-            weight_keys =  self.weights[detailed_label == key]
-            print("  ", key ," ",weight_keys.sum())
-            
+            print("  ", key, " ", self.weight_keys[key].sum())
+
         print(
             f"[*] --- Number of signal events : {self.dfall[self.target==1].shape[0]}"
         )
@@ -46,7 +46,6 @@ class Dataset_visualise:
         display(self.dfall.describe())
 
     def histogram_dataset(self, columns=None):
-        fig = plt.figure()
         if columns == None:
             columns = self.columns
         sns.set_theme(rc={"figure.figsize": (40, 40)}, style="whitegrid")
@@ -77,7 +76,9 @@ class Dataset_visualise:
             label="S",
         )
 
-        plt.legend(loc="best")
+        for i in range(len(ax)):
+            ax[i].set_title(columns[i])
+            ax[i].legend(["Background", "Signal"])
         plt.title("Histograms of features in" + self.name)
         plt.show()
 
@@ -133,34 +134,45 @@ class Dataset_visualise:
         plt.show()
         plt.close()
 
-    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30, detailedlabel=None):
+    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30):
         field = self.dfall[field_name]
         sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
 
         bins = 30
 
-        detailed_label = np.array(self.detailed_label)
-
         hist_s, bins = np.histogram(
-            field[detailed_label == "htautau"],
+            field[self.target == 1],
             bins=bins,
-            weights=self.weights[detailed_label == "htautau"],
+            weights=self.weights[self.target == 1],
         )
 
-        hist_b = np.zeros(len(hist_s))
+        hist_b, bins = np.histogram(
+            field[self.target == 0],
+            bins=bins,
+            weights=self.weights[self.target == 0],
+        )
+
+        hist_bkg = hist_b.copy()
+        
+        higgs = "htautau"
 
         for key in self.keys:
-            if key is not "htautau":
+            if key != higgs:
+                field_key = field[self.detailed_label == key]
+                print(key, field_key.shape)
+                print(key, self.weight_keys[key].shape)
                 hist, bins = np.histogram(
-                    field[detailed_label == key],
+                    field_key,
                     bins=bins,
-                    weights=self.weights[detailed_label == key],
+                    weights=self.weight_keys[key],
                 )
-                hist_b += hist
                 plt.stairs(hist_b, bins, fill=True, label=f"{key} bkg")
+                hist_b -= hist
+            else:
+                print(key, hist_s.shape)
 
         plt.stairs(
-            hist_s * mu_hat + hist_b,
+            hist_s * mu_hat + hist_bkg,
             bins,
             fill=False,
             color="orange",
@@ -168,7 +180,7 @@ class Dataset_visualise:
         )
 
         plt.stairs(
-            hist_s + hist_b,
+            hist_s + hist_bkg,
             bins,
             fill=False,
             color="red",
@@ -177,8 +189,9 @@ class Dataset_visualise:
 
         plt.legend()
         plt.title(f"Stacked histogram of {field_name} in {self.name}")
+        plt.xlabel(f"{field_name}")
+        plt.ylabel("Weighted count")
         plt.show()
-
 
     def pair_plots_syst(self, df_syst, sample_size=10):
         df_sample = self.dfall[self.columns].copy()
@@ -198,7 +211,9 @@ class Dataset_visualise:
 
         ax = sns.PairGrid(df_sample, hue="syst")
         ax.map_upper(sns.scatterplot, alpha=0.5, size=0.3)
-        ax.map_lower(sns.kdeplot, fill=True, levels=5, alpha=0.5)  # Change alpha value here
+        ax.map_lower(
+            sns.kdeplot, fill=True, levels=5, alpha=0.5
+        )  # Change alpha value here
         ax.map_diag(
             sns.histplot,
             alpha=0.3,
@@ -225,11 +240,23 @@ def Z_curve(score, labels, weights):  ## work in progress
     plt.show()
 
 
-def roc_curve_(score, labels, weights, plot_label="model", color="b", lw=2):
+def visualize_scatter(ingestion_result_dict, ground_truth_mus):
+    plt.figure(figsize=(6, 4))
+    for key in ingestion_result_dict.keys():
+        ingestion_result = ingestion_result_dict[key]
+        mu_hat = np.mean(ingestion_result["mu_hats"])
+        mu = ground_truth_mus[key]
+        plt.scatter(mu, mu_hat, c='b', marker='o')
+    
+    plt.xlabel('Ground Truth $\mu$')
+    plt.ylabel('Predicted $\mu$ (averaged for 100 test sets)')
+    plt.title('Ground Truth vs. Predicted $\mu$ Values')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
+
+def roc_curve_wrapper(score, labels, weights, plot_label="model", color="b", lw=2):
 
     auc = roc_auc_score(y_true=labels, y_score=score, sample_weight=weights)
-
-    plt.figure()
 
     plt.figure(figsize=(8, 7))
 
