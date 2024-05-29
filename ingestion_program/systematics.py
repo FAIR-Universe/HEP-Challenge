@@ -582,6 +582,7 @@ LHC_NUMBERS = {
     "htautau": 3639,
 }
 
+
 def get_bootstraped_dataset(
     test_set,
     mu=1.0,
@@ -600,26 +601,17 @@ def get_bootstraped_dataset(
         bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * bkg_scale)
 
     bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
-    
-    print(f"bkg_norm = {bkg_norm}")
-    print(f"LHC_NUMBERS = {LHC_NUMBERS}")
-    
-    
 
     pseudo_data = []
     for key in test_set.keys():
-        temp = (test_set[key].sample(
-            n=bkg_norm[key], replace=True, random_state=seed
-        ))
-        print(f" for set {key} lenth = {len(temp)}" )
-        print(f" for set {key} lenth = {mu} -- {bkg_norm[key]}" )
+        temp = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+
         pseudo_data.append(temp)
-              
 
     pseudo_data = pd.concat(pseudo_data)
 
     pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
-    
+
     return pseudo_data
 
 
@@ -637,6 +629,5 @@ def get_systematics_dataset(
         jes=jes,
         soft_met=soft_met,
     )
-
 
     return data_syst
