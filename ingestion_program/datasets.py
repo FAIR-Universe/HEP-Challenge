@@ -21,9 +21,7 @@ class Data:
     def load_train_set(self):
         print("[*] Loading Train data")
 
-        train_data_file = os.path.join(
-            self.input_dir, "train", "data", "data.parquet"
-        )
+        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
         train_labels_file = os.path.join(
             self.input_dir, "train", "labels", "data.labels"
         )
@@ -132,7 +130,7 @@ class Data:
 
     def get_train_set(self):
         return self.__train_set
-    
+
     def get_test_set(self):
         return self.__test_set
 
@@ -162,7 +160,7 @@ def Neurips2024_public_dataset():
     file = "public_data.zip"
     if file not in os.listdir(file_read_loc):
         wget.download(
-            "https://www.codabench.org/datasets/download/df38ed11-c909-41a7-842e-a1f01c925851	/",
+            "https://www.codabench.org/datasets/download/2af33dff-7283-4256-8eda-2190a477c9ca/",
             out=os.path.join(file_read_loc, "public_data.zip"),
         )
 

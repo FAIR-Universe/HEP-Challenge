@@ -582,6 +582,7 @@ LHC_NUMBERS = {
     "htautau": 3639,
 }
 
+
 def get_bootstraped_dataset(
     test_set,
     mu=1.0,
@@ -608,13 +609,14 @@ def get_bootstraped_dataset(
         temp = (test_set[key].sample(
             n=bkg_norm[key], replace=True, random_state=seed
         ))
+        temp = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+
         pseudo_data.append(temp)
-              
 
     pseudo_data = pd.concat(pseudo_data)
 
     pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
-    
+
     return pseudo_data
 
 
@@ -632,6 +634,5 @@ def get_systematics_dataset(
         jes=jes,
         soft_met=soft_met,
     )
-
 
     return data_syst
