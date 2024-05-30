@@ -5,6 +5,7 @@ import os
 import subprocess
 import requests
 from pathlib import Path
+from zipfile import ZipFile
 
 
 test_set_settings = None
@@ -166,9 +167,8 @@ def Neurips2024_public_dataset():
 
     input_data = file_read_loc / "input_data"
     if not input_data.exists():
-        subprocess.run(
-            ["unzip", os.path.join(file_read_loc, file), "-d", file_read_loc]
-        )
+        with ZipFile(file) as zip:
+            zip.extractall(path=file_read_loc)
 
     return Data(
         str(current_path / "public_data" / "input_data")
