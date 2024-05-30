@@ -54,6 +54,10 @@ class Ingestion:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
+    def load_train_set(self):
+        self.data.load_train_set()
+        return self.data.get_train_set()
+
     def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
         from systematics import systematics
