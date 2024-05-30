@@ -7,24 +7,24 @@ For this competition participants models will be tested on ***4*** sets of ***50
 
 ## Quantiles Score
 
-The participants are requested to provide a method that, for a given test data set, returns an interval [$\mu_{16}, \mu_{84}$]. This interval should describe the central 68% quantile of the likelihood function of the signal strength $\mu$. In other words, the interval should contain the true $\mu$ value of a given data set 68% of the time. 
+The participants are requested to provide a method that, for a given test data set, returns an interval [$\hat \mu_{16}, \hat \mu_{84}$]. This interval should describe the central 68% quantile of the likelihood function of the signal strength $\mu$. In other words, the interval should contain the true $\mu$ value of a given data set 68% of the time. 
 
 ### Constructing the Interval
 
-Not every uncertainty quantification method is able to return a full likelihood function. Some methods, for example, return a predicted central value $\mu$ and an uncertainty on that value $\Delta \mu$ instead. However, constructing the interval does not require the full likelihood function. For ease of use, here are a few suggestions for constructing the interval for various methods:
+Not every uncertainty quantification method is able to return a full likelihood function. Some methods, for example, return a predicted central value $\hat \mu$ and an uncertainty on that value $\Delta \hat \mu$ instead. However, constructing the interval does not require the full likelihood function. For ease of use, here are a few suggestions for constructing the interval for various methods:
 
 **Methods that return a likelihood function**: Calculate the central Interval containing 68% of the total probability mass using numerical integration
 
-**Methods that a central value and Gaussian uncertainty**: Define $\mu_{16}$ = $\mu$ - $\Delta \mu$ and $\mu_{84}$ =  $\mu$ + $\Delta \mu$. If the underlying assumption of a symmetrical uncertainty made by the Gaussian uncertainty is given, this should contain 68% of the probability, since the 1 standard deviation region of a Gaussian distribution contains 68% of the probability mass.
+**Methods that a central value and Gaussian uncertainty**: Define $\hat \mu_{16} = \hat \mu - \Delta \hat \mu$ and $\hat \mu_{84} = \hat \mu + \Delta \hat \mu$. If the underlying assumption of a symmetrical uncertainty made by the Gaussian uncertainty is given, this should contain 68% of the probability, since the 1 standard deviation region of a Gaussian distribution contains 68% of the probability mass.
 
 
 ## Scoring
 
 The score consist of two parts, the interval width and the coverage:
 
-**Interval width**: we define the width as the average size of the interval over $N$ test sets $w = \frac{1}{N} \sum_{i=0}^{N} |\mu_{84,i} - \mu_{16,i}|$. 
+**Interval width**: we define the width as the average size of the interval over $N$ test sets $w = \frac{1}{N} \sum_{i=0}^{N} \left| \hat \mu_{84,i} - \hat \mu_{16,i} \right|$. 
 
-**Coverage**: we define the coverage as the fraction of times the true $\mu$ is contained withing the respective interval. $c = \frac{1}{N} \sum_{i=0}^{N} 1~\textrm{if} (\mu_{true,i} \in [\mu_{84,i} - \mu_{16,i}])$. 
+**Coverage**: we define the coverage as the fraction of times the true $\mu$ is contained withing the respective interval. $c = \frac{1}{N} \sum_{i=0}^{N} 1~\textrm{if} (\mu_{true,i} \in [\hat \mu_{84,i} - \hat \mu_{16,i}])$. 
 
 **Coverage function**: we define the coverage scoring function as 
 
