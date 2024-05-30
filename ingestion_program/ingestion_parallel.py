@@ -56,6 +56,27 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
 
 _model = None
 
+def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, w_scale=None, bkg_scale=None, seed=42):
+
+        from systematics import get_bootstraped_dataset, get_systematics_dataset
+
+        # get bootstrapped dataset from the original test set
+        pesudo_exp_data = get_bootstraped_dataset(
+            data,
+            mu=set_mu,
+            w_scale=w_scale,
+            bkg_scale=bkg_scale,
+            seed=seed,
+        )
+        test_set = get_systematics_dataset(
+            pesudo_exp_data,
+            tes=tes,
+            jes=jes,
+            soft_met=soft_met,
+        )
+
+        return test_set
+
 
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
@@ -99,7 +120,7 @@ def _process_combination(arrays, test_settings, combination):
             set_mu = test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = test_set.generate_psuedo_exp_data(
+            test_set = _generate_psuedo_exp_data(test_set,
                 set_mu=set_mu,
                 tes=tes,
                 jes=jes,
@@ -132,8 +153,6 @@ class SharedTestSet:
         self._data = {}
         self._sm = []
         self._owner = False
-        self._keys = []
-        self._columns = []
 
         if arrays is not None:
             self._load_arrays(arrays)
@@ -141,6 +160,9 @@ class SharedTestSet:
         if test_set is not None:
             self._load(test_set)
             self._owner = True
+
+    def _shared_memory_name(self, dataset_key, column):
+        return f"{dataset_key}_{column}"
 
     def _load_arrays(self, arrays):
         def _create_sm_array(name, dtype, shape):
@@ -157,7 +179,7 @@ class SharedTestSet:
                     dtype = entry["dtype"]
                     shape = entry["shape"]
 
-                    array = _create_sm_array(name, dtype, shape)
+                    array = _create_sm_array(self._shared_memory_name(key, name), dtype, shape)
                     columns[name] = array
                 self._data[key] = pd.DataFrame(columns, copy=False)
                 continue
@@ -167,65 +189,34 @@ class SharedTestSet:
 
             self._data[key] = _create_sm_array(key, dtype, shape)
 
-    def _load(self,data_set):
+    def _load(self, data_set):
         def _create_sm_array(name, dtype, shape, size):
             shm_b = shared_memory.SharedMemory(name=name, create=True, size=size)
             self._sm.append(shm_b)
 
             return np.ndarray(shape, dtype=dtype, buffer=shm_b.buf)
 
-        # data
-        for key in data_set.keys():
-            self._keys.append(key)
+        def _data_frame_to_shared_memory(dataset_key, data_frame):
             d = {}
-            data = data_set[key]
-            for column in data.columns:
-                value = data[column]
-                self._columns.append(column)
-                new_column = f"{key}_" + column
-                
+            for column in data_frame.columns:
+                value = data_frame[column]
                 size = value.nbytes
 
-                d[new_column] = _create_sm_array(new_column, value.dtype, value.shape, size)
-                d[new_column][:] = value
+                d[column] = _create_sm_array(self._shared_memory_name(dataset_key, column), value.dtype, value.shape, size)
+                d[column][:] = value
 
-            self._data[key] = pd.DataFrame(d, copy=False)
+            return pd.DataFrame(d, copy=False)
+
+        for key in data_set.keys():
+            self._data[key] = _data_frame_to_shared_memory(key, data_set[key])
+
+    def __getitem__(self, key):
+        return self._data[key]
 
     def keys(self):
-        return self._keys
-    
-    def generate_psuedo_exp_data(self, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, w_scale=None, bkg_scale=None, seed=42):
-        
-        from systematics import get_bootstraped_dataset, get_systematics_dataset
+        return self._data.keys()
 
-        # get bootstrapped dataset from the original test set
-        pesudo_exp_data = get_bootstraped_dataset(
-            self._data,
-            mu=set_mu,
-            w_scale=w_scale,
-            bkg_scale=bkg_scale,
-            seed=seed,
-        )
-        test_set = get_systematics_dataset(
-            pesudo_exp_data,
-            tes=tes,
-            jes=jes,
-            soft_met=soft_met,
-        )
-        
-        return test_set
-
-    # def __getitem__(self, key):
-    #     return self._data[key]
-
-    def __getitem__(self, key=None):
-        out_data = pd.DataFrame()
-        for column in self._columns:
-            new_column = f"{key}_{column}"
-            out_data[column] = self._data[new_column]
-        return out_data
-        # context manager to close the shared memory
-
+    # context manager to close the shared memory
     def __enter__(self):
         return self
 
