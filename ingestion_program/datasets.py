@@ -3,7 +3,8 @@ import pandas as pd
 import json
 import os
 import subprocess
-import wget
+import requests
+from pathlib import Path
 
 
 test_set_settings = None
@@ -148,23 +149,27 @@ parent_path = os.path.dirname(current_path)
 
 
 def Neurips2024_public_dataset():
-    current_path = os.getcwd()
-    file_read_loc = os.path.join(current_path, "public_data")
-    if not os.path.isdir(file_read_loc):
-        os.mkdir(file_read_loc)
+    current_path = Path.cwd()
+    file_read_loc = current_path / "public_data"
+    if not file_read_loc.exists():
+        file_read_loc.mkdir()
 
-    file = "public_data.zip"
-    if file not in os.listdir(file_read_loc):
-        wget.download(
-            "https://www.codabench.org/datasets/download/2af33dff-7283-4256-8eda-2190a477c9ca/",
-            out=os.path.join(file_read_loc, "public_data.zip"),
-        )
+    url = "https://www.codabench.org/datasets/download/2af33dff-7283-4256-8eda-2190a477c9ca/"
+    file = file_read_loc / "public_data.zip"
+    chunk_size = 1024 * 1024
+    if not file.exists():
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with file.open("wb") as f:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    f.write(chunk)
 
-    if "input_data" not in os.listdir(file_read_loc):
+    input_data = file_read_loc / "input_data"
+    if not input_data.exists():
         subprocess.run(
             ["unzip", os.path.join(file_read_loc, file), "-d", file_read_loc]
         )
 
     return Data(
-        os.path.join(current_path, "public_data", "input_data"), data_format="parquet"
+        str(current_path / "public_data" / "input_data")
     )
