@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("..")
 # from ingestion_parallel import Ingestion
-from ingestion import Ingestion
+from ingestion_parallel import Ingestion
 from datasets import Data
 import argparse
 import pathlib
