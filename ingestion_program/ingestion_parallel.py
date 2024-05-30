@@ -297,10 +297,6 @@ class Ingestion:
     def load_train_set(self):
         self.data.load_train_set()
         return self.data.get_train_set()
-    
-    def load_test_set(self):
-        self.data.load_test_set()
-        self.test_set = self.data.get_test_set()
 
     def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
@@ -317,7 +313,6 @@ class Ingestion:
 
     def predict_submission(self, test_settings):
         print("[*] Calling predict method of submitted model")
-        self.load_test_set()
 
         num_pseudo_experiments = test_settings["num_pseudo_experiments"]
         num_of_sets = test_settings["num_of_sets"]
@@ -337,7 +332,9 @@ class Ingestion:
 
         using_tensorflow = "tensorflow" in sys.modules
 
-        with SharedTestSet(test_set=self.test_set) as test_set:
+        test_set = self.data.get_test_set()
+
+        with SharedTestSet(test_set=test_set) as test_set:
             mp_context = mp.get_context("spawn")
 
             # We want to round robin the devices. So we create a queue
