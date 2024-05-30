@@ -1,8 +1,6 @@
 import sys
 
 sys.path.append("..")
-# from ingestion_parallel import Ingestion
-from ingestion_parallel import Ingestion
 from datasets import Data
 import argparse
 import pathlib
@@ -52,16 +50,29 @@ parser.add_argument(
     action="store_true",
 )
 parser.add_argument(
-    "--systematics",
-    type=dict,
-    help="Systematics to be used",
-    default={  # Systematics to use
-        "tes": False,
-        "jes": False,
-        "soft_met": False,
-        "w_scale": False,
-        "bkg_scale": False,
-    },
+    "--systematics-tes",
+    action="store_true",
+    help="Whether to use tes systematics",
+)
+parser.add_argument(
+    "--systematics-jes",
+    action="store_true",
+    help="Whether to use jes systematics",
+)
+parser.add_argument(
+    "--systematics-soft-met",
+    action="store_true",
+    help="Whether to use soft_met systematics",
+)
+parser.add_argument(
+    "--systematics-w-scale",
+    action="store_true",
+    help="Whether to use w_scale systematics",
+)
+parser.add_argument(
+    "--systematics-bkg-scale",
+    action="store_true",
+    help="Whether to use bkg_scale systematics",
 )
 parser.add_argument(
     "--num-pseudo-experiments",
@@ -75,9 +86,19 @@ parser.add_argument(
     help="Number of sets",
     default=5,
 )
-
+parser.add_argument(
+    "--parallel",
+    action="store_true",
+    help="Whether to run ingestion in parallel",
+)
 
 args = parser.parse_args()
+
+if args.parallel:
+    from ingestion_parallel import Ingestion
+else:
+    from ingestion import Ingestion
+
 
 if not args.codabench:
     input_dir = args.input
@@ -116,7 +137,13 @@ ingestion.init_submission(Model)
 # fit submission
 ingestion.fit_submission()
 test_settings = {}
-test_settings["systematics"] = args.systematics
+test_settings["systematics"] = {
+    "tes": args.systematics_tes,
+    "jes": args.systematics_jes,
+    "soft_met": args.systematics_soft_met,
+    "w_scale": args.systematics_w_scale,
+    "bkg_scale": args.systematics_bkg_scale,
+}
 test_settings["num_pseudo_experiments"] = args.num_pseudo_experiments
 test_settings["num_of_sets"] = args.num_of_sets
 

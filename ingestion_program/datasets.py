@@ -1,4 +1,3 @@
-from frozendict import frozendict
 import numpy as np
 import pandas as pd
 import json
@@ -51,15 +50,13 @@ class Data:
         with open(train_detailed_labels_file) as f:
             train_detailed_labels = f.read().splitlines()
 
-        self.__train_set = frozendict(
-            {
+        self.__train_set = {
                 "data": pd.read_parquet(train_data_file, engine="pyarrow"),
                 "labels": train_labels,
                 "settings": train_settings,
                 "weights": train_weights,
                 "detailed_labels": train_detailed_labels,
             }
-        )
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
@@ -81,7 +78,6 @@ class Data:
         test_data_dir = os.path.join(self.input_dir, "test", "data")
 
         # read test setting
-
         test_set = {
             "ztautau": pd.DataFrame(),
             "wjets": pd.DataFrame(),
