@@ -63,7 +63,7 @@ def _process_combination(arrays, test_settings, combination):
     print("[*] Processing combination")
     dict_systematics = test_settings["systematics"]
     num_pseudo_experiments = test_settings["num_pseudo_experiments"]
-    
+
     try:
         # Setup shared memory for the test set
         with SharedTestSet(arrays=arrays) as test_set:
