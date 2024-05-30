@@ -1,5 +1,4 @@
 import numpy as np
-from HiggsML.systematics import systematics
 
 
 def compute_mu(score, weight, saved_info):
@@ -34,17 +33,6 @@ def calculate_saved_info(model, train_set):
     Calculate the saved_info dictionary for mu calculation
     Replace with actual calculations
     """
-
-    # train_plus_syst = systematics(
-    #     data_set=train_set,
-    #     tes=1.03,
-    #     jes=1.03,
-    #     soft_met=1.0,
-    #     seed=31415,
-    #     w_scale=None,
-    #     bkg_scale=None,
-    #     verbose=0,
-    # )
 
     score = model.predict(train_set["data"])
 
