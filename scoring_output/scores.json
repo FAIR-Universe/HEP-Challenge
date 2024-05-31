@@ -1,8 +1,8 @@
 {
-    "rmse": 9.59567041354197,
-    "mae": 4.799978074958557,
-    "interval": 0.15788452288394905,
-    "coverage": 0.015,
-    "quantiles_score": -9.785484815377146,
-    "ingestion_duration": 0
+    "rmse": 2.8541000854115874,
+    "mae": 2.7094948476221177,
+    "interval": 0.010900491993763218,
+    "coverage": 0.0,
+    "quantiles_score": 0.5298724356773575,
+    "ingestion_duration": 1
 }
