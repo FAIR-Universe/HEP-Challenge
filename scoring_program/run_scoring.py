@@ -72,7 +72,7 @@ ingestion_duration_file = os.path.join(prediction_dir, "ingestion_duration.json"
 scoring.load_ingestion_duration(ingestion_duration_file)
 
 # Load ingestions results
-scoring.load_ingestion_results(prediction_dir)
+scoring.load_ingestion_results(prediction_dir, output_dir)
 
 # Compute Scores
 scoring.compute_scores(test_settings)
