@@ -24,7 +24,7 @@ The score consist of two parts, the interval width and the coverage:
 
 **Interval width**: we define the width as the average size of the interval over $N$ test sets $w = \frac{1}{N} \sum_{i=0}^{N} \left| \hat \mu_{84,i} - \hat \mu_{16,i} \right|$. 
 
-**Coverage**: we define the coverage as the fraction of times the true $\mu$ is contained withing the respective interval. $c = \frac{1}{N} \sum_{i=0}^{N} 1~\textrm{if} (\mu_{true,i} \in [\hat \mu_{84,i} - \hat \mu_{16,i}])$. 
+**Coverage**: we define the coverage as the fraction of times the true $\mu$ is contained withing the respective interval. $c = \frac{1}{N} \sum_{i=0}^{N} 1~\textrm{if} (\mu_{true,i} \in [\hat \mu_{16,i} , \hat \mu_{84,i}])$. 
 
 **Coverage function**: we define the coverage scoring function as 
 
