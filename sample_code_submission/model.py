@@ -77,14 +77,10 @@ class Model():
         self.systematics = systematics
         self.model_name = "XGB_NLL"
         # Intialize class variables
-        self.theta_candidates = np.linspace(0.5, 1.0, 100)
-        self.mu_scan = np.linspace(0, 3.92, 100)
         self.threshold = 0.9
         self.bins = 30
         self.bin_nums = 30
-        self.force_correction = 0
         self.plot_count = 1
-        self.variable = "DER_deltar_lep_had"
         self.calibration = 0
         self.scaler = StandardScaler()
         self.SYST = True
@@ -324,7 +320,7 @@ class Model():
         self.control_bins = int(self.bin_nums * (1 - self.threshold))
 
         if self.SYST:
-            self.theta_function(plot_count=2)
+            self.alpha_function(plot_count=2)
 
         else:
             s , b = self.nominal_histograms(1)
@@ -360,11 +356,11 @@ class Model():
         del self.holdout
 
 
-    def nominal_histograms(self,theta):
+    def nominal_histograms(self,alpha):
 
         holdout_syst = self.systematics(
             data_set=self.holdout,
-            tes=theta,
+            tes=alpha,
             jes=1.0,
         )
 
@@ -387,7 +383,7 @@ class Model():
         return holdout_signal_hist , holdout_background_hist
 
 
-    def theta_function(self,plot_count=25):
+    def alpha_function(self,plot_count=25):
 
         fit_line_s_list = []
         fit_line_b_list = []
@@ -397,37 +393,27 @@ class Model():
         error_s = []
         error_b = []
 
-        theta_list = np.linspace(0.9,1.1,10)
-        s_list = [[] for _ in range(self.bins)]
-        b_list = [[] for _ in range(self.bins)]
+        alpha_list = np.linspace(0.9,1.1,10)
+        s_array = np.zeros((len(alpha_list),self.bins))
+        b_array = np.zeros((len(alpha_list),self.bins))
         
-        for theta in tqdm(theta_list):
-            s , b = self.nominal_histograms(theta)
-            # print(f"[*] --- s: {s}")
-            # print(f"[*] --- b: {b}")
+        for i in tqdm(range(len(alpha_list))):
+            s_array[i] , s_array[i] = self.nominal_histograms(alpha_list[i])
 
-            for i in range(len(s)):
-                s_list[i].append(s[i])
-                b_list[i].append(b[i])
+        s_array = s_array.T
+        b_array = b_array.T
 
-        print(f"[*] --- s_list shape: {np.array(s_list).shape}")
-        print(f"[*] --- b_list shape: {np.array(b_list).shape}")
-        print(f"[*] --- theta_list shape: {np.array(theta_list).shape}")
+        print(f"[*] --- s_array shape: {s_array.shape}")
+        print(f"[*] --- b_array shape: {b_array.shape}")
+        
 
-        for i in range(len(s_list)):
-            s_array = np.array(s_list[i])
-            b_array = np.array(b_list[i])
+        for i in range(s_array.shape[0]):
 
-
-            coef_s = np.polyfit(theta_list, s_array, 3)
-            coef_b = np.polyfit(theta_list, b_array, 3)
+            coef_s = np.polyfit(alpha_list, s_array[i], 3)
+            coef_b = np.polyfit(alpha_list, b_array[i], 3)
 
             fit_fun_s = np.poly1d(coef_s)
             fit_fun_b = np.poly1d(coef_b)
-
-            error_s.append(np.sqrt(np.mean((s_array - fit_fun_s(theta_list))**2)))
-
-            error_b.append(np.sqrt(np.mean((b_array - fit_fun_b(theta_list))**2)))
 
             fit_line_s_list.append(fit_fun_s)
             fit_line_b_list.append(fit_fun_b)
@@ -439,15 +425,15 @@ class Model():
             self.coef_b_list.append(coef_b_)
 
 
-        for i in range(min(plot_count,len(s_list))):
+        for i in range(min(plot_count,self.bins)):
 
             _, ax = plt.subplots()
 
-            plt.plot(theta_list,s_list[i],'b.',label="s")
-            plt.plot(theta_list,fit_line_s_list[i](theta_list),'cyan',label="fit s")
+            plt.plot(alpha_list,s_array[i],'b.',label="s")
+            plt.plot(alpha_list,fit_line_s_list[i](alpha_list),'cyan',label="fit s")
             plt.legend()
             plt.title(f"Bin {i}")
-            plt.xlabel("theta")
+            plt.xlabel("alpha")
             plt.ylabel("Events")
             # hep.atlas.text(loc=1, text='Internal')
             save_path = os.path.join(submissions_dir, "plots/")
@@ -457,11 +443,11 @@ class Model():
 
             _, ax = plt.subplots()
 
-            plt.plot(theta_list,b_list[i],'r.',label="b")
-            plt.plot(theta_list,fit_line_b_list[i](theta_list),'orange',label="fit b")
+            plt.plot(alpha_list,b_array[i],'r.',label="b")
+            plt.plot(alpha_list,fit_line_b_list[i](alpha_list),'orange',label="fit b")
             plt.legend()
             plt.title(f"Bin {i}")
-            plt.xlabel("theta")
+            plt.xlabel("alpha")
             plt.ylabel("Events")
             # hep.atlas.text(loc=1, text='Internal')
             save_path = os.path.join(submissions_dir, "plots/")
@@ -481,8 +467,6 @@ class Model():
         self.fit_dict = {
             "gamma_roi": fit_line_s_list,
             "beta_roi": fit_line_b_list,
-            "error_s": error_s,
-            "error_b": error_b
         }
 
         print(f"[*] --- number of bins: {self.bins}")
@@ -491,8 +475,6 @@ class Model():
         self.fit_dict_control = {
             "gamma_roi": fit_line_s_list[-self.control_bins:],
             "beta_roi": fit_line_b_list[-self.control_bins:],
-            "error_s": error_s[-self.control_bins:],
-            "error_b": error_b[-self.control_bins:]
         }
 
     def save_model(self):
@@ -517,14 +499,22 @@ class Model():
         with open(model_path, "wb") as model_file:
             pickle.dump(self.model, model_file)
 
-        settings = {
-            "threshold": self.threshold,
-            "bin_nums": self.bin_nums,
-            "control_bins": self.control_bins,
-            "coef_s_list": self.coef_s_list,
-            "coef_b_list": self.coef_b_list,
-            "calibration": self.calibration,
-        }
+        if self.SYST:
+            settings = {
+                "threshold": self.threshold,
+                "bin_nums": self.bin_nums,
+                "control_bins": self.control_bins,
+                "coef_s_list": self.coef_s_list,
+                "coef_b_list": self.coef_b_list,
+            }
+        else:
+            settings = {
+                "threshold": self.threshold,
+                "bin_nums": self.bin_nums,
+                "control_bins": self.control_bins,
+                "gamma_roi": self.fit_dict["gamma_roi"],
+                "beta_roi": self.fit_dict["beta_roi"],
+            }
 
 
         pickle.dump(settings, open(settings_path, "wb"))

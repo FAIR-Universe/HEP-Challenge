@@ -13,9 +13,9 @@ class NeuralNetwork(nn.Module):
 
         n_dim = train_data.shape[1]
 
-        self.fc1 = nn.Linear(n_dim, 10)
-        self.fc2 = nn.Linear(10, 10)
-        self.fc3 = nn.Linear(10, 1)
+        self.fc1 = nn.Linear(n_dim, 100)
+        self.fc2 = nn.Linear(100, 100)
+        self.fc3 = nn.Linear(100, 1)
         self.activation = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -45,7 +45,7 @@ class NeuralNetwork(nn.Module):
         def weighted_loss(y, y_hat, w):
             return (criterion(y, y_hat)*w).mean()
         
-        epochs = 100
+        epochs = 1
         for epoch in range(epochs):
             optimizer.zero_grad()
             outputs = self.forward(X_train).ravel()
