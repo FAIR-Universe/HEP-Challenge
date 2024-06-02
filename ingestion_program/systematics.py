@@ -487,7 +487,7 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
 
 
 def make_unweighted_set(data_set):
-    keys = ["htautau", "ztautau", "wjets", "ttbar", "diboson"]
+    keys = ["htautau", "ztautau", "ttbar", "diboson"]
     unweighted_set = {}
     for key in keys:
         unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
@@ -575,8 +575,7 @@ def systematics(
 
 
 LHC_NUMBERS = {
-    "ztautau": 823327,
-    "wjets": 710190,
+    "ztautau": 3544019,
     "diboson": 40590,
     "ttbar": 158761,
     "htautau": 3639,
@@ -593,7 +592,8 @@ def get_bootstraped_dataset(
 
     bkg_norm = LHC_NUMBERS.copy()
     if w_scale is not None:
-        bkg_norm["wjets"] = int(LHC_NUMBERS["wjets"] * w_scale * bkg_scale)
+        # bkg_norm["wjets"] = int(LHC_NUMBERS["wjets"] * w_scale * bkg_scale)
+        pass
 
     if bkg_scale is not None:
         bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
