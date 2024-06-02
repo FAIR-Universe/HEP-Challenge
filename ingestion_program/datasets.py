@@ -154,7 +154,7 @@ def Neurips2024_public_dataset():
     if not file_read_loc.exists():
         file_read_loc.mkdir()
 
-    url = "https://www.codabench.org/datasets/download/2af33dff-7283-4256-8eda-2190a477c9ca/"
+    url = "https://www.codabench.org/datasets/download/c5a4490c-8230-4a37-be73-b4e7a06019fc/"
     file = file_read_loc / "public_data.zip"
     chunk_size = 1024 * 1024
     if not file.exists():
