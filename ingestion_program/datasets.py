@@ -82,7 +82,6 @@ class Data:
         # read test setting
         test_set = {
             "ztautau": pd.DataFrame(),
-            "wjets": pd.DataFrame(),
             "diboson": pd.DataFrame(),
             "ttbar": pd.DataFrame(),
             "htautau": pd.DataFrame(),
