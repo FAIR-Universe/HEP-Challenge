@@ -2,14 +2,14 @@
 ***
 
 The dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups: 
-1. Higgs signal ($H \rightarrow \tau \tau$)
+1. Higgs boson signal ($H \rightarrow \tau \tau$)
 2. $Z$ boson background ($Z \rightarrow \tau \tau$) 
 
 ### Higgs Signal: 
-The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The taus leptons are further allowed to decay into all possible final states. 
+The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states. 
 
 ### Z boson Background: 
-Only background events coming from Z boson are included in this challenge. While simulating the process, interference effects between Z boson and Photon are included. Similar to signal events, only the tau-tau decay mode of the Z boson is included in the dataset.
+Only background events coming from $Z$ bosons are included in this challenge. While simulating the process, interference effects between $Z$ bosons and photons are included. Similar to signal events, only the tau-tau decay mode of the $Z$ boson is included in the dataset.
 
  
 >#### ⚠️ Note: 
@@ -48,19 +48,19 @@ Only background events coming from Z boson are included in this challenge. While
 | 13. | DER_lep_eta_centrality       | The centrality of the pseudorapidity of the lepton w.r.t. the two jets (undefined if PRI_jet_num ≤ 1). |
 | 14. | Eletron Flag                 | 1 if it is an electron 0 if it not.                                                               |
 | 15. | muon Flag                    | 1 if it is a muon 0 if it not.                                                                   |
-| 16. | PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_x}^2}$ of the hadronic tau.                          |
+| 16. | PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the hadronic tau.                          |
 | 17. | PRI_had_eta                  | The pseudorapidity $\eta$ of the hadronic tau.                                                    |
 | 18. | PRI_had_phi                  | The azimuth angle $\phi$ of the hadronic tau.                                                     |
-| 19. | PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_x}^2}$ of the lepton (electron or muon).             |
+| 19. | PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the lepton (electron or muon).             |
 | 20. | PRI_lep_eta                  | The pseudorapidity $\eta$ of the lepton.                                                           |
 | 21. | PRI_lep_phi                  | The azimuth angle $\phi$ of the lepton.                                                            |
-| 22. | PRI_met                      | The missing transverse energy $\overrightarrow{E}^{miss}_{T}$.                                    |
+| 22. | PRI_met                      | The missing transverse energy ${E}^{miss}_{T}$.                                    |
 | 23. | PRI_met_phi                  | The azimuth angle $\phi$ of the missing transverse energy.                                        |
 | 24. | PRI_jet_num                  | The number of jets (integer with a value of 0, 1, 2 or 3; possible larger values have been capped at 3). |
-| 25. | PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_x}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
+| 25. | PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
 | 26. | PRI_jet_leading_eta          | The pseudorapidity $\eta$ of the leading jet (undefined if PRI_jet_num = 0).                     |
 | 27. | PRI_jet_leading_phi          | The azimuth angle $\phi$ of the leading jet (undefined if PRI_jet_num = 0).                      |
-| 28. | PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_x}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
+| 28. | PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
 | 29. | PRI_jet_subleading_eta       | The pseudorapidity $\eta$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                  |
 | 30. | PRI_jet_subleading_phi       | The azimuth angle $\phi$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                   |
 | 31. | PRI_jet_all_pt               | The scalar sum of the transverse momentum of all the jets of the events.                          |
