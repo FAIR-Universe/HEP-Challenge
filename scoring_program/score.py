@@ -10,11 +10,6 @@ import sys
 import io
 import base64
 
-# ------------------------------------------
-# Settings
-# ------------------------------------------
-# True when running on Codabench
-# False when running locally
 current_path = os.path.dirname(os.path.realpath(__file__))
 parent_path = os.path.dirname(current_path)
 sys.path.append(parent_path)
@@ -84,7 +79,7 @@ class Scoring:
         for i in range(len(self.ingestion_results)):
             ingestion_result = self.ingestion_results[i]
             mu = test_settings["ground_truth_mus"][i]
-            
+
             mu_hats = ingestion_result["mu_hats"]
             delta_mu_hats = ingestion_result["delta_mu_hats"]
             p16s = ingestion_result["p16"]

@@ -1,9 +1,9 @@
-import sys
-sys.path.append('..')
 import argparse
 import pathlib
 import os
 import json
+import sys
+sys.path.append('..')
 
 module_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir_name = os.path.dirname(module_dir)
@@ -16,7 +16,7 @@ parser.add_argument("--prediction",
                     type=pathlib.Path,
                     help="Prediction file location",
                     default=os.path.join(root_dir_name, "sample_result_submission")
-                    ) 
+                    )
 parser.add_argument("--output",
                     "-o",
                     help="Output file location",
@@ -57,9 +57,7 @@ else:
     with open(settings_file) as f:
         test_settings = json.load(f)
 
-
 from score import Scoring
-
 
 # Init scoring
 scoring = Scoring()

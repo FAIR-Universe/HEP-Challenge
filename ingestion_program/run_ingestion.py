@@ -101,7 +101,6 @@ if __name__ == "__main__":
     else:
         from ingestion import Ingestion
 
-
     if not args.codabench:
         input_dir = args.input
         output_dir = args.output
@@ -113,7 +112,6 @@ if __name__ == "__main__":
         submission_dir = "/app/ingested_program"
         program_dir = "/app/program"
 
-
     if args.public_dataset:
         from datasets import Neurips2024_public_dataset as public_dataset
 
@@ -121,12 +119,10 @@ if __name__ == "__main__":
     else:
         data = Data(input_dir)
 
-
     sys.path.append(program_dir)
     sys.path.append(submission_dir)
 
     from model import Model
-
 
     ingestion = Ingestion(data)
 
@@ -180,3 +176,7 @@ if __name__ == "__main__":
 
     # Save duration
     ingestion.save_duration(output_dir)
+
+    print("\n----------------------------------------------")
+    print("[✔] Ingestion Program executed successfully!")
+    print("----------------------------------------------\n\n")

@@ -165,4 +165,3 @@ class Ingestion:
             result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
             with open(result_file, "w") as f:
                 f.write(json.dumps(self.results_dict[key], indent=4))
-
