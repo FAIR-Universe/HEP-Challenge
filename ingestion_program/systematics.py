@@ -278,9 +278,7 @@ class V4:
 
 
 # ==================================================================================
-
-
-def w_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
+def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     """
     Apply a scaling to the weight. For W background
 
@@ -291,7 +289,21 @@ def w_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    weights = (weights * systBkgNorm).where((detailedlabel == "wjets"), other=weights)
+    weights[detailedlabel == "ttbar"] = weights[detailedlabel == "ttbar"]*systBkgNorm
+    return weights
+
+def dibosn_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
+    """
+    Apply a scaling to the weight. For W background
+
+    Args
+    ----
+        data: the dataset should be a pandas.DataFrame like object.
+            This function will modify the given data inplace.
+
+    """
+    # scale the weight, arbitrary but reasonable value
+    weights[detailedlabel == "diboson"] = weights[detailedlabel == "diboson"]*systBkgNorm
     return weights
 
 
@@ -306,25 +318,9 @@ def all_bkg_weight_norm(weights, label, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    weights = (weights * systBkgNorm).where(label == 0, other=weights)
+    weights[label == 0] = weights[label == 0] * systBkgNorm
     return weights
 
-
-def all_bkg_crossection_norm(crossection_list, systBkgNorm):
-    """
-    Apply a scaling to the Crosssection.
-
-    Args
-    ----
-        crossection_list: the dataset should be a pandas.DataFrame like object.
-            This function will modify the given data inplace.
-
-    """
-    # scale the weight, arbitrary but reasonable value
-    crossection_list["crosssection"] = (
-        crossection_list["crosssection"] * systBkgNorm
-    ).where(crossection_list["Label"] == 0, other=crossection_list["crosssection"])
-    return crossection_list
 
 
 # ==================================================================================
@@ -512,7 +508,8 @@ def systematics(
     jes=1.0,
     soft_met=1.0,
     seed=31415,
-    w_scale=None,
+    ttbar_scale=None,
+    diboson_scale=None,
     bkg_scale=None,
     verbose=0,
 ):
@@ -534,18 +531,22 @@ def systematics(
         default: None
     """
 
-    if w_scale is not None:
+    if ttbar_scale is not None:
         if "weights" in data_set.keys():
-            print("W bkg weight rescaling :", w_scale)
-            data_set["weights"] = w_bkg_weight_norm(
-                data_set["weights"], data_set["detailed_labels"], w_scale
+            data_set["weights"] = ttbar_bkg_weight_norm(
+                data_set["weights"], data_set["detailed_labels"], ttbar_scale
+            )
+            
+    if diboson_scale is not None:
+        if "weights" in data_set.keys():
+            data_set["weights"] = dibosn_bkg_weight_norm(
+                data_set["weights"], data_set["detailed_labels"], diboson_scale
             )
 
     if bkg_scale is not None:
         if "weights" in data_set.keys():
-            print("All bkg weight rescaling :", bkg_scale)
             data_set["weights"] = all_bkg_weight_norm(
-                data_set["weights"], data_set["label"], bkg_scale
+                data_set["weights"], data_set["labels"], bkg_scale
             )
 
     if verbose > 0:

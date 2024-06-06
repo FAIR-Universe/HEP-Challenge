@@ -3,62 +3,72 @@
 # ------------------------------
 
 XGBOOST = False
-TENSORFLOW = False
-TORCH = True
+TENSORFLOW = True
+TORCH = False
 
 from statistical_analysis import calculate_saved_info, compute_mu
 
 import os
+import pickle
 
 
 class Model:
     """
     This is a model class to be submitted by the participants in their submission.
 
-    This class should consists of the following functions
-    1) init :
-        takes 2 arguments: train_set and systematics,
-        can be used for intiializing variables, classifier etc.
-    2) fit :
-        takes no arguments
-        can be used to train a classifier
+    This class consists of the following functions:
+    1) __init__:
+        Initializes the Model class.
+        Args:
+            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights, detailed_labels, and settings.
+            systematics (object, optional): A function that can be used to get a dataset with systematics added.
+        Returns:
+            None
+
+    2) fit:
+        Trains the model.
+        Params:
+            None
+        Functionality:
+            This function can be used to train a model. If `re_train` is True, it balances the dataset,
+            fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
+            loads the saved model and calculates the saved information. The saved information is used
+            to compute the train results.
+        Returns:
+            None
+
     3) predict:
-        takes 1 argument: test sets
-        can be used to get predictions of the test set.
-        returns a dictionary
+        Predicts the values for the test set.
+        Parameters:
+            test_set (dict): A dictionary containing the test data and weights.
+        Returns:
+            dict: A dictionary with the following keys:
+            - 'mu_hat': The predicted value of mu.
+            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
+            - 'p16': The lower bound of the 16th percentile of mu.
+            - 'p84': The upper bound of the 84th percentile of mu.
 
-    Note:   Add more methods if needed e.g. save model, load pre-trained model etc.
-            It is the participant's responsibility to make sure that the submission
-            class is named "Model" and that its constructor arguments remains the same.
-            The ingestion program initializes the Model class and calls fit and predict methods
-
-            When you add another file with the submission model e.g. a trained model to be loaded and used,
-            load it in the following way:
-
-            # get to the model directory (your submission directory)
-            model_dir = os.path.dirname(os.path.abspath(__file__))
-
-            your trained model file is now in model_dir, you can load it from here
+    4) balance_set:
+        Balances the training set by equalizing the number of background and signal events.
+        Params:
+            None
+        Returns:
+            dict: A dictionary with the balanced training set.
     """
 
     def __init__(self, get_train_set=None, systematics=None):
         """
-        Model class constructor
+        Initializes the Model class.
 
-        Params:
-            train_set:
-                a dictionary with data, labels, weights and settings
-
-            systematics:
-                a class which you can use to get a dataset with systematics added
-                See sample submission for usage of systematics
-
+        Args:
+            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights,detailed_labels and settings.
+            systematics (object, optional): A function that can be used to get a dataset with systematics added.
 
         Returns:
             None
         """
         self.train_set = (
-            get_train_set  # train_set is a dictionary with data, labels and weights
+            get_train_set  # train_set is a dictionary with data, labels, and weights
         )
         self.systematics = systematics
 
@@ -77,41 +87,89 @@ class Model:
         )
         print(" \n ")
 
-
+        self.re_train = True
 
         if XGBOOST:
             from boosted_decision_tree import BoostedDecisionTree
 
-            self.model = BoostedDecisionTree(train_data=self.train_set["data"])
-            self.name = "BDT"
+            self.model = BoostedDecisionTree()
+            module_file = "model_XGB.json"
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_XGB"
 
             print("Model is BDT")
         elif TENSORFLOW:
             from neural_network_TF import NeuralNetwork
 
+            module_file = "./model_tf.keras"
             self.model = NeuralNetwork(train_data=self.train_set["data"])
-            self.name = "NN"
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_tf"
             print("Model is TF NN")
-            
+
         elif TORCH:
             from neural_network_torch import NeuralNetwork
 
+            module_file = "./model_torch.pt"
             self.model = NeuralNetwork(train_data=self.train_set["data"])
-            self.name = "NN"
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_torch"
             print("Model is Torch NN")
 
     def fit(self):
         """
+        Trains the model.
+
         Params:
             None
 
         Functionality:
-            this function can be used to train a model
+            This function can be used to train a model. If `re_train` is True, it balances the dataset,
+            fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
+            loads the saved model and calculates the saved information. The saved information is used
+            to compute the train results.
 
         Returns:
             None
         """
 
+        if self.re_train:
+
+            balanced_set = self.balance_set()
+            self.model.fit(
+                balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
+            )
+
+            self.model.save(self.name)
+
+        saved_info_file = "./saved_info_" + self.name + ".pkl"
+        if os.path.exists(saved_info_file):
+            with open(saved_info_file, "rb") as f:
+                self.saved_info = pickle.load(f)
+        else:
+            self.saved_info = calculate_saved_info(self.model, self.train_set)
+            with open(saved_info_file, "wb") as f:
+                pickle.dump(self.saved_info, f)
+
+        train_score = self.model.predict(self.train_set["data"])
+        train_results = compute_mu(
+            train_score, self.train_set["weights"], self.saved_info
+        )
+
+        print("Train Results: ")
+        for key in train_results.keys():
+            print("\t", key, " : ", train_results[key])
+
+    def balance_set(self):
         balanced_set = self.train_set.copy()
 
         weights_train = self.train_set["weights"].copy()
@@ -130,39 +188,21 @@ class Model:
 
         balanced_set["weights"] = weights_train
 
-        self.model.fit(
-            balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
-        )
-
-        self.saved_info = calculate_saved_info(self.model, self.train_set)
-
-        train_score = self.model.predict(self.train_set["data"])
-        train_results = compute_mu(
-            train_score, self.train_set["weights"], self.saved_info
-        )
-
-
-
-        print("Train Results: ")
-        for key in train_results.keys():
-            print("\t", key, " : ", train_results[key])
-
-
+        return balanced_set
 
     def predict(self, test_set):
         """
-        Params:
-            test_set
+        Predicts the values for the test set.
 
-        Functionality:
-            this function can be used for predictions using the test sets
+        Parameters:
+            test_set (dict): A dictionary containing the test data, and weights.
 
         Returns:
-            dict with keys
-                - mu_hat
-                - delta_mu_hat
-                - p16
-                - p84
+            dict: A dictionary with the following keys:
+            - 'mu_hat': The predicted value of mu.
+            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
+            - 'p16': The lower bound of the 16th percentile of mu.
+            - 'p84': The upper bound of the 84th percentile of mu.
         """
 
         test_data = test_set["data"]
