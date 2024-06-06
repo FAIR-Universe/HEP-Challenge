@@ -135,7 +135,7 @@ class Data:
         del self.__train_set
 
     def get_syst_train_set(
-        self, tes=1.0, jes=1.0, soft_met=1.0, w_scale=None, bkg_scale=None
+        self, tes=1.0, jes=1.0, soft_met=0.0, w_scale=None, bkg_scale=None
     ):
         from systematics import systematics
 
