@@ -56,7 +56,7 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
 
 _model = None
 
-def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, w_scale=None, bkg_scale=None, seed=42):
+def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
 
         from systematics import get_bootstraped_dataset, get_systematics_dataset
 
@@ -64,7 +64,8 @@ def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, w_
         pesudo_exp_data = get_bootstraped_dataset(
             data,
             mu=set_mu,
-            w_scale=w_scale,
+            ttbar_scale=ttbar_scale,
+            diboson_scale=diboson_scale,
             bkg_scale=bkg_scale,
             seed=seed,
         )
@@ -101,17 +102,22 @@ def _process_combination(arrays, test_settings, combination):
             else:
                 jes = 1.0
             if dict_systematics["soft_met"]:
-                soft_met = np.random.uniform(1.0, 5)
+                soft_met = np.random.uniform(0.0, 5)
             else:
-                soft_met = 1.0
+                soft_met = 0.0
 
-            if dict_systematics["w_scale"]:
-                w_scale = np.random.uniform(0.5, 2)
+            if dict_systematics["ttbar_scale"]:
+                ttbar_scale = np.random.uniform(0.5, 2)
             else:
-                w_scale = None
+                ttbar_scale = None
+                
+            if dict_systematics["diboson_scale"]:
+                diboson_scale = np.random.uniform(0.5, 2)
+            else:
+                diboson_scale = None
 
             if dict_systematics["bkg_scale"]:
-                bkg_scale = np.random.uniform(0.5, 2)
+                bkg_scale = np.random.uniform(0.995, 1.005)
             else:
                 bkg_scale = None
 
@@ -125,7 +131,8 @@ def _process_combination(arrays, test_settings, combination):
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
-                w_scale=w_scale,
+                ttbar_scale=ttbar_scale,
+                diboson_scale=diboson_scale,
                 bkg_scale=bkg_scale,
                 seed=seed,
             )

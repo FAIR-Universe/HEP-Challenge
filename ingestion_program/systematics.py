@@ -506,7 +506,7 @@ def systematics(
     data_set=None,
     tes=1.0,
     jes=1.0,
-    soft_met=1.0,
+    soft_met=0.0,
     seed=31415,
     ttbar_scale=None,
     diboson_scale=None,
@@ -524,8 +524,10 @@ def systematics(
     jes:
         default: 1.0
     soft_met:
-        default: 1.0
-    w_scale:
+        default: 0.0
+    ttbar_scale:
+        default: None
+    diboson_scale:
         default: None
     bkg_scale:
         default: None
@@ -587,19 +589,20 @@ def get_bootstraped_dataset(
     test_set,
     mu=1.0,
     seed=31415,
-    w_scale=1.0,
-    bkg_scale=1.0,
+    ttbar_scale=None,
+    diboson_scale=None,
+    bkg_scale=None,
 ):
 
     bkg_norm = LHC_NUMBERS.copy()
-    if w_scale is not None:
-        # bkg_norm["wjets"] = int(LHC_NUMBERS["wjets"] * w_scale * bkg_scale)
-        pass
+    if ttbar_scale is not None:
+        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        
+    if diboson_scale is not None:
+        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
 
     if bkg_scale is not None:
         bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
-        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * bkg_scale)
-        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * bkg_scale)
 
     bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
     
@@ -625,7 +628,7 @@ def get_systematics_dataset(
     data,
     tes=1.0,
     jes=1.0,
-    soft_met=1.0,
+    soft_met=0.0,
 ):
     weights = np.ones(data.shape[0])
 
