@@ -98,17 +98,22 @@ class Ingestion:
             else:
                 jes = 1.0
             if dict_systematics["soft_met"]:
-                soft_met = np.random.uniform(1.0, 5)
+                soft_met = np.random.uniform(0.0, 5)
             else:
-                soft_met = 1.0
+                soft_met = 0.0
 
-            if dict_systematics["w_scale"]:
-                w_scale = np.random.uniform(0.5, 2)
+            if dict_systematics["ttbar_scale"]:
+                ttbar_scale = np.random.uniform(0.5, 2)
             else:
-                w_scale = None
+                ttbar_scale = None
+                
+            if dict_systematics["diboson_scale"]:
+                diboson_scale = np.random.uniform(0.5, 2)
+            else:
+                diboson_scale = None
 
             if dict_systematics["bkg_scale"]:
-                bkg_scale = np.random.uniform(0.5, 2)
+                bkg_scale = np.random.uniform(0.995, 1.005)
             else:
                 bkg_scale = None
 
@@ -122,7 +127,8 @@ class Ingestion:
                 tes=tes,
                 jes=jes,
                 soft_met=soft_met,
-                w_scale=w_scale,
+                ttbar_scale=ttbar_scale,
+                diboson_scale=diboson_scale,
                 bkg_scale=bkg_scale,
                 seed=42,
             )

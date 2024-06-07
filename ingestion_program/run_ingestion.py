@@ -65,9 +65,14 @@ parser.add_argument(
     help="Whether to use soft_met systematics",
 )
 parser.add_argument(
-    "--systematics-w-scale",
+    "--systematics-ttbar-scale",
     action="store_true",
-    help="Whether to use w_scale systematics",
+    help="Whether to use ttbar_scale systematics",
+)
+parser.add_argument(
+    "--systematics-diboson-scale",
+    action="store_true",
+    help="Whether to use diboson_scale systematics",
 )
 parser.add_argument(
     "--systematics-bkg-scale",
@@ -139,7 +144,8 @@ if __name__ == "__main__":
         "tes": args.systematics_tes,
         "jes": args.systematics_jes,
         "soft_met": args.systematics_soft_met,
-        "w_scale": args.systematics_w_scale,
+        "ttbar_scale": args.systematics_ttbar_scale,
+        "diboson_scale": args.systematics_diboson_scale,
         "bkg_scale": args.systematics_bkg_scale,
     }
     test_settings["num_pseudo_experiments"] = args.num_pseudo_experiments

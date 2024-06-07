@@ -101,8 +101,9 @@ class Data:
         set_mu=1,
         tes=1.0,
         jes=1.0,
-        soft_met=1.0,
-        w_scale=None,
+        soft_met=0.0,
+        ttbar_scale=None,
+        diboson_scale=None,
         bkg_scale=None,
         seed=42,
     ):
@@ -112,7 +113,8 @@ class Data:
         pesudo_exp_data = get_bootstraped_dataset(
             self.__test_set,
             mu=set_mu,
-            w_scale=w_scale,
+            ttbar_scale=ttbar_scale,
+            diboson_scale=diboson_scale,          
             bkg_scale=bkg_scale,
             seed=seed,
         )
@@ -135,13 +137,13 @@ class Data:
         del self.__train_set
 
     def get_syst_train_set(
-        self, tes=1.0, jes=1.0, soft_met=0.0, w_scale=None, bkg_scale=None
+        self, tes=1.0, jes=1.0, soft_met=0.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None
     ):
         from systematics import systematics
 
         if self.__train_set is None:
             self.load_train_set()
-        return systematics(self.__train_set, tes, jes, soft_met, w_scale, bkg_scale)
+        return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale)
 
 
 current_path = os.path.dirname(os.path.realpath(__file__))
