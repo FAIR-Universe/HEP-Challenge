@@ -10,9 +10,10 @@ Welcome to FAIR Universe HEP Challenge's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   pages/data.md
    pages/overview.md
+   pages/data.md
    pages/terms.md
+   pages/evaluation.md
    pages/starting_kit.md
    rst_source/modules
 
