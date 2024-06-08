@@ -140,7 +140,7 @@ class Model:
         elif TENSORFLOW:
             from neural_network_TF import NeuralNetwork
 
-            module_file = "./model_tf.keras"
+            module_file = current_file + "/model_tf.keras"
             self.model = NeuralNetwork(train_data=self.training_set["data"])
             if os.path.exists(module_file):
                 self.model.load(module_file)
@@ -152,7 +152,7 @@ class Model:
         elif TORCH:
             from neural_network_torch import NeuralNetwork
 
-            module_file = "./model_torch.pt"
+            module_file = current_file + "/model_torch.pt"
             self.model = NeuralNetwork(train_data=self.train_set["data"])
             if os.path.exists(module_file):
                 self.model.load(module_file)
