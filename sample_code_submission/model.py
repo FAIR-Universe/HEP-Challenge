@@ -123,12 +123,13 @@ class Model:
         print("Training Data: ", self.training_set["data"].shape)
 
         self.re_train = True
+        current_file = os.path.dirname(os.path.abspath(__file__))
 
         if XGBOOST:
             from boosted_decision_tree import BoostedDecisionTree
 
             self.model = BoostedDecisionTree()
-            module_file = "model_XGB.json"
+            module_file = current_file + "/model_XGB.pkl"
             if os.path.exists(module_file):
                 self.model.load(module_file)
                 self.re_train = False  # if model is already trained, no need to retrain
@@ -185,11 +186,11 @@ class Model:
             self.model.fit(
                 balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
             )
+            current_file = os.path.dirname(os.path.abspath(__file__))
+            self.model.save( current_file + "/" + self.name)
 
-            self.model.save(self.name)
 
-
-        saved_info_file = "./saved_info_" + self.name + ".pkl"
+        saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
             self.stat_analysis.load(saved_info_file) 
         else:   
