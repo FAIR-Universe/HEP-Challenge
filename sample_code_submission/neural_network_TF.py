@@ -29,8 +29,9 @@ class NeuralNetwork:
 
         n_dim = train_data.shape[1]
 
-        self.model.add(Dense(10, input_dim=n_dim, activation="relu"))
-        self.model.add(Dense(10, activation="relu"))
+        self.model.add(Dense(100, input_dim=n_dim, activation="relu"))
+        self.model.add(Dense(100, activation="relu"))
+        self.model.add(Dense(100, activation="relu"))        
         self.model.add(Dense(1, activation="sigmoid"))
 
         self.model.compile(
