@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>systematics module &mdash; FAIR Universe HEP Challenge 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="data_io module" href="data_io.html" />
+    <link rel="prev" title="visualization module" href="visualization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            FAIR Universe HEP Challenge
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="Ingestion_program.html">Ingestion_program</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ingestion.html">ingestion module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ingestion_parallel.html">ingestion_parallel module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="visualization.html">visualization module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">systematics module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.DER_data"><code class="docutils literal notranslate"><span class="pre">DER_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.Systematics"><code class="docutils literal notranslate"><span class="pre">Systematics</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.V4"><code class="docutils literal notranslate"><span class="pre">V4</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.all_bkg_weight_norm"><code class="docutils literal notranslate"><span class="pre">all_bkg_weight_norm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.calcul_int"><code class="docutils literal notranslate"><span class="pre">calcul_int()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_deltaeta_jet_jet"><code class="docutils literal notranslate"><span class="pre">f_DER_deltaeta_jet_jet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_deltar_had_lep"><code class="docutils literal notranslate"><span class="pre">f_DER_deltar_had_lep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_lep_eta_centrality"><code class="docutils literal notranslate"><span class="pre">f_DER_lep_eta_centrality()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_mass_jet_jet"><code class="docutils literal notranslate"><span class="pre">f_DER_mass_jet_jet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_mass_transverse_met_lep"><code class="docutils literal notranslate"><span class="pre">f_DER_mass_transverse_met_lep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_mass_vis"><code class="docutils literal notranslate"><span class="pre">f_DER_mass_vis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_met_phi_centrality"><code class="docutils literal notranslate"><span class="pre">f_DER_met_phi_centrality()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_prodeta_jet_jet"><code class="docutils literal notranslate"><span class="pre">f_DER_prodeta_jet_jet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_pt_h"><code class="docutils literal notranslate"><span class="pre">f_DER_pt_h()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_pt_ratio_lep_had"><code class="docutils literal notranslate"><span class="pre">f_DER_pt_ratio_lep_had()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_pt_tot"><code class="docutils literal notranslate"><span class="pre">f_DER_pt_tot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_DER_sum_pt"><code class="docutils literal notranslate"><span class="pre">f_DER_sum_pt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.f_del_DER"><code class="docutils literal notranslate"><span class="pre">f_del_DER()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.getDetailLabel"><code class="docutils literal notranslate"><span class="pre">getDetailLabel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.load_higgs"><code class="docutils literal notranslate"><span class="pre">load_higgs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.mom4_manipulate"><code class="docutils literal notranslate"><span class="pre">mom4_manipulate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.postprocess"><code class="docutils literal notranslate"><span class="pre">postprocess()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.w_bkg_weight_norm"><code class="docutils literal notranslate"><span class="pre">w_bkg_weight_norm()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_io.html">data_io module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="score.html">score module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FAIR Universe HEP Challenge</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">HEP-Challenge</a></li>
+          <li class="breadcrumb-item"><a href="Ingestion_program.html">Ingestion_program</a></li>
+      <li class="breadcrumb-item active">systematics module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/rst_source/systematics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-systematics">
+<span id="systematics-module"></span><h1>systematics module<a class="headerlink" href="#module-systematics" title="Link to this heading"></a></h1>
+<p>ATLAS Higgs Machine Learning Challenge 2014
+Read CERN Open Data Portal Dataset <a class="reference external" href="http://opendata.cern.ch/record/328">http://opendata.cern.ch/record/328</a>
+and manipulate it</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>KaggleWeight and KaggleSet are removed</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>Label is changd from charcter to integer 0 or 1</p></li>
+</ul>
+</div></blockquote>
+<ul>
+<li><p>DetailLabel is introduced indicating subpopulations</p></li>
+<li><dl>
+<dt>systematics effect are simulated</dt><dd><blockquote>
+<div><ul class="simple">
+<li><p>bkg_weight_norm : manipulates the background weight of the W background</p></li>
+<li><dl class="simple">
+<dt>had_energy_scale<span class="classifier">manipulates PRI_had_pt and recompute other quantities accordingly</span></dt><dd><p>Some WARNING : variable DER_mass_MMC is not properly manipulated (modification is linearised), 
+and I advocate to NOT use DER_mass_MMC when doSystTauEnergyScale is enabled
+There is a threshold in the original HiggsML file at 20GeV on PRI_had_energy. 
+This threshold is moved when changing sysTauEnergyScale which is unphysicsal. 
+So if you’re going to play with sysTauEnergyScale (within 0.9-1.1), 
+I suggest you remove events below say 22 GeV <em>after</em> the manipulation
+applying doSystTauEnergyScale with sysTauENergyScale=1. does NOT yield identical results as not applyield 
+doSystTauEnergyScale, this is because of rounding error and zero mass approximation.
+doSysTauEnerbyScale impacts PRI_had_pt as well as PRI_met and PRI_met_phi</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>so overall I suggest that when playing with doSystTauEnergyScale, the reference is</dt><dd><ul>
+<li><p>not using DER_mass_MMC</p></li>
+<li><p>applying <em>after</em> this manipulation PRI_had_pt&gt;22</p></li>
+<li><p>run with sysTauENergyScale=1. to have the reference</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>Author D. Rousseau LAL, Nov 2016</p>
+<p>Modification Dec 2016 (V. Estrade):
+- Wrap everything into separated functions.
+- V4 class now handle 1D-vector values (to improve computation efficiency).
+- Fix compatibility with both python 2 and 3.
+- Use pandas.DataFrame to ease computation along columns
+- Loading function for the base HiggsML dataset (fetch it on the internet if needed)</p>
+<p>Refactor March 2017 (V. Estrade):
+- Split load function (cleaner)</p>
+<p>July 06 2017 (V. Estrade):
+- Add normalization_weight function</p>
+<p>May 2019 (D. Rousseau) :
+- Major hack, in preparation for Centralesupelec EI,
+python syst/datawarehouse/datawarehouse/higgsml.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-s0.csv</p>
+<p>python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv –csv -p –BKGnorm 1. –Wnorm 1. –tes 1. –jes 1. –softMET 0. –seed 31415926
+python higgsml_syst.py –help # for command help
+reasonable values for parameters
+BKGnorm : 1.05  
+Wnorm : 1.5 
+tes : 1.03
+jes : 1.03
+softMET : 3 GeV</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.DER_data">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">DER_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.DER_data" title="Link to this definition"></a></dt>
+<dd><p>data is supposed to be clean (no Weight, no eventId etc…)
+This function directly modifies the dataframe data so make sure to make a copy if
+you need to keep data</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="systematics.Systematics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">Systematics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">softMET</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">31415</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.Systematics" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="systematics.V4">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">V4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ae</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A simple 4-vector class to ease calculation, work easy peasy on numpy vector of 4 vector</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.copy" title="Link to this definition"></a></dt>
+<dd><p>Copy the current V4 object
+Parameters: None
+Returns: copy (V4) - a copy of the current V4 object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.deltaEta">
+<span class="sig-name descname"><span class="pre">deltaEta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.deltaEta" title="Link to this definition"></a></dt>
+<dd><p>Compute the pseudo-rapidity difference with another V4 object
+Parameters: v (V4) - the other V4 object
+Returns: deltaEta (float) - pseudo-rapidity difference</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.deltaPhi">
+<span class="sig-name descname"><span class="pre">deltaPhi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.deltaPhi" title="Link to this definition"></a></dt>
+<dd><p>Compute the azimuthal angle difference with another V4 object
+Parameters: v (V4) - the other V4 object
+Returns: deltaPhi (float) - azimuthal angle difference</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.deltaR">
+<span class="sig-name descname"><span class="pre">deltaR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.deltaR" title="Link to this definition"></a></dt>
+<dd><p>Compute the delta R with another V4 object
+Parameters: v (V4) - the other V4 object
+Returns: deltaR (float) - delta R with another V4 object</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="systematics.V4.e">
+<span class="sig-name descname"><span class="pre">e</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#systematics.V4.e" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.eWithM">
+<span class="sig-name descname"><span class="pre">eWithM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.eWithM" title="Link to this definition"></a></dt>
+<dd><p>Compute the energy with a given mass
+Parameters: m (float) - mass
+Returns: e (float) - energy with a given mass</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.eta">
+<span class="sig-name descname"><span class="pre">eta</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.eta" title="Link to this definition"></a></dt>
+<dd><p>Compute the pseudo-rapidity
+Parameters: None
+Returns: eta (float) - pseudo-rapidity</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.m">
+<span class="sig-name descname"><span class="pre">m</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.m" title="Link to this definition"></a></dt>
+<dd><p>Compute the mass
+Parameters: None
+Returns: m (float) - mass</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.p">
+<span class="sig-name descname"><span class="pre">p</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.p" title="Link to this definition"></a></dt>
+<dd><p>Compute the norm of the 3D momentum
+Parameters: None
+Returns: p (float) - norm of the 3D momentum</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.p2">
+<span class="sig-name descname"><span class="pre">p2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.p2" title="Link to this definition"></a></dt>
+<dd><p>Compute the squared norm of the 3D momentum
+Parameters: None
+Returns: p2 (float) - squared norm of the 3D momentum</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.phi">
+<span class="sig-name descname"><span class="pre">phi</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.phi" title="Link to this definition"></a></dt>
+<dd><p>Compute the azimuthal angle
+Parameters: None
+Returns: phi (float) - azimuthal angle</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.pt">
+<span class="sig-name descname"><span class="pre">pt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.pt" title="Link to this definition"></a></dt>
+<dd><p>Compute the norm of the transverse momentum
+Parameters: None
+Returns: pt (float) - norm of the transverse momentum</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.pt2">
+<span class="sig-name descname"><span class="pre">pt2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.pt2" title="Link to this definition"></a></dt>
+<dd><p>Compute the squared norm of the transverse momentum
+Parameters: None
+Returns: pt2 (float) - squared norm of the transverse momentum</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="systematics.V4.px">
+<span class="sig-name descname"><span class="pre">px</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#systematics.V4.px" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="systematics.V4.py">
+<span class="sig-name descname"><span class="pre">py</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#systematics.V4.py" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="systematics.V4.pz">
+<span class="sig-name descname"><span class="pre">pz</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#systematics.V4.pz" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.scale">
+<span class="sig-name descname"><span class="pre">scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.scale" title="Link to this definition"></a></dt>
+<dd><p>Apply a simple scaling</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.scaleFixedM">
+<span class="sig-name descname"><span class="pre">scaleFixedM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.scaleFixedM" title="Link to this definition"></a></dt>
+<dd><p>Scale (keeping mass unchanged)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.setPtEtaPhiM">
+<span class="sig-name descname"><span class="pre">setPtEtaPhiM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.setPtEtaPhiM" title="Link to this definition"></a></dt>
+<dd><p>Re-initialize with : pt, eta, phi and m</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systematics.V4.sum">
+<span class="sig-name descname"><span class="pre">sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.sum" title="Link to this definition"></a></dt>
+<dd><p>Add another V4 into self</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.all_bkg_weight_norm">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">all_bkg_weight_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systBkgNorm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.all_bkg_weight_norm" title="Link to this definition"></a></dt>
+<dd><p>Apply a scaling to the weight.</p>
+<section id="args">
+<h2>Args<a class="headerlink" href="#args" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>data: the dataset should be a pandas.DataFrame like object.</dt><dd><p>This function will modify the given data inplace.</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.calcul_int">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">calcul_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.calcul_int" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_deltaeta_jet_jet">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_deltaeta_jet_jet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_deltaeta_jet_jet" title="Link to this definition"></a></dt>
+<dd><p>Calculate the absolute value of the difference of the pseudorapidity of the two jets
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_deltar_had_lep">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_deltar_had_lep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_deltar_had_lep" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_lep_eta_centrality">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_lep_eta_centrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_lep_eta_centrality" title="Link to this definition"></a></dt>
+<dd><p>Calculate the centrality of the lepton
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_mass_jet_jet">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_mass_jet_jet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_mass_jet_jet" title="Link to this definition"></a></dt>
+<dd><p>Calculate the invariant mass of the two jets
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_mass_transverse_met_lep">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_mass_transverse_met_lep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_mass_transverse_met_lep" title="Link to this definition"></a></dt>
+<dd><p>Calculate the transverse mass between the MET and the lepton
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_mass_vis">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_mass_vis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_mass_vis" title="Link to this definition"></a></dt>
+<dd><p>Calculate the invariant mass of the hadron and the lepton
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_met_phi_centrality">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_met_phi_centrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_met_phi_centrality" title="Link to this definition"></a></dt>
+<dd><p>Calculate the centrality of the MET
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_prodeta_jet_jet">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_prodeta_jet_jet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_prodeta_jet_jet" title="Link to this definition"></a></dt>
+<dd><p>Calculate the product of the pseudorapidities of the two jets
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_pt_h">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_pt_h</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_pt_h" title="Link to this definition"></a></dt>
+<dd><p>Calculate the transverse momentum of the hadronic system
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_pt_ratio_lep_had">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_pt_ratio_lep_had</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_pt_ratio_lep_had" title="Link to this definition"></a></dt>
+<dd><p>Calculate the ratio of the transverse momentum of the lepton and the hadron 
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_pt_tot">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_pt_tot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_pt_tot" title="Link to this definition"></a></dt>
+<dd><p>Calculate the total transverse momentum
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_DER_sum_pt">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_DER_sum_pt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_DER_sum_pt" title="Link to this definition"></a></dt>
+<dd><p>Calculate the sum of the transverse momentum of the lepton, the hadron and the jets
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.f_del_DER">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">f_del_DER</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.f_del_DER" title="Link to this definition"></a></dt>
+<dd><p>Delete all the unnecessary columns that were used to calculate the DER variables
+Parameters: data (dataframe)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.getDetailLabel">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">getDetailLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origWeight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.getDetailLabel" title="Link to this definition"></a></dt>
+<dd><p>Given original weight and label, 
+return more precise label specifying the original simulation type.</p>
+<section id="id1">
+<h2>Args<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>origWeight: the original weight of the event
+Label : the label of the event (can be {“b”, “s”} or {0,1})
+num: (default=True) if True use the numeric detail labels</p>
+<blockquote>
+<div><p>else use the string detail labels. You should prefer numeric labels.</p>
+</div></blockquote>
+</div></blockquote>
+</section>
+<section id="return">
+<h2>Return<a class="headerlink" href="#return" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>detailLabel: the corresponding detail label (“W” is the default if not found)</p>
+</div></blockquote>
+<p>Note : Could be better optimized but this is fast enough.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.load_higgs">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">load_higgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.load_higgs" title="Link to this definition"></a></dt>
+<dd><p>Load HiggsML dataset from csv file.
+Parameters: in_file (str) - path to the csv file
+Returns: data (pandas.DataFrame) - the dataset</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.mom4_manipulate">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">mom4_manipulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systTauEnergyScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systJetEnergyScale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">softMET</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">31415</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.mom4_manipulate" title="Link to this definition"></a></dt>
+<dd><p>Manipulate primary inputs : the PRI_had_pt PRI_jet_leading_pt PRI_jet_subleading_pt and recompute the others values accordingly.</p>
+<section id="id2">
+<h2>Args<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>data: the dataset should be a pandas.DataFrame like object.</dt><dd><p>This function will modify the given data inplace.</p>
+</dd>
+</dl>
+<p>systTauEnergyScale : the factor applied : PRI_had_pt &lt;– PRI_had_pt * systTauEnergyScale
+systJetEnergyScale : the factor applied : all jet pt  * systJetEnergyScale
+recompute MET accordingly
+Add soft MET gaussian random energy</p>
+</div></blockquote>
+</section>
+<section id="notes">
+<h2>Notes :<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>Recompute :</dt><dd><ul class="simple">
+<li><p>PRI_had_pt</p></li>
+<li><p>PRI_jet_leading_pt</p></li>
+<li><p>PRI_jet_subleading_pt</p></li>
+<li><p>PRI_met</p></li>
+<li><p>PRI_met_phi</p></li>
+<li><p>PRI_met_sumet</p></li>
+</ul>
+</dd>
+</dl>
+<p>Round up to 3 decimals.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.postprocess">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">postprocess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.postprocess" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.w_bkg_weight_norm">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">w_bkg_weight_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systBkgNorm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.w_bkg_weight_norm" title="Link to this definition"></a></dt>
+<dd><p>Apply a scaling to the weight. For W background</p>
+<section id="id3">
+<h2>Args<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
+<blockquote>
+<div><dl class="simple">
+<dt>data: the dataset should be a pandas.DataFrame like object.</dt><dd><p>This function will modify the given data inplace.</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="visualization.html" class="btn btn-neutral float-left" title="visualization module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data_io.html" class="btn btn-neutral float-right" title="data_io module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, FAIR-Universe Collaboration.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
