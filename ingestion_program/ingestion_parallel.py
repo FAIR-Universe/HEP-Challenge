@@ -7,7 +7,6 @@ import pandas as pd
 from datetime import datetime as dt
 import json
 from itertools import product
-from numpy.random import RandomState
 import warnings
 import multiprocessing as mp
 from multiprocessing import shared_memory
@@ -18,18 +17,9 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
-# ------------------------------------------
-# Settings
-# ------------------------------------------
-# True when running on Codabench
-# False when running locally
-CODABENCH = False
-NUM_SETS = 4  # Total = 10
-NUM_PSEUDO_EXPERIMENTS = 50  # Total = 100
-USE_SYSTEAMTICS = True
+
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
-USE_RANDOM_MUS = True
 
 # tf.config.threading.set_inter_op_parallelism_threads(1)
 # tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -64,41 +54,37 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
     _model = pickle.loads(pickled_model)
 
 
-def _get_bootstraped_dataset(test_set, mu=1.0, tes=1.0, seed=42):
-    weights = test_set["weights"].copy()
-    weights[test_set["labels"] == 1] = weights[test_set["labels"] == 1] * mu
-    prng = RandomState(seed)
-
-    new_weights = prng.poisson(lam=weights)
-
-    del weights
-
-    temp_df = test_set["data"][new_weights > 0].copy()
-    temp_df["weights"] = new_weights[new_weights > 0]
-    temp_df["labels"] = test_set["labels"][new_weights > 0]
-
-    # Apply systematics to the sampled data
-    from systematics import Systematics
-
-    data_syst = Systematics(data=temp_df, tes=tes).data
-
-    # Apply weight scaling factor mu to the data
-
-    data_syst.pop("labels")
-    weights = data_syst.pop("weights")
-
-    del temp_df
-
-    return {"data": data_syst, "weights": weights}
-
-
 _model = None
+
+def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
+
+        from systematics import get_bootstraped_dataset, get_systematics_dataset
+
+        # get bootstrapped dataset from the original test set
+        pesudo_exp_data = get_bootstraped_dataset(
+            data,
+            mu=set_mu,
+            ttbar_scale=ttbar_scale,
+            diboson_scale=diboson_scale,
+            bkg_scale=bkg_scale,
+            seed=seed,
+        )
+        test_set = get_systematics_dataset(
+            pesudo_exp_data,
+            tes=tes,
+            jes=jes,
+            soft_met=soft_met,
+        )
+
+        return test_set
 
 
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
 def _process_combination(arrays, test_settings, combination):
     print("[*] Processing combination")
+    dict_systematics = test_settings["systematics"]
+    num_pseudo_experiments = test_settings["num_pseudo_experiments"]
 
     try:
         # Setup shared memory for the test set
@@ -106,17 +92,50 @@ def _process_combination(arrays, test_settings, combination):
             set_index, test_set_index = combination
 
             # random tes value (one per test set)
-            if USE_SYSTEAMTICS:
-                # random tes value (one per test set)
+            # random tes value (one per test set)
+            if dict_systematics["tes"]:
                 tes = np.random.uniform(0.9, 1.1)
             else:
-                tes = 1.0  # create a seed
-            seed = (set_index * NUM_PSEUDO_EXPERIMENTS) + test_set_index
+                tes = 1.0
+            if dict_systematics["jes"]:
+                jes = np.random.uniform(0.9, 1.1)
+            else:
+                jes = 1.0
+            if dict_systematics["soft_met"]:
+                soft_met = np.random.uniform(0.0, 5)
+            else:
+                soft_met = 0.0
+
+            if dict_systematics["ttbar_scale"]:
+                ttbar_scale = np.random.uniform(0.5, 2)
+            else:
+                ttbar_scale = None
+                
+            if dict_systematics["diboson_scale"]:
+                diboson_scale = np.random.uniform(0.5, 2)
+            else:
+                diboson_scale = None
+
+            if dict_systematics["bkg_scale"]:
+                bkg_scale = np.random.uniform(0.995, 1.005)
+            else:
+                bkg_scale = None
+
+            seed = (set_index * num_pseudo_experiments) + test_set_index
             # get mu value of set from test settings
             set_mu = test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
-            test_set = _get_bootstraped_dataset(test_set, mu=set_mu, tes=tes, seed=seed)
+            test_set = _generate_psuedo_exp_data(test_set,
+                set_mu=set_mu,
+                tes=tes,
+                jes=jes,
+                soft_met=soft_met,
+                ttbar_scale=ttbar_scale,
+                diboson_scale=diboson_scale,
+                bkg_scale=bkg_scale,
+                seed=seed,
+            )
             # print(f"[*] Predicting process with seed {seed}")
             predicted_dict = {}
             # Call predict method of the model that was passed to the worker
@@ -146,8 +165,11 @@ class SharedTestSet:
             self._load_arrays(arrays)
 
         if test_set is not None:
-            self._load(test_set["data"], test_set["weights"], test_set["labels"])
+            self._load(test_set)
             self._owner = True
+
+    def _shared_memory_name(self, dataset_key, column):
+        return f"{dataset_key}_{column}"
 
     def _load_arrays(self, arrays):
         def _create_sm_array(name, dtype, shape):
@@ -164,7 +186,7 @@ class SharedTestSet:
                     dtype = entry["dtype"]
                     shape = entry["shape"]
 
-                    array = _create_sm_array(name, dtype, shape)
+                    array = _create_sm_array(self._shared_memory_name(key, name), dtype, shape)
                     columns[name] = array
                 self._data[key] = pd.DataFrame(columns, copy=False)
                 continue
@@ -174,41 +196,34 @@ class SharedTestSet:
 
             self._data[key] = _create_sm_array(key, dtype, shape)
 
-    def _load(self, data, weights, labels):
+    def _load(self, data_set):
         def _create_sm_array(name, dtype, shape, size):
             shm_b = shared_memory.SharedMemory(name=name, create=True, size=size)
             self._sm.append(shm_b)
 
             return np.ndarray(shape, dtype=dtype, buffer=shm_b.buf)
 
-        # data
-        d = {}
-        for column in data.columns:
-            value = data[column]
-            size = value.nbytes
+        def _data_frame_to_shared_memory(dataset_key, data_frame):
+            d = {}
+            for column in data_frame.columns:
+                value = data_frame[column]
+                size = value.nbytes
 
-            d[column] = _create_sm_array(column, value.dtype, value.shape, size)
-            d[column][:] = value
+                d[column] = _create_sm_array(self._shared_memory_name(dataset_key, column), value.dtype, value.shape, size)
+                d[column][:] = value
 
-        self._data["data"] = pd.DataFrame(d, copy=False)
+            return pd.DataFrame(d, copy=False)
 
-        # weights
-        self._data["weights"] = _create_sm_array(
-            "weights", weights.dtype, weights.shape, weights.nbytes
-        )
-        self._data["weights"][:] = weights
-
-        # labels
-        self._data["labels"] = _create_sm_array(
-            "labels", labels.dtype, labels.shape, labels.nbytes
-        )
-        self._data["labels"][:] = labels
+        for key in data_set.keys():
+            self._data[key] = _data_frame_to_shared_memory(key, data_set[key])
 
     def __getitem__(self, key):
         return self._data[key]
 
-        # context manager to close the shared memory
+    def keys(self):
+        return self._data.keys()
 
+    # context manager to close the shared memory
     def __enter__(self):
         return self
 
@@ -248,12 +263,13 @@ class SharedTestSet:
 # Ingestion Class
 # ------------------------------------------
 class Ingestion:
-    def __init__(self):
+    def __init__(self, data=None):
+
         # Initialize class variables
         self.start_time = None
         self.end_time = None
         self.model = None
-        self.train_set = None
+        self.data = data
 
     def start_timer(self):
         self.start_time = dt.now()
@@ -277,152 +293,41 @@ class Ingestion:
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
-    def save_duration(self):
+    def save_duration(self, output_dir=None):
         duration = self.get_duration()
         duration_in_mins = int(duration.total_seconds() / 60)
-        duration_file = os.path.join(self.output_dir, "ingestion_duration.json")
+        duration_file = os.path.join(output_dir, "ingestion_duration.json")
         if duration is not None:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
-    def set_directories(self):
-        # set default directories
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        root_dir_name = os.path.dirname(module_dir)
-
-        input_data_dir_name = "input_data"
-        output_dir_name = "sample_result_submission"
-        program_dir_name = "ingestion_program"
-        submission_dir_name = "sample_code_submission"
-
-        if CODABENCH:
-            root_dir_name = "/app"
-            input_data_dir_name = "input_data"
-            output_dir_name = "output"
-            program_dir_name = "program"
-            submission_dir_name = "ingested_program"
-
-        # Input data directory to read training and test data from
-        self.input_dir = os.path.join(root_dir_name, input_data_dir_name)
-        # Output data directory to write predictions to
-        self.output_dir = os.path.join(root_dir_name, output_dir_name)
-        # Program directory
-        self.program_dir = os.path.join(root_dir_name, program_dir_name)
-        # Directory to read submitted submissions from
-        self.submission_dir = os.path.join(root_dir_name, submission_dir_name)
-
-        # In case submission dir and output dir are provided as args
-        if len(sys.argv) > 1:
-            self.submission_dir = sys.argv[1]
-        if len(sys.argv) > 2:
-            self.output_dir = sys.argv[2]
-
-        # Add to path
-        sys.path.append(self.input_dir)
-        sys.path.append(self.output_dir)
-        sys.path.append(self.program_dir)
-        sys.path.append(self.submission_dir)
-
     def load_train_set(self):
-        print("[*] Loading Train data")
+        self.data.load_train_set()
+        return self.data.get_train_set()
 
-        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
-        train_labels_file = os.path.join(
-            self.input_dir, "train", "labels", "data.labels"
-        )
-        train_settings_file = os.path.join(
-            self.input_dir, "train", "settings", "data.json"
-        )
-        train_weights_file = os.path.join(
-            self.input_dir, "train", "weights", "data.weights"
-        )
-
-        # read train labels
-        with open(train_labels_file, "r") as f:
-            train_labels = np.array(f.read().splitlines(), dtype=float)
-
-        # read train settings
-        with open(train_settings_file) as f:
-            train_settings = json.load(f)
-
-        # read train weights
-        with open(train_weights_file) as f:
-            train_weights = np.array(f.read().splitlines(), dtype=float)
-        train_weights = train_weights
-
-        self.train_set = {
-            "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-            "labels": train_labels,
-            "settings": train_settings,
-            "weights": train_weights,
-        }
-
-        del train_labels, train_settings, train_weights
-        print(self.train_set["data"].info(verbose=False, memory_usage="deep"))
-        print("[*] Train data loaded successfully")
-
-    def load_test_set(self):
-        print("[*] Loading Test data")
-
-        test_data_file = os.path.join(self.input_dir, "test", "data", "data.parquet")
-        test_settings_file = os.path.join(
-            self.input_dir, "test", "settings", "data.json"
-        )
-        test_weights_file = os.path.join(
-            self.input_dir, "test", "weights", "data.weights"
-        )
-        test_labels_file = os.path.join(self.input_dir, "test", "labels", "data.labels")
-
-        # read test settings
-        if USE_RANDOM_MUS:
-            self.test_settings = {
-                "ground_truth_mus": (np.random.uniform(0.1, 3, NUM_SETS)).tolist()
-            }
-            random_settings_file = os.path.join(self.output_dir, "random_mu.json")
-            with open(random_settings_file, "w") as f:
-                json.dump(self.test_settings, f)
-        else:
-            with open(test_settings_file) as f:
-                self.test_settings = json.load(f)
-
-        # read test weights
-        with open(test_weights_file) as f:
-            test_weights = np.array(f.read().splitlines(), dtype=float)
-
-        # read test labels
-        with open(test_labels_file) as f:
-            test_labels = np.array(f.read().splitlines(), dtype=float)
-
-        self.test_set = {
-            "data": pd.read_parquet(test_data_file, engine="pyarrow"),
-            "weights": test_weights,
-            "labels": test_labels,
-        }
-        del test_weights, test_labels
-
-        print(self.test_set["data"].info(verbose=False, memory_usage="deep"))
-        print("[*] Test data loaded successfully")
-
-    def init_submission(self):
+    def init_submission(self, Model):
         print("[*] Initializing Submmited Model")
-        from model import Model
-        from systematics import Systematics
+        from systematics import (
+            systematics,
+        )
 
-        self.model = Model(train_set=self.train_set, systematics=Systematics)
-
-        del self.train_set
+        self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
+        self.data.delete_train_set()
 
     def fit_submission(self):
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
-    def predict_submission(self):
+    def predict_submission(self, test_settings):
         print("[*] Calling predict method of submitted model")
 
+        num_pseudo_experiments = test_settings["num_pseudo_experiments"]
+        num_of_sets = test_settings["num_of_sets"]
+
         # get set indices
-        set_indices = np.arange(0, NUM_SETS)
+        set_indices = np.arange(0, num_of_sets)
         # get test set indices per set
-        test_set_indices = np.arange(0, NUM_PSEUDO_EXPERIMENTS)
+        test_set_indices = np.arange(0, num_pseudo_experiments)
 
         # create a product of set and test set indices all combinations of tuples
         all_combinations = list(product(set_indices, test_set_indices))
@@ -434,7 +339,9 @@ class Ingestion:
 
         using_tensorflow = "tensorflow" in sys.modules
 
-        with SharedTestSet(test_set=self.test_set) as test_set:
+        test_set = self.data.get_test_set()
+
+        with SharedTestSet(test_set=test_set) as test_set:
             mp_context = mp.get_context("spawn")
 
             # We want to round robin the devices. So we create a queue
@@ -468,7 +375,7 @@ class Ingestion:
                 func = partial(
                     _process_combination,
                     test_set_sm_arrays,
-                    self.test_settings,
+                    test_settings,
                 )
                 futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
 
@@ -481,12 +388,12 @@ class Ingestion:
 
         print("[*] All processes done")
 
-    def save_result(self):
+    def compute_result(self):
         print("[*] Saving ingestion result")
 
         # loop over sets
-        for i in range(0, NUM_SETS):
-            set_result = self.results_dict[i]
+        for key in self.results_dict.keys():
+            set_result = self.results_dict[key]
             set_result.sort(key=lambda x: x["test_set_index"])
             mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
             for test_set_dict in set_result:
@@ -501,10 +408,13 @@ class Ingestion:
                 "p16": p16,
                 "p84": p84,
             }
-            result_file = os.path.join(self.output_dir, "result_" + str(i) + ".json")
-            with open(result_file, "w") as f:
-                f.write(json.dumps(ingestion_result_dict, indent=4))
+            self.results_dict[key] = ingestion_result_dict
 
+    def save_result(self, output_dir=None):
+        for key in self.results_dict.keys():
+            result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
+            with open(result_file, "w") as f:
+                f.write(json.dumps(self.results_dict[key], indent=4))
 
 if __name__ == "__main__":
     print("############################################")

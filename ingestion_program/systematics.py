@@ -48,59 +48,46 @@ May 2019 (D. Rousseau) :
 - Major hack, in preparation for Centralesupelec EI,
 python syst/datawarehouse/datawarehouse/higgsml.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-s0.csv
 
-python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv --csv -p --BKGnorm 1. --Wnorm 1. --tes 1. --jes 1. --softMET 0. --seed 31415926
+python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv --csv -p --BKGnorm 1. --Wnorm 1. --tes 1. --jes 1. --soft_met 0. --seed 31415926
 python higgsml_syst.py --help # for command help
 reasonable values for parameters
 BKGnorm : 1.05  
 Wnorm : 1.5 
 tes : 1.03
 jes : 1.03
-softMET : 3 GeV
+soft_met : 3 GeV
 """
 __version__ = "4.0"
 __author__ = "David Rousseau, and Victor Estrade "
 
-import sys
-import os
-import gzip
+
 import copy
 import pandas as pd
 import numpy as np
-from numpy import sin, cos, cosh, sinh, sqrt, exp
+from derived_quantities import DER_data
 
-
-def load_higgs(in_file):
-    """
-    Load HiggsML dataset from csv file.
-    Parameters: in_file (str) - path to the csv file
-    Returns: data (pandas.DataFrame) - the dataset
-
-    """
-
-    filename=in_file
-    print ("filename=",filename)
-    data = pd.read_csv(filename)
-    return data
 
 # ==================================================================================
 #  V4 Class and physic computations
 # ==================================================================================
 
-class V4:
 
+class V4:
     """
     A simple 4-vector class to ease calculation, work easy peasy on numpy vector of 4 vector
     """
-    px=0
-    py=0
-    pz=0
-    e=0
-    def __init__(self,apx=0., apy=0., apz=0., ae=0.):
+
+    px = 0
+    py = 0
+    pz = 0
+    e = 0
+
+    def __init__(self, apx=0.0, apy=0.0, apz=0.0, ae=0.0):
         """
         Constructor with 4 coordinates
         Parameters: apx (float) - x coordinate
                     apy (float) - y coordinate
-                    apz (float) - z coordinate  
+                    apz (float) - z coordinate
                     ae (float) - energy coordinate
         Returns: None
 
@@ -110,7 +97,9 @@ class V4:
         self.pz = apz
         self.e = ae
         if self.e + 1e-3 < self.p():
-            raise ValueError("Energy is too small! Energy: {}, p: {}".format(self.e, self.p()))
+            raise ValueError(
+                "Energy is too small! Energy: {}, p: {}".format(self.e, self.p())
+            )
 
     def copy(self):
         """
@@ -119,7 +108,7 @@ class V4:
         Returns: copy (V4) - a copy of the current V4 object
         """
         return copy.deepcopy(self)
-    
+
     def p2(self):
         """
         Compute the squared norm of the 3D momentum
@@ -128,7 +117,7 @@ class V4:
 
         """
         return self.px**2 + self.py**2 + self.pz**2
-    
+
     def p(self):
         """
         Compute the norm of the 3D momentum
@@ -137,7 +126,7 @@ class V4:
 
         """
         return np.sqrt(self.p2())
-    
+
     def pt2(self):
         """
         Compute the squared norm of the transverse momentum
@@ -145,7 +134,7 @@ class V4:
         Returns: pt2 (float) - squared norm of the transverse momentum
         """
         return self.px**2 + self.py**2
-    
+
     def pt(self):
         """
         Compute the norm of the transverse momentum
@@ -154,7 +143,7 @@ class V4:
         """
 
         return np.sqrt(self.pt2())
-    
+
     def m(self):
         """
         Compute the mass
@@ -162,8 +151,8 @@ class V4:
         Returns: m (float) - mass
         """
 
-        return np.sqrt( np.abs( self.e**2 - self.p2() ) ) # abs is needed for protection
-    
+        return np.sqrt(np.abs(self.e**2 - self.p2()))  # abs is needed for protection
+
     def eta(self):
         """
         Compute the pseudo-rapidity
@@ -171,8 +160,8 @@ class V4:
         Returns: eta (float) - pseudo-rapidity
         """
 
-        return np.arcsinh( self.pz/self.pt() )
-    
+        return np.arcsinh(self.pz / self.pt())
+
     def phi(self):
         """
         Compute the azimuthal angle
@@ -181,7 +170,7 @@ class V4:
         """
 
         return np.arctan2(self.py, self.px)
-    
+
     def deltaPhi(self, v):
         """
         Compute the azimuthal angle difference with another V4 object
@@ -189,27 +178,27 @@ class V4:
         Returns: deltaPhi (float) - azimuthal angle difference
         """
 
-        return (self.phi() - v.phi() + 3*np.pi) % (2*np.pi) - np.pi
-    
-    def deltaEta(self,v):
+        return (self.phi() - v.phi() + 3 * np.pi) % (2 * np.pi) - np.pi
+
+    def deltaEta(self, v):
         """
         Compute the pseudo-rapidity difference with another V4 object
         Parameters: v (V4) - the other V4 object
         Returns: deltaEta (float) - pseudo-rapidity difference
 
         """
-        return self.eta()-v.eta()
-    
-    def deltaR(self,v):
+        return self.eta() - v.eta()
+
+    def deltaR(self, v):
         """
         Compute the delta R with another V4 object
         Parameters: v (V4) - the other V4 object
-        Returns: deltaR (float) - delta R with another V4 object    
+        Returns: deltaR (float) - delta R with another V4 object
         """
 
-        return np.sqrt(self.deltaPhi(v)**2+self.deltaEta(v)**2 )
+        return np.sqrt(self.deltaPhi(v) ** 2 + self.deltaEta(v) ** 2)
 
-    def eWithM(self,m=0.):
+    def eWithM(self, m=0.0):
         """
         Compute the energy with a given mass
         Parameters: m (float) - mass
@@ -217,43 +206,51 @@ class V4:
 
         """
 
-        return np.sqrt(self.p2()+m**2)
+        return np.sqrt(self.p2() + m**2)
 
     # FIXME this gives ugly prints with 1D-arrays
     def __str__(self):
 
-        return "PxPyPzE( %s,%s,%s,%s)<=>PtEtaPhiM( %s,%s,%s,%s) " % (self.px, self.py,self.pz,self.e,self.pt(),self.eta(),self.phi(),self.m())
+        return "PxPyPzE( %s,%s,%s,%s)<=>PtEtaPhiM( %s,%s,%s,%s) " % (
+            self.px,
+            self.py,
+            self.pz,
+            self.e,
+            self.pt(),
+            self.eta(),
+            self.phi(),
+            self.m(),
+        )
 
-    def scale(self,factor=1.): # scale
-
+    def scale(self, factor=1.0):  # scale
         """Apply a simple scaling"""
         self.px *= factor
         self.py *= factor
         self.pz *= factor
-        self.e = np.abs( factor*self.e )
-    
-    def scaleFixedM(self,factor=1.): 
+        self.e = np.abs(factor * self.e)
+
+    def scaleFixedM(self, factor=1.0):
         """Scale (keeping mass unchanged)"""
         m = self.m()
         self.px *= factor
         self.py *= factor
         self.pz *= factor
         self.e = self.eWithM(m)
-    
-    def setPtEtaPhiM(self, pt=0., eta=0., phi=0., m=0):
+
+    def setPtEtaPhiM(self, pt=0.0, eta=0.0, phi=0.0, m=0):
         """Re-initialize with : pt, eta, phi and m"""
-        self.px = pt*np.cos(phi)
-        self.py = pt*np.sin(phi)
-        self.pz = pt*np.sinh(eta)
+        self.px = pt * np.cos(phi)
+        self.py = pt * np.sin(phi)
+        self.pz = pt * np.sinh(eta)
         self.e = self.eWithM(m)
-    
+
     def sum(self, v):
         """Add another V4 into self"""
         self.px += v.px
         self.py += v.py
         self.pz += v.pz
         self.e += v.e
-    
+
     def __iadd__(self, other):
         """Add another V4 into self"""
         try:
@@ -261,11 +258,11 @@ class V4:
             self.py += other.py
             self.pz += other.pz
             self.e += other.e
-        except AttributeError: 
+        except AttributeError:
             # If 'other' is not V4 like object then return special NotImplemented error
             return NotImplemented
         return self
-    
+
     def __add__(self, other):
         """Add 2 V4 vectors : v3 = v1 + v2 = v1.__add__(v2)"""
         copy = self.copy()
@@ -274,93 +271,14 @@ class V4:
             copy.py += other.py
             copy.pz += other.pz
             copy.e += other.e
-        except AttributeError: 
+        except AttributeError:
             # If 'other' is not V4 like object then return special NotImplemented error
             return NotImplemented
         return copy
 
 
-
-
 # ==================================================================================
-def getDetailLabel(origWeight, Label, num=True):
-    """
-    Given original weight and label, 
-    return more precise label specifying the original simulation type.
-    
-    Args
-    ----
-        origWeight: the original weight of the event
-        Label : the label of the event (can be {"b", "s"} or {0,1})
-        num: (default=True) if True use the numeric detail labels
-                else use the string detail labels. You should prefer numeric labels.
-
-    Return
-    ------
-        detailLabel: the corresponding detail label ("W" is the default if not found)
-
-    Note : Could be better optimized but this is fast enough.
-    """
-    # prefer numeric detail label
-    detail_label_num={
-        57207:0, # Signal
-        4613:1,
-        8145:2,
-        4610:3,
-        917703: 105, #Z
-        5127399:111,
-        4435976:112,
-        4187604:113,
-        2407146:114,
-        1307751:115,
-        944596:122,
-        936590:123,
-        1093224:124,
-        225326:132,
-        217575:133,
-        195328:134,
-        254338:135,
-        2268701:300 #T
-        }
-    # complementary for W detaillabeldict=200
-    #previous alphanumeric detail label    
-    detail_label_str={
-       57207:"S0",
-       4613:"S1",
-       8145:"S2",
-       4610:"S3",
-       917703:"Z05",
-       5127399:"Z11",
-       4435976:"Z12",
-       4187604:"Z13",
-       2407146:"Z14",
-       1307751:"Z15",
-       944596:"Z22",
-       936590:"Z23",
-       1093224:"Z24",
-       225326:"Z32",
-       217575:"Z33",
-       195328:"Z34",
-       254338:"Z35",
-       2268701:"W"  # was T
-    }
-
-    if num:
-        detailLabelDict = detail_label_num
-        defaultLabel=400 # 400 "T" is the default value if not found
-    else:
-        detailLabelDict = detail_label_str
-        defaultLabel="T" #"T" is the default value if not found
-        
-    iWeight=int(1e7*origWeight+0.5)
-    detailLabel = detailLabelDict.get(iWeight, defaultLabel) 
-    if detailLabel == "T" and (Label != 0 and Label != 'b') :
-        raise ValueError("ERROR! if not in detailLabelDict sould have Label==1 ({}, {})".format(iWeight,Label))
-
-    return detailLabel
-
-
-def w_bkg_weight_norm(data, systBkgNorm):
+def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     """
     Apply a scaling to the weight. For W background
 
@@ -371,11 +289,25 @@ def w_bkg_weight_norm(data, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    data["Weight"] = (data["Weight"]*systBkgNorm).where(data["detailLabel"] == 300, other=data["Weight"])
-    return data
+    weights[detailedlabel == "ttbar"] = weights[detailedlabel == "ttbar"]*systBkgNorm
+    return weights
+
+def dibosn_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
+    """
+    Apply a scaling to the weight. For W background
+
+    Args
+    ----
+        data: the dataset should be a pandas.DataFrame like object.
+            This function will modify the given data inplace.
+
+    """
+    # scale the weight, arbitrary but reasonable value
+    weights[detailedlabel == "diboson"] = weights[detailedlabel == "diboson"]*systBkgNorm
+    return weights
 
 
-def all_bkg_weight_norm(data, systBkgNorm):
+def all_bkg_weight_norm(weights, label, systBkgNorm):
     """
     Apply a scaling to the weight.
 
@@ -386,14 +318,15 @@ def all_bkg_weight_norm(data, systBkgNorm):
 
     """
     # scale the weight, arbitrary but reasonable value
-    data["Weight"] = (data["Weight"]*systBkgNorm).where(data["Label"] == 0, other=data["Weight"])
-    return data
+    weights[label == 0] = weights[label == 0] * systBkgNorm
+    return weights
 
-        
+
+
 # ==================================================================================
 # Manipulate the 4-momenta
 # ==================================================================================
-def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed = 31415):
+def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed=31415):
     """
     Manipulate primary inputs : the PRI_had_pt PRI_jet_leading_pt PRI_jet_subleading_pt and recompute the others values accordingly.
 
@@ -404,15 +337,15 @@ def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed =
         systTauEnergyScale : the factor applied : PRI_had_pt <-- PRI_had_pt * systTauEnergyScale
         systJetEnergyScale : the factor applied : all jet pt  * systJetEnergyScale
         recompute MET accordingly
-        Add soft MET gaussian random energy 
+        Add soft MET gaussian random energy
 
-        
+
     Notes :
     -------
         Recompute :
             - PRI_had_pt
             - PRI_jet_leading_pt
-            - PRI_jet_subleading_pt            
+            - PRI_jet_subleading_pt
             - PRI_met
             - PRI_met_phi
             - PRI_met_sumet
@@ -420,105 +353,106 @@ def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed =
 
     """
 
+    vmet = V4()  # met 4-vector
+    vmet.setPtEtaPhiM(data["PRI_met"], 0.0, data["PRI_met_phi"], 0.0)  # met mass zero,
+    # met_sumet=data["PRI_met_sumet"]
 
-    vmet = V4() # met 4-vector
-    vmet.setPtEtaPhiM(data["PRI_met"], 0., data["PRI_met_phi"], 0.) # met mass zero,
-#     met_sumet=data["PRI_met_sumet"]
-    
-    if systTauEnergyScale!=1.:
+    if systTauEnergyScale != 1.0:
         # scale tau energy scale, arbitrary but reasonable value
-        data["PRI_had_pt"] *= systTauEnergyScale 
-
+        data["PRI_had_pt"] *= systTauEnergyScale
 
         # build 4-vectors
-        vtau = V4() # tau 4-vector
-        vtau.setPtEtaPhiM(data["PRI_had_pt"], data["PRI_had_eta"], data["PRI_had_phi"], 0.8) # tau mass 0.8 like in original
+        vtau = V4()  # tau 4-vector
+        vtau.setPtEtaPhiM(
+            data["PRI_had_pt"], data["PRI_had_eta"], data["PRI_had_phi"], 0.8
+        )  # tau mass 0.8 like in original
 
-        #vlep = V4() # lepton 4-vector
-        #vlep.setPtEtaPhiM(data["PRI_lep_pt"], data["PRI_lep_eta"], data["PRI_lep_phi"], 0.) # lep mass 0 (either 0.106 or 0.0005 but info is lost)
-
+        # vlep = V4() # lepton 4-vector
+        # vlep.setPtEtaPhiM(data["PRI_lep_pt"], data["PRI_lep_eta"], data["PRI_lep_phi"], 0.) # lep mass 0 (either 0.106 or 0.0005 but info is lost)
 
         # fix MET according to tau pt change (minus sign since met is minus sum pt of visible particles
         vtauDeltaMinus = vtau.copy()
-        vtauDeltaMinus.scaleFixedM( (1.-systTauEnergyScale)/systTauEnergyScale )
+        vtauDeltaMinus.scaleFixedM((1.0 - systTauEnergyScale) / systTauEnergyScale)
         vmet += vtauDeltaMinus
-        vmet.pz = 0.
-        vmet.e = vmet.eWithM(0.)
+        vmet.pz = 0.0
+        vmet.e = vmet.eWithM(0.0)
 
-        #met_sum_et is increased if energy scale increased
-        tauDeltaMinus=vtau.pt()
-#         met_sumet+= (systTauEnergyScale-1)/systTauEnergyScale *tauDeltaMinus
+        # met_sum_et is increased if energy scale increased
+        # tauDeltaMinus = vtau.pt()
+        # met_sumet+= (systTauEnergyScale-1)/systTauEnergyScale *tauDeltaMinus
 
     # scale jet energy scale, arbitrary but reasonable value
 
-    if systJetEnergyScale!=1. :
-        #data["PRI_jet_leading_pt"]    *= systJetEnergyScale
-        data["PRI_jet_leading_pt"] = np.where(data["PRI_n_jets"] >0,
-                                           data["PRI_jet_leading_pt"]*systJetEnergyScale,
-                                           data["PRI_jet_leading_pt"])
-        #data["PRI_jet_subleading_pt"] *= systJetEnergyScale
-        data["PRI_jet_subleading_pt"] = np.where(data["PRI_n_jets"] >1,
-                                           data["PRI_jet_subleading_pt"]*systJetEnergyScale,
-                                           data["PRI_jet_subleading_pt"])
+    if systJetEnergyScale != 1.0:
+        # data["PRI_jet_leading_pt"]    *= systJetEnergyScale
+        data["PRI_jet_leading_pt"] = np.where(
+            data["PRI_n_jets"] > 0,
+            data["PRI_jet_leading_pt"] * systJetEnergyScale,
+            data["PRI_jet_leading_pt"],
+        )
+        # data["PRI_jet_subleading_pt"] *= systJetEnergyScale
+        data["PRI_jet_subleading_pt"] = np.where(
+            data["PRI_n_jets"] > 1,
+            data["PRI_jet_subleading_pt"] * systJetEnergyScale,
+            data["PRI_jet_subleading_pt"],
+        )
 
-        data["PRI_jet_all_pt"] *= systJetEnergyScale 
+        data["PRI_jet_all_pt"] *= systJetEnergyScale
 
-        jet_all_pt= data["PRI_jet_all_pt"]
-    
-        #met_sum_et is increased if energy scale increased
-#         met_sumet+= (systJetEnergyScale-1)/systJetEnergyScale *jet_all_pt
-    
+        # jet_all_pt = data["PRI_jet_all_pt"]
+        # # met_sum_et is increased if energy scale increased
+        # met_sumet+= (systJetEnergyScale-1)/systJetEnergyScale *jet_all_pt
 
         # first jet if it exists
         vj1 = V4()
-        vj1.setPtEtaPhiM(data["PRI_jet_leading_pt"].where( data["PRI_n_jets"] > 0, other=0 ),
-                             data["PRI_jet_leading_eta"].where( data["PRI_n_jets"] > 0, other=0 ),
-                             data["PRI_jet_leading_phi"].where( data["PRI_n_jets"] > 0, other=0 ),
-                             0.) # zero mass
+        vj1.setPtEtaPhiM(
+            data["PRI_jet_leading_pt"].where(data["PRI_n_jets"] > 0, other=0),
+            data["PRI_jet_leading_eta"].where(data["PRI_n_jets"] > 0, other=0),
+            data["PRI_jet_leading_phi"].where(data["PRI_n_jets"] > 0, other=0),
+            0.0,
+        )  # zero mass
         # fix MET according to leading jet pt change
         vj1DeltaMinus = vj1.copy()
-        vj1DeltaMinus.scaleFixedM( (1.-systJetEnergyScale)/systJetEnergyScale )
+        vj1DeltaMinus.scaleFixedM((1.0 - systJetEnergyScale) / systJetEnergyScale)
         vmet += vj1DeltaMinus
-        vmet.pz = 0.
-        vmet.e = vmet.eWithM(0.)
-
-
+        vmet.pz = 0.0
+        vmet.e = vmet.eWithM(0.0)
 
         # second jet if it exists
-        vj2=V4()
-        vj2.setPtEtaPhiM(data["PRI_jet_subleading_pt"].where( data["PRI_n_jets"] > 1, other=0 ),
-                         data["PRI_jet_subleading_eta"].where( data["PRI_n_jets"] > 1, other=0 ),
-                         data["PRI_jet_subleading_phi"].where( data["PRI_n_jets"] > 1, other=0 ),
-                         0.) # zero mass
+        vj2 = V4()
+        vj2.setPtEtaPhiM(
+            data["PRI_jet_subleading_pt"].where(data["PRI_n_jets"] > 1, other=0),
+            data["PRI_jet_subleading_eta"].where(data["PRI_n_jets"] > 1, other=0),
+            data["PRI_jet_subleading_phi"].where(data["PRI_n_jets"] > 1, other=0),
+            0.0,
+        )  # zero mass
 
         # fix MET according to leading jet pt change
         vj2DeltaMinus = vj2.copy()
-        vj2DeltaMinus.scaleFixedM( (1.-systJetEnergyScale)/systJetEnergyScale )
+        vj2DeltaMinus.scaleFixedM((1.0 - systJetEnergyScale) / systJetEnergyScale)
         vmet += vj2DeltaMinus
-        vmet.pz = 0.
-        vmet.e = vmet.eWithM(0.)
-        
-    #note that in principle we should also fix MET for the third jet or more but we do not have enough information
+        vmet.pz = 0.0
+        vmet.e = vmet.eWithM(0.0)
 
-    if softMET>0:
+    # note that in principle we should also fix MET for the third jet or more but we do not have enough information
+
+    if soft_met > 0:
         # add soft met term
         # Compute the missing v4 vector
         random_state = np.random.RandomState(seed=seed)
         SIZE = data.shape[0]
         v4_soft_term = V4()
-        v4_soft_term.px = random_state.normal(0, softMET, size=SIZE)
-        v4_soft_term.py = random_state.normal(0, softMET, size=SIZE)
+        v4_soft_term.px = random_state.normal(0, soft_met, size=SIZE)
+        v4_soft_term.py = random_state.normal(0, soft_met, size=SIZE)
         v4_soft_term.pz = np.zeros(SIZE)
-        v4_soft_term.e = v4_soft_term.eWithM(0.)
+        v4_soft_term.e = v4_soft_term.eWithM(0.0)
         # fix MET according to soft term
         vmet = vmet + v4_soft_term
 
-    
-
     data["PRI_met"] = vmet.pt()
     data["PRI_met_phi"] = vmet.phi()
-#     data["PRI_met_sumet"] = met_sumet
-                     
+    #     data["PRI_met_sumet"] = met_sumet
+
     # Fix precision to 3 decimals
     DECIMALS = 3
 
@@ -530,338 +464,176 @@ def mom4_manipulate (data, systTauEnergyScale, systJetEnergyScale,softMET,seed =
     data["PRI_lep_phi"] = data["PRI_lep_phi"].round(decimals=DECIMALS)
     data["PRI_met"] = data["PRI_met"].round(decimals=DECIMALS)
     data["PRI_met_phi"] = data["PRI_met_phi"].round(decimals=DECIMALS)
-#     data["PRI_met_sumet"] = data["PRI_met_sumet"].round(decimals=DECIMALS)
+    #     data["PRI_met_sumet"] = data["PRI_met_sumet"].round(decimals=DECIMALS)
     data["PRI_jet_leading_pt"] = data["PRI_jet_leading_pt"].round(decimals=DECIMALS)
     data["PRI_jet_leading_eta"] = data["PRI_jet_leading_eta"].round(decimals=DECIMALS)
     data["PRI_jet_leading_phi"] = data["PRI_jet_leading_phi"].round(decimals=DECIMALS)
-    data["PRI_jet_subleading_pt"] = data["PRI_jet_subleading_pt"].round(decimals=DECIMALS)
-    data["PRI_jet_subleading_eta"] = data["PRI_jet_subleading_eta"].round(decimals=DECIMALS)
-    data["PRI_jet_subleading_phi"] = data["PRI_jet_subleading_phi"].round(decimals=DECIMALS)
+    data["PRI_jet_subleading_pt"] = data["PRI_jet_subleading_pt"].round(
+        decimals=DECIMALS
+    )
+    data["PRI_jet_subleading_eta"] = data["PRI_jet_subleading_eta"].round(
+        decimals=DECIMALS
+    )
+    data["PRI_jet_subleading_phi"] = data["PRI_jet_subleading_phi"].round(
+        decimals=DECIMALS
+    )
     data["PRI_jet_all_pt"] = data["PRI_jet_all_pt"].round(decimals=DECIMALS)
 
     return data
 
 
-def calcul_int(data):
+def make_unweighted_set(data_set):
+    keys = ["htautau", "ztautau", "ttbar", "diboson"]
+    unweighted_set = {}
+    for key in keys:
+        unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
+            frac=1, random_state=31415
+        )
 
-    #Definition of the x and y components of the hadron's momentum
-    data["had_px"] = data.PRI_had_pt * cos(data.PRI_had_phi)
-    data["had_py"] = data.PRI_had_pt * sin(data.PRI_had_phi)
-    data["had_pz"] = data.PRI_had_pt * sinh(data.PRI_had_eta)
-    data["p_had"] = data.PRI_had_pt * cosh(data.PRI_had_eta)
+    return unweighted_set
 
-    #Definition of the x and y components of the lepton's momentum
-    data["lep_px"] = data.PRI_lep_pt * cos(data.PRI_lep_phi)
-    data["lep_py"] = data.PRI_lep_pt * sin(data.PRI_lep_phi)
-    data["lep_pz"] = data.PRI_lep_pt * sinh(data.PRI_lep_eta)
-    data["p_lep"] = data.PRI_lep_pt * cosh(data.PRI_lep_eta)
-
-    #Definition of the x and y components of the neutrinos's momentum (MET)
-    data["met_x"] = data.PRI_met * cos(data.PRI_met_phi)
-    data["met_y"] = data.PRI_met * sin(data.PRI_met_phi)
-
-    #Definition of the x and y components of the leading jet's momentum
-    data["jet_leading_px"] = data.PRI_jet_leading_pt * cos(data.PRI_jet_leading_phi) * (data.PRI_n_jets >= 1)  # = 0 if PRI_n_jets == 0
-    data["jet_leading_py"] = data.PRI_jet_leading_pt * sin(data.PRI_jet_leading_phi) * (data.PRI_n_jets >= 1)
-    data["jet_leading_pz"] = data.PRI_jet_leading_pt * sinh(data.PRI_jet_leading_eta) * (data.PRI_n_jets >= 1)
-    data["p_jet_leading"] = data.PRI_jet_leading_pt * cosh(data.PRI_jet_leading_eta) * (data.PRI_n_jets >= 1)
-
-    #Definition of the x and y components of the subleading jet's momentum
-    data["jet_subleading_px"] = data.PRI_jet_subleading_pt * cos(data.PRI_jet_subleading_phi) * (data.PRI_n_jets >= 2)  # = 0 if PRI_n_jets <= 1
-    data["jet_subleading_py"] = data.PRI_jet_subleading_pt * sin(data.PRI_jet_subleading_phi) * (data.PRI_n_jets >= 2)
-    data["jet_subleading_pz"] = data.PRI_jet_subleading_pt * sinh(data.PRI_jet_subleading_eta) * (data.PRI_n_jets >= 2)
-    data["p_jet_subleading"] = data.PRI_jet_subleading_pt * cosh(data.PRI_jet_subleading_eta) * (data.PRI_n_jets >= 2)
-
-    return data
-#calcul_int(data)
-#display(data.head(10))
-
-
-def f_DER_mass_transverse_met_lep(data):
-    """
-    Calculate the transverse mass between the MET and the lepton
-    Parameters: data (dataframe)
-    """
-    data["calcul_int"] = (data.PRI_met+data.PRI_lep_pt)**2-(data.met_x+data.lep_px)**2-(data.met_y+data.lep_py)**2
-    data["DER_mass_transverse_met_lep"] = sqrt(data.calcul_int * (data.calcul_int >= 0))
-    del data["calcul_int"]
-    return data
-
-def f_DER_mass_vis(data):
-    """
-    Calculate the invariant mass of the hadron and the lepton
-    Parameters: data (dataframe)
-    """
-
-    data["DER_mass_vis"]=sqrt((data.p_lep+data.p_had)**2-(data.lep_px+data.had_px)**2-(data.lep_py+data.had_py)**2-(data.lep_pz+data.had_pz)**2)
-    return data
-
-def f_DER_pt_h(data):
-    """
-    Calculate the transverse momentum of the hadronic system
-    Parameters: data (dataframe)
-    """
-
-    data["DER_pt_h"] = sqrt((data.had_px + data.lep_px + data.met_x)**2 
-                          + (data.had_py + data.lep_py + data.met_y)**2)
-    return data
-
-def f_DER_deltaeta_jet_jet(data):
-    """
-    Calculate the absolute value of the difference of the pseudorapidity of the two jets
-    Parameters: data (dataframe)
-    """
-
-
-    data["DER_deltaeta_jet_jet"]= abs(data.PRI_jet_subleading_eta-data.PRI_jet_leading_eta)*(data.PRI_n_jets>=2)-7*(data.PRI_n_jets<2)
-    return data
-
-from numpy import sqrt
-#undefined if PRI_n_jets <= 1:
-def f_DER_mass_jet_jet(data):
-    """
-    Calculate the invariant mass of the two jets
-    Parameters: data (dataframe)
-    """
-
-    data["calcul_int"] = ((data.p_jet_leading + data.p_jet_subleading)**2 
-                      - (data.jet_leading_px + data.jet_subleading_px)**2 
-                      - (data.jet_leading_py + data.jet_subleading_py)**2
-                      - (data.jet_leading_pz + data.jet_subleading_pz)**2)
-    data["DER_mass_jet_jet"] = (sqrt(data.calcul_int*(data.calcul_int>=0))*(data.PRI_n_jets >= 2)
-                            - 7*(data.PRI_n_jets <= 1))
-
-    del data["calcul_int"]
-    return data
-
-
-def f_DER_prodeta_jet_jet(data):
-    """
-    Calculate the product of the pseudorapidities of the two jets
-    Parameters: data (dataframe)
-    """
-
-    data["DER_prodeta_jet_jet"] = data.PRI_jet_leading_eta*data.PRI_jet_subleading_eta*(data.PRI_n_jets >= 2) -7*(data.PRI_n_jets<=1)
-    return data
-
-
-def f_DER_deltar_had_lep(data):
-    data["difference2_eta"]=(data.PRI_lep_eta-data.PRI_had_eta)**2
-    data["difference2_phi"]=  (np.abs(np.mod(data.PRI_lep_phi-data.PRI_had_phi+3*np.pi,2*np.pi)-np.pi))**2    
-    data["DER_deltar_had_lep"] = sqrt(data.difference2_eta + data.difference2_phi)
-
-    del data["difference2_eta"]
-    del data["difference2_phi"]
-    return data
-
-
-def f_DER_pt_tot(data):
-    """
-    Calculate the total transverse momentum
-    Parameters: data (dataframe)
-    """
-    data["DER_pt_tot"] = sqrt((data.had_px + data.lep_px + data.met_x + data.jet_leading_px + data.jet_subleading_px)**2 
-                          + (data.had_py + data.lep_py + data.met_y + data.jet_leading_py + data.jet_subleading_py)**2)
-    return data
-
-def f_DER_sum_pt(data):
-    """
-    Calculate the sum of the transverse momentum of the lepton, the hadron and the jets
-    Parameters: data (dataframe)
-    """
-
-    data["DER_sum_pt"] = data.PRI_had_pt + data.PRI_lep_pt + data.PRI_jet_all_pt
-    return data
-
-def f_DER_pt_ratio_lep_had(data):
-    """
-    Calculate the ratio of the transverse momentum of the lepton and the hadron 
-    Parameters: data (dataframe)
-    """
-    data["DER_pt_ratio_lep_had"] = data.PRI_lep_pt / data.PRI_had_pt
-    return data
-
-def f_DER_met_phi_centrality(data):
-    """
-    Calculate the centrality of the MET
-    Parameters: data (dataframe)
-    """
-    def A(met,lep,had):
-        return sin(met-lep) * np.sign(sin(had-lep))
-
-    def B(met,lep,had):
-        return sin(had-met) * np.sign(sin(had-lep))
-
-    data["A"]  = A(data.PRI_met_phi, data.PRI_lep_phi, data.PRI_had_phi)
-    data["B"]  = B(data.PRI_met_phi, data.PRI_lep_phi, data.PRI_had_phi)
-    data["num"] = (data.A + data.B)
-    data["denum"] = sqrt(data.A**2 + data.B**2)
-
-    data["DER_met_phi_centrality"] = data.num/(data.denum + (data.denum == 0))*(data.denum != 0) - 7*(data.denum == 0)
-    epsilon = 0.0001
-    mask = data.denum == 0
-        
-    data.loc[mask,"A"]  = A(data.PRI_met_phi, data.PRI_lep_phi + epsilon, data.PRI_had_phi)
-    data.loc[mask,"B"]  = B(data.PRI_met_phi, data.PRI_lep_phi + epsilon, data.PRI_had_phi)
-    data.loc[mask,"num"] = (data.A + data.B)
-    data.loc[mask,"denum"] = sqrt(data.A**2 + data.B**2)
-    data.loc[mask,"DER_met_phi_centrality"] = data.num/(data.denum + (data.denum == 0))*(data.denum != 0) - 7*(data.denum == 0)
-
-    del data["A"]
-    del data["B"]
-    del data["num"]
-    del data["denum"]
-    return data
-
-def f_DER_lep_eta_centrality(data):
-    """
-    Calculate the centrality of the lepton
-    Parameters: data (dataframe)
-    """
-
-    data["difference"] = (data.PRI_jet_leading_eta - data.PRI_jet_subleading_eta)**2
-    data["moyenne"] = (data.PRI_jet_leading_eta + data.PRI_jet_subleading_eta)/2
-
-    data["DER_lep_eta_centrality"]=(exp(-4/(data.difference)*((data.PRI_lep_eta - data.moyenne)**2))*(data.PRI_n_jets >= 2)
-                                      -7*(data.PRI_n_jets <= 1))
-
-    del data["difference"]
-    del data["moyenne"]
-
-    return data
-
-def f_del_DER(data):
-    """
-    Delete all the unnecessary columns that were used to calculate the DER variables
-    Parameters: data (dataframe)
-    """
-    del data["had_px"]
-    del data["had_py"]
-    del data["had_pz"]
-    del data["p_had"]
-    del data["lep_px"]
-    del data["lep_py"]
-    del data["lep_pz"]
-    del data["p_lep"]
-    del data["met_x"]
-    del data["met_y"]
-    del data["jet_leading_px"]
-    del data["jet_leading_py"]
-    del data["jet_leading_pz"]
-    del data["p_jet_leading"]
-    del data["jet_subleading_px"]
-    del data["jet_subleading_py"]
-    del data["jet_subleading_pz"]
-    del data["p_jet_subleading"]
-
-    return data
-
-def DER_data(data):
-    """
-    data is supposed to be clean (no Weight, no eventId etc...)
-    This function directly modifies the dataframe data so make sure to make a copy if
-    you need to keep data
-    """
-    data = calcul_int(data)
-    data = f_DER_mass_transverse_met_lep(data)
-    data = f_DER_mass_vis(data)
-    data = f_DER_pt_h(data)
-    data = f_DER_deltaeta_jet_jet(data)
-    data = f_DER_mass_jet_jet(data)
-    data = f_DER_prodeta_jet_jet(data)
-    data = f_DER_deltar_had_lep(data)
-    data = f_DER_pt_tot(data)
-    data = f_DER_sum_pt(data)
-    data = f_DER_pt_ratio_lep_had(data)
-    data = f_DER_met_phi_centrality(data)
-    data = f_DER_lep_eta_centrality(data)
-    data = f_del_DER(data)
-    return data
 
 def postprocess(data):
 
-    data = data.drop(data[data.PRI_had_pt<26].index)
-    data = data.drop(data[data.PRI_lep_pt<20].index)
+    data = data.drop(data[data.PRI_had_pt < 26].index)
+    data = data.drop(data[data.PRI_lep_pt < 20].index)
     # data = data.drop(data[data.PRI_met>70].index)
 
     return data
 
 
-# ==================================================================================
-#  MAIN : here is defined the behaviour of this module as a main script
-# ==================================================================================
-class Systematics:
+def systematics(
+    data_set=None,
+    tes=1.0,
+    jes=1.0,
+    soft_met=0.0,
+    seed=31415,
+    ttbar_scale=None,
+    diboson_scale=None,
+    bkg_scale=None,
+    verbose=0,
+):
+    """
+    Params:
+    -------
+    data:
+        dataframe
+    tes:
+        between 0.9 and 1.1, default: 1.0
+        1.0 means no systemtics
+    jes:
+        default: 1.0
+    soft_met:
+        default: 0.0
+    ttbar_scale:
+        default: None
+    diboson_scale:
+        default: None
+    bkg_scale:
+        default: None
+    """
 
-    def __init__(
-        self,
-        data=None,
-        tes=1.0,
-        jes=1.0,
-        softMET=1.0,
-        seed=31415,
-        w_scale=None,
-        bkg_scale=None,
-        verbose=0
+    if ttbar_scale is not None:
+        if "weights" in data_set.keys():
+            data_set["weights"] = ttbar_bkg_weight_norm(
+                data_set["weights"], data_set["detailed_labels"], ttbar_scale
+            )
+            
+    if diboson_scale is not None:
+        if "weights" in data_set.keys():
+            data_set["weights"] = dibosn_bkg_weight_norm(
+                data_set["weights"], data_set["detailed_labels"], diboson_scale
+            )
 
-    ):
-        """
-        Params:
-        -------
-        data:
-            dataframe
-        tes:
-            between 0.9 and 1.1, default: 1.0
-            1.0 means no systemtics
-        jes:
-            default: 1.0
-        softMET:
-            default: 1.0
-        w_scale:
-            default: None
-        bkg_scale:
-            default: None
-        """
+    if bkg_scale is not None:
+        if "weights" in data_set.keys():
+            data_set["weights"] = all_bkg_weight_norm(
+                data_set["weights"], data_set["labels"], bkg_scale
+            )
 
-        self.data = data
-        self.tes = tes
-        self.jes = jes
-        self.softMET = softMET
-        self.w_scale = w_scale
-        self.bkg_scale = bkg_scale
+    if verbose > 0:
+        print("Tau energy rescaling :", tes)
+    data = mom4_manipulate(
+        data=data_set["data"].copy(),
+        systTauEnergyScale=tes,
+        systJetEnergyScale=jes,
+        soft_met=soft_met,
+        seed=seed,
+    )
 
-        self.columns = [
-            "EventId",
-            "PRI_had_pt",
-            "PRI_had_eta",
-            "PRI_had_phi",
-            "PRI_lep_pt",
-            "PRI_lep_eta",
-            "PRI_lep_phi",
-            "PRI_met",
-            "PRI_met_phi",
-            "PRI_met_sumet",
-            "PRI_n_jets",
-            "PRI_jet_leading_pt",
-            "PRI_jet_leading_eta",
-            "PRI_jet_leading_phi",
-            "PRI_jet_subleading_pt",
-            "PRI_jet_subleading_eta",
-            "PRI_jet_subleading_phi",
-            "PRI_jet_all_pt",
-            "Weight",
-            "Label",
-            "detailLabel",
-        ] 
+    df = DER_data(data)
+    for key in data_set.keys():
+        if key is not "data":
+            df[key] = data_set[key]
 
-        if self.w_scale is not None:
-            print("W bkg weight rescaling :", self.w_scale)
-            self.data = w_bkg_weight_norm(self.data, self.w_scale)
+    data_syst = postprocess(df)
 
-        if self.bkg_scale is not None:
-            print("All bkg weight rescaling :", self.bkg_scale)
-            self.data = all_bkg_weight_norm(self.data, self.bkg_scale)
-        if verbose > 0:
-            print("Tau energy rescaling :", self.tes)
-        self.data = mom4_manipulate(data=self.data,systTauEnergyScale = self.tes,systJetEnergyScale = self.jes,softMET = self.softMET,seed=seed)
-        self.data = postprocess(self.data)
-        self.data = DER_data(self.data)
+    data_syst_set = {}
+    for key in data_set.keys():
+        if key is not "data":
+            data_syst_set[key] = data_syst.pop(key)
+    data_syst_set["data"] = data_syst
+
+    return data_syst_set
+
+
+LHC_NUMBERS = {
+    "ztautau": 3544019,
+    "diboson": 40590,
+    "ttbar": 158761,
+    "htautau": 3639,
+}
+
+
+def get_bootstraped_dataset(
+    test_set,
+    mu=1.0,
+    seed=31415,
+    ttbar_scale=None,
+    diboson_scale=None,
+    bkg_scale=None,
+):
+
+    bkg_norm = LHC_NUMBERS.copy()
+    if ttbar_scale is not None:
+        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        
+    if diboson_scale is not None:
+        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
+
+    if bkg_scale is not None:
+        bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
+
+    bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
+    
+    
+
+    pseudo_data = []
+    for key in test_set.keys():
+        temp = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+
+        pseudo_data.append(temp)
+
+    pseudo_data = pd.concat(pseudo_data)
+
+    pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
+
+    return pseudo_data
+
+
+def get_systematics_dataset(
+    data,
+    tes=1.0,
+    jes=1.0,
+    soft_met=0.0,
+):
+    weights = np.ones(data.shape[0])
+
+    data_syst = systematics(
+        data_set={"data": data, "weights": weights},
+        tes=tes,
+        jes=jes,
+        soft_met=soft_met,
+    )
+
+    return data_syst
