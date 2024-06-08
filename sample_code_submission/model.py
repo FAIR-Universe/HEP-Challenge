@@ -12,6 +12,7 @@ from HiggsML.datasets import train_test_split
 import os
 import pickle
 
+current_file = os.path.dirname(os.path.abspath(__file__))
 
 class Model:
     """
@@ -123,8 +124,7 @@ class Model:
         print("Training Data: ", self.training_set["data"].shape)
 
         self.re_train = True
-        current_file = os.path.dirname(os.path.abspath(__file__))
-
+        
         if XGBOOST:
             from boosted_decision_tree import BoostedDecisionTree
 
@@ -186,7 +186,6 @@ class Model:
             self.model.fit(
                 balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
             )
-            current_file = os.path.dirname(os.path.abspath(__file__))
             self.model.save( current_file + "/" + self.name)
 
 
