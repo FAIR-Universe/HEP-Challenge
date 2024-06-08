@@ -20,7 +20,9 @@
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="neural_network_TF module" href="neural_network_TF.html" />
+    <link rel="prev" title="boosted_decision_tree module" href="boosted_decision_tree.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,12 +45,27 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">HEP-Challenge</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Ingestion_program.html">Ingestion_program</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="sample_code_submission.html">Sample Code Submission</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="boosted_decision_tree.html">boosted_decision_tree module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">model module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#model.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="neural_network_TF.html">neural_network_TF module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neural_network_torch.html">neural_network_torch module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="statistical_analysis.html">statistical_analysis module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="score.html">score module</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -65,6 +82,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">HEP-Challenge</a></li>
+          <li class="breadcrumb-item"><a href="sample_code_submission.html">Sample Code Submission</a></li>
       <li class="breadcrumb-item active">model module</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/rst_source/model.rst.txt" rel="nofollow"> View page source</a>
@@ -79,26 +98,89 @@
 <span id="model-module"></span><h1>model module<a class="headerlink" href="#module-model" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="model.Model">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">model.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systematics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">model.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">get_train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systematics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This is a model class to be submitted by the participants in their submission.</p>
-<p>This class should consists of the following functions
-1) init : initialize a classifier
-2) fit : can be used to train a classifier
-3) predict: predict mu_hats,  delta_mu_hat and q1,q2</p>
+<p>This class consists of the following functions:
+1) __init__:</p>
+<blockquote>
+<div><p>Initializes the Model class.
+Args:</p>
+<blockquote>
+<div><p>get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights, detailed_labels, and settings.
+systematics (object, optional): A function that can be used to get a dataset with systematics added.</p>
+</div></blockquote>
 <dl class="simple">
-<dt>Note:   Add more methods if needed e.g. save model, load pre-trained model etc.</dt><dd><p>It is the participant’s responsibility to make sure that the submission 
-class is named “Model” and that its constructor arguments remains the same.
-The ingestion program initializes the Model class and calls fit and predict methods</p>
+<dt>Returns:</dt><dd><p>None</p>
 </dd>
 </dl>
+</div></blockquote>
+<ol class="arabic" start="2">
+<li><dl>
+<dt>fit:</dt><dd><p>Trains the model.
+Params:</p>
+<blockquote>
+<div><p>None</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Functionality:</dt><dd><p>This function can be used to train a model. If <cite>re_train</cite> is True, it balances the dataset,
+fits the model using the balanced dataset, and saves the model. If <cite>re_train</cite> is False, it
+loads the saved model and calculates the saved information. The saved information is used
+to compute the train results.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>predict:</dt><dd><p>Predicts the values for the test set.
+Parameters:</p>
+<blockquote>
+<div><p>test_set (dict): A dictionary containing the test data and weights.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dict: A dictionary with the following keys:
+- ‘mu_hat’: The predicted value of mu.
+- ‘delta_mu_hat’: The uncertainty in the predicted value of mu.
+- ‘p16’: The lower bound of the 16th percentile of mu.
+- ‘p84’: The upper bound of the 84th percentile of mu.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>balance_set:</dt><dd><p>Balances the training set by equalizing the number of background and signal events.
+Params:</p>
+<blockquote>
+<div><p>None</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dict: A dictionary with the balanced training set.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="py method">
+<dt class="sig sig-object py" id="model.Model.balance_set">
+<span class="sig-name descname"><span class="pre">balance_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.balance_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="model.Model.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.fit" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
+<dd><p>Trains the model.</p>
+<dl class="simple">
 <dt>Params:</dt><dd><p>None</p>
 </dd>
-<dt>Functionality:</dt><dd><p>this function can be used to train a model using the train set</p>
+<dt>Functionality:</dt><dd><p>This function can be used to train a model. If <cite>re_train</cite> is True, it balances the dataset,
+fits the model using the balanced dataset, and saves the model. If <cite>re_train</cite> is False, it
+loads the saved model and calculates the saved information. The saved information is used
+to compute the train results.</p>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
 </dd>
@@ -106,64 +188,19 @@ The ingestion program initializes the Model class and calls fit and predict meth
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="model.Model.mu_hat_calc">
-<span class="sig-name descname"><span class="pre">mu_hat_calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.mu_hat_calc" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="model.Model.nominal_histograms">
-<span class="sig-name descname"><span class="pre">nominal_histograms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.nominal_histograms" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="model.Model.predict">
 <span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_set</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.predict" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>Params:</dt><dd><p>None</p>
+<dd><p>Predicts the values for the test set.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>test_set (dict): A dictionary containing the test data, and weights.</p>
 </dd>
-<dt>Functionality:</dt><dd><p>to predict using the test sets</p>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>dict with keys</dt><dd><ul class="simple">
-<li><p>mu_hat</p></li>
-<li><p>delta_mu_hat</p></li>
-<li><p>p16</p></li>
-<li><p>p84</p></li>
-</ul>
+<dt>Returns:</dt><dd><p>dict: A dictionary with the following keys:
+- ‘mu_hat’: The predicted value of mu.
+- ‘delta_mu_hat’: The uncertainty in the predicted value of mu.
+- ‘p16’: The lower bound of the 16th percentile of mu.
+- ‘p84’: The upper bound of the 84th percentile of mu.</p>
 </dd>
 </dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="model.Model.save_model">
-<span class="sig-name descname"><span class="pre">save_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.save_model" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="model.Model.theta_function">
-<span class="sig-name descname"><span class="pre">theta_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.theta_function" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="model.PyTorchModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">model.</span></span><span class="sig-name descname"><span class="pre">PyTorchModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_cols</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.PyTorchModel" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="model.PyTorchModel.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.PyTorchModel.forward" title="Link to this definition"></a></dt>
-<dd><p>Define the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
 </dd></dl>
 
 </dd></dl>
@@ -173,7 +210,10 @@ registered hooks while the latter silently ignores them.</p>
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="boosted_decision_tree.html" class="btn btn-neutral float-left" title="boosted_decision_tree module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="neural_network_TF.html" class="btn btn-neutral float-right" title="neural_network_TF module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
