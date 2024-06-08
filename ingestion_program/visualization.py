@@ -8,6 +8,32 @@ from sklearn.metrics import roc_auc_score
 
 
 class Dataset_visualise:
+    """
+    A class for visualizing datasets.
+
+    Parameters:
+    - data_set (dict): The dataset containing the data, labels, weights, and detailed labels.
+    - name (str): The name of the dataset (default: "dataset").
+    - columns (list): The list of column names to consider (default: None, which includes all columns).
+
+    Attributes:
+    - dfall (DataFrame): The dataset.
+    - target (Series): The labels.
+    - weights (Series): The weights.
+    - detailed_label (ndarray): The detailed labels.
+    - columns (list): The list of column names.
+    - name (str): The name of the dataset.
+    - keys (ndarray): The unique detailed labels.
+    - weight_keys (dict): The weights for each detailed label.
+
+    Methods:
+    - examine_dataset(): Prints information about the dataset.
+    - histogram_dataset(columns=None): Plots histograms of the dataset features.
+    - correlation_plots(columns=None): Plots correlation matrices of the dataset features.
+    - pair_plots(sample_size=10, columns=None): Plots pair plots of the dataset features.
+    - stacked_histogram(field_name, mu_hat=1.0, bins=30): Plots a stacked histogram of a specific field in the dataset.
+    - pair_plots_syst(df_syst, sample_size=10): Plots pair plots between the dataset and a system dataset.
+    """
 
     def __init__(self, data_set, name="dataset", columns=None):
         self.dfall = data_set["data"]
@@ -25,6 +51,9 @@ class Dataset_visualise:
             self.weight_keys[key] = self.weights[self.detailed_label == key]
 
     def examine_dataset(self):
+        """
+        Prints information about the dataset.
+        """
         print(f"[*] --- Dataset name : {self.name}")
         print(f"[*] --- Number of events : {self.dfall.shape[0]}")
         print(f"[*] --- Number of features : {self.dfall.shape[1]}")
@@ -46,6 +75,12 @@ class Dataset_visualise:
         display(self.dfall.describe())
 
     def histogram_dataset(self, columns=None):
+        """
+        Plots histograms of the dataset features.
+
+        Parameters:
+        - columns (list): The list of column names to consider (default: None, which includes all columns).
+        """
         if columns == None:
             columns = self.columns
         sns.set_theme(rc={"figure.figsize": (40, 40)}, style="whitegrid")
@@ -83,6 +118,12 @@ class Dataset_visualise:
         plt.show()
 
     def correlation_plots(self, columns=None):
+        """
+        Plots correlation matrices of the dataset features.
+
+        Parameters:
+        - columns (list): The list of column names to consider (default: None, which includes all columns).
+        """
         caption = ["Signal feature", "Background feature"]
         if columns == None:
             columns = self.columns
@@ -99,6 +140,13 @@ class Dataset_visualise:
             plt.show()
 
     def pair_plots(self, sample_size=10, columns=None):
+        """
+        Plots pair plots of the dataset features.
+
+        Parameters:
+        - sample_size (int): The number of samples to consider (default: 10).
+        - columns (list): The list of column names to consider (default: None, which includes all columns).
+        """
         if columns == None:
             columns = self.columns
         df_sample = self.dfall[columns].copy()
@@ -135,6 +183,14 @@ class Dataset_visualise:
         plt.close()
 
     def stacked_histogram(self, field_name, mu_hat=1.0, bins=30):
+        """
+        Plots a stacked histogram of a specific field in the dataset.
+
+        Parameters:
+        - field_name (str): The name of the field to plot.
+        - mu_hat (float): The value of mu (default: 1.0).
+        - bins (int): The number of bins for the histogram (default: 30).
+        """
         field = self.dfall[field_name]
         sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
 
@@ -194,6 +250,13 @@ class Dataset_visualise:
         plt.show()
 
     def pair_plots_syst(self, df_syst, sample_size=10):
+        """
+        Plots pair plots between the dataset and a system dataset.
+
+        Parameters:
+        - df_syst (DataFrame): The system dataset.
+        - sample_size (int): The number of samples to consider (default: 10).
+        """
         df_sample = self.dfall[self.columns].copy()
         df_sample_syst = df_syst[self.columns].copy()
 
@@ -225,19 +288,6 @@ class Dataset_visualise:
         plt.show()
         plt.close()
 
-
-def Z_curve(score, labels, weights):  ## work in progress
-
-    plt.figure()
-
-    sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
-
-    thresholds_list = np.linspace(0, 1, num=100)
-    int_pred_sig = [
-        weights[(labels == 1) & (score > th_cut)].sum() for th_cut in thresholds_list
-    ]
-    plt.plot(thresholds_list, int_pred_sig)
-    plt.show()
 
 
 def visualize_scatter(ingestion_result_dict, ground_truth_mus):
