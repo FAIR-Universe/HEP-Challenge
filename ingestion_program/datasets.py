@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import json
 import os
-import subprocess
 import requests
 from pathlib import Path
 from zipfile import ZipFile

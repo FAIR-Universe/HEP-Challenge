@@ -7,10 +7,8 @@ TENSORFLOW = True
 TORCH = False
 
 from statistical_analysis import  StatisticalAnalysis
-from HiggsML.datasets import train_test_split
-
+import numpy as np
 import os
-import pickle
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
@@ -224,6 +222,64 @@ class Model:
         balanced_set["weights"] = weights_train
 
         return balanced_set
+
+def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
+    data = data_set["data"].copy()
+    train_set = {}
+    test_set = {}
+    full_size = len(data)
+    
+    print(f"Full size of the data is {full_size}")
+    
+    np.random.seed(random_state)
+    if isinstance(test_size, float):
+        test_number = int(test_size * full_size)
+        random_index = np.random.randint(0, full_size, test_number)
+    elif isinstance(test_size, int):
+        random_index = np.random.randint(0, full_size, test_size)
+    else:
+        raise ValueError("test_size should be either float or int")
+
+    full_range = data.index
+    remaining_index = full_range[np.isin(full_range, random_index, invert=True)]
+    remaining_index = np.array(remaining_index)
+    
+    print(f"Train size is {len(remaining_index)}")
+    print(f"Test size is {len(random_index)}")
+    
+    for key in data_set.keys():
+        if (key != "data") and (key != "settings"):
+            array = np.array(data_set[key])
+            test_set[key] = array[random_index]
+            train_set[key] = array[remaining_index]
+
+    test_set["data"] = data.iloc[random_index]
+    train_set["data"] = data.iloc[remaining_index]
+
+    if reweight is True:
+        signal_weight = np.sum(data_set["weights"][data_set["labels"] == 1])
+        background_weight = np.sum(data_set["weights"][data_set["labels"] == 0])
+        signal_weight_train = np.sum(train_set["weights"][train_set["labels"] == 1])
+        background_weight_train = np.sum(train_set["weights"][train_set["labels"] == 0])
+        signal_weight_test = np.sum(test_set["weights"][test_set["labels"] == 1])
+        background_weight_test = np.sum(test_set["weights"][test_set["labels"] == 0])
+
+        train_set["weights"][train_set["labels"] == 1] = train_set["weights"][
+            train_set["labels"] == 1
+        ] * (signal_weight / signal_weight_train)
+        test_set["weights"][test_set["labels"] == 1] = test_set["weights"][
+            test_set["labels"] == 1
+        ] * (signal_weight / signal_weight_test)
+
+        train_set["weights"][train_set["labels"] == 0] = train_set["weights"][
+            train_set["labels"] == 0
+        ] * (background_weight / background_weight_train)
+        test_set["weights"][test_set["labels"] == 0] = test_set["weights"][
+            test_set["labels"] == 0
+        ] * (background_weight / background_weight_test)
+
+    return train_set, test_set
+
 
     def predict(self, test_set):
         """
