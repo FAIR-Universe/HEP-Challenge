@@ -1,3 +1,4 @@
+***
 # Overview 
 ***
 
@@ -47,7 +48,7 @@ This competition allows code submissions. Participants can submit either of the 
 
 ## Credits
 ***
-#### Lawrence Berkeley National Laboratory 
+### Lawrence Berkeley National Laboratory 
 - Benjamin Nachman
 - Ben Thorne
 - Chris Harris
@@ -55,19 +56,19 @@ This competition allows code submissions. Participants can submit either of the 
 - Steven Farrell
 - Wahid Bhimji
 
-#### University of Washington
+### University of Washington
 - Elham E Khoda
 - Shih-Chieh Hsu
 
-#### ChaLearn
+### ChaLearn
 - Isabelle Guyon
 - Ihsan Ullah
 
-#### Université Paris-Saclay
+### Université Paris-Saclay
 - David Rousseau
 - Ragansu Chakkappai
 
-#### UC Irvine
+### UC Irvine
 - Aishik Ghosh
 
 

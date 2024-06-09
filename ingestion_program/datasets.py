@@ -12,9 +12,34 @@ test_set_settings = None
 
 
 class Data:
+    """
+    A class to represent a dataset.
+
+    Parameters:
+    input_dir (str): The directory path of the input data.
+
+    Attributes:
+    __train_set (dict): A dictionary containing the train dataset.
+    __test_set (dict): A dictionary containing the test dataset.
+    input_dir (str): The directory path of the input data.
+
+    Methods:
+    load_train_set(): Loads the train dataset.
+    load_test_set(): Loads the test dataset.
+    generate_psuedo_exp_data(): Generates pseudo experimental data.
+    get_train_set(): Returns the train dataset.
+    get_test_set(): Returns the test dataset.
+    delete_train_set(): Deletes the train dataset.
+    get_syst_train_set(): Returns the train dataset with systematic variations.
+    """
 
     def __init__(self, input_dir):
+        """
+        Constructs a Data object.
 
+        Parameters:
+        input_dir (str): The directory path of the input data.
+        """
         self.__train_set = None
         self.__test_set = None
         self.input_dir = input_dir
@@ -128,12 +153,27 @@ class Data:
         return test_set
 
     def get_train_set(self):
+        """
+        Returns the train dataset.
+
+        Returns:
+        dict: The train dataset.
+        """
         return self.__train_set
 
     def get_test_set(self):
+        """
+        Returns the test dataset.
+
+        Returns:
+        dict: The test dataset.
+        """
         return self.__test_set
 
     def delete_train_set(self):
+        """
+        Deletes the train dataset.
+        """
         del self.__train_set
 
     def get_syst_train_set(
@@ -151,6 +191,21 @@ parent_path = os.path.dirname(current_path)
 
 
 def Neurips2024_public_dataset():
+    """
+    Downloads and extracts the Neurips 2024 public dataset.
+
+    Returns:
+        Data: The path to the extracted input data.
+
+    Raises:
+        HTTPError: If there is an error while downloading the dataset.
+        FileNotFoundError: If the downloaded dataset file is not found.
+        zipfile.BadZipFile: If the downloaded file is not a valid zip file.
+    """
+    current_path = Path.cwd()
+    # Rest of the code...
+def Neurips2024_public_dataset():
+    
     current_path = Path.cwd()
     file_read_loc = current_path / "public_data"
     if not file_read_loc.exists():

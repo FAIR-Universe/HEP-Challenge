@@ -53,7 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../pages/evaluation.html">Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="Ingestion_program.html">Ingestion_program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sample_code_submission.html">Sample Code Submission</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="boosted_decision_tree.html">boosted_decision_tree module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">model module</a><ul>
@@ -65,7 +65,7 @@
 <li class="toctree-l3"><a class="reference internal" href="statistical_analysis.html">statistical_analysis module</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="score.html">score module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scoring_program.html">scoring_program</a></li>
 </ul>
 </li>
 </ul>
@@ -103,88 +103,35 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">model.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">get_train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systematics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This is a model class to be submitted by the participants in their submission.</p>
-<p>This class consists of the following functions:
-1) __init__:</p>
-<blockquote>
-<div><p>Initializes the Model class.
-Args:</p>
-<blockquote>
-<div><p>get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights, detailed_labels, and settings.
-systematics (object, optional): A function that can be used to get a dataset with systematics added.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>get_train_set</strong> (<em>callable</em>) – A function that returns a dictionary with data, labels, weights, detailed_labels, and settings. (optional)</p></li>
+<li><p><strong>systematics</strong> (<em>object</em>) – A function that can be used to get a dataset with systematics added. (optional)</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
-<ol class="arabic" start="2">
-<li><dl>
-<dt>fit:</dt><dd><p>Trains the model.
-Params:</p>
-<blockquote>
-<div><p>None</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Functionality:</dt><dd><p>This function can be used to train a model. If <cite>re_train</cite> is True, it balances the dataset,
-fits the model using the balanced dataset, and saves the model. If <cite>re_train</cite> is False, it
-loads the saved model and calculates the saved information. The saved information is used
-to compute the train results.</p>
-</dd>
-<dt>Returns:</dt><dd><p>None</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</li>
-<li><dl>
-<dt>predict:</dt><dd><p>Predicts the values for the test set.
-Parameters:</p>
-<blockquote>
-<div><p>test_set (dict): A dictionary containing the test data and weights.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>dict: A dictionary with the following keys:
-- ‘mu_hat’: The predicted value of mu.
-- ‘delta_mu_hat’: The uncertainty in the predicted value of mu.
-- ‘p16’: The lower bound of the 16th percentile of mu.
-- ‘p84’: The upper bound of the 84th percentile of mu.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</li>
-<li><dl>
-<dt>balance_set:</dt><dd><p>Balances the training set by equalizing the number of background and signal events.
-Params:</p>
-<blockquote>
-<div><p>None</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Returns:</dt><dd><p>dict: A dictionary with the balanced training set.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</li>
-</ol>
 <dl class="py method">
 <dt class="sig sig-object py" id="model.Model.balance_set">
 <span class="sig-name descname"><span class="pre">balance_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.balance_set" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Balances the training set by equalizing the number of background and signal events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary with the balanced training set.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="model.Model.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.fit" title="Link to this definition"></a></dt>
-<dd><p>Trains the model.</p>
-<dl class="simple">
-<dt>Params:</dt><dd><p>None</p>
-</dd>
-<dt>Functionality:</dt><dd><p>This function can be used to train a model. If <cite>re_train</cite> is True, it balances the dataset,
+<dd><p>This function can be used to train a model. If <cite>re_train</cite> is True, it balances the dataset,
 fits the model using the balanced dataset, and saves the model. If <cite>re_train</cite> is False, it
 loads the saved model and calculates the saved information. The saved information is used
 to compute the train results.</p>
-</dd>
-<dt>Returns:</dt><dd><p>None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -193,10 +140,12 @@ to compute the train results.</p>
 <dt class="sig sig-object py" id="model.Model.predict">
 <span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_set</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#model.Model.predict" title="Link to this definition"></a></dt>
 <dd><p>Predicts the values for the test set.</p>
-<dl class="simple">
-<dt>Parameters:</dt><dd><p>test_set (dict): A dictionary containing the test data, and weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>test_set</strong> (<em>dict</em>) – A dictionary containing the test data and weights.</p>
 </dd>
-<dt>Returns:</dt><dd><p>dict: A dictionary with the following keys:
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with the following keys:
 - ‘mu_hat’: The predicted value of mu.
 - ‘delta_mu_hat’: The uncertainty in the predicted value of mu.
 - ‘p16’: The lower bound of the 16th percentile of mu.

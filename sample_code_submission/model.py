@@ -6,7 +6,7 @@ XGBOOST = False
 TENSORFLOW = True
 TORCH = False
 
-from statistical_analysis import  StatisticalAnalysis
+from statistical_analysis import StatisticalAnalysis
 from HiggsML.datasets import train_test_split
 
 import os
@@ -14,60 +14,28 @@ import pickle
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
+
 class Model:
     """
     This is a model class to be submitted by the participants in their submission.
 
-    This class consists of the following functions:
-    1) __init__:
-        Initializes the Model class.
-        Args:
-            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights, detailed_labels, and settings.
-            systematics (object, optional): A function that can be used to get a dataset with systematics added.
-        Returns:
-            None
+    :param get_train_set: A function that returns a dictionary with data, labels, weights, detailed_labels, and settings. (optional)
+    :type get_train_set: callable
+    :param systematics: A function that can be used to get a dataset with systematics added. (optional)
+    :type systematics: object
 
-    2) fit:
-        Trains the model.
-        Params:
-            None
-        Functionality:
-            This function can be used to train a model. If `re_train` is True, it balances the dataset,
-            fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
-            loads the saved model and calculates the saved information. The saved information is used
-            to compute the train results.
-        Returns:
-            None
-
-    3) predict:
-        Predicts the values for the test set.
-        Parameters:
-            test_set (dict): A dictionary containing the test data and weights.
-        Returns:
-            dict: A dictionary with the following keys:
-            - 'mu_hat': The predicted value of mu.
-            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
-            - 'p16': The lower bound of the 16th percentile of mu.
-            - 'p84': The upper bound of the 84th percentile of mu.
-
-    4) balance_set:
-        Balances the training set by equalizing the number of background and signal events.
-        Params:
-            None
-        Returns:
-            dict: A dictionary with the balanced training set.
     """
 
     def __init__(self, get_train_set=None, systematics=None):
         """
         Initializes the Model class.
 
-        Args:
-            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights,detailed_labels and settings.
-            systematics (object, optional): A function that can be used to get a dataset with systematics added.
+        :param get_train_set: A function that returns a dictionary with data, labels, weights, detailed_labels, and settings. (optional)
+        :type get_train_set: callable
+        :param systematics: A function that can be used to get a dataset with systematics added. (optional)
+        :type systematics: object
 
-        Returns:
-            None
+        :returns: None
         """
         self.train_set = (
             get_train_set  # train_set is a dictionary with data, labels and weights
@@ -120,11 +88,10 @@ class Model:
         )
         print(" \n ")
 
-
         print("Training Data: ", self.training_set["data"].shape)
 
         self.re_train = True
-        
+
         if XGBOOST:
             from boosted_decision_tree import BoostedDecisionTree
 
@@ -162,22 +129,14 @@ class Model:
             print("Model is Torch NN")
         self.stat_analysis = StatisticalAnalysis(self.model, valid_set)
 
-
     def fit(self):
         """
-        Trains the model.
-
-        Params:
-            None
-
-        Functionality:
-            This function can be used to train a model. If `re_train` is True, it balances the dataset,
-            fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
-            loads the saved model and calculates the saved information. The saved information is used
-            to compute the train results.
-
-        Returns:
-            None
+        This function can be used to train a model. If `re_train` is True, it balances the dataset,
+        fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
+        loads the saved model and calculates the saved information. The saved information is used
+        to compute the train results.
+        
+        :returns: None
         """
 
         if self.re_train:
@@ -186,25 +145,30 @@ class Model:
             self.model.fit(
                 balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
             )
-            self.model.save( current_file + "/" + self.name)
-
+            self.model.save(current_file + "/" + self.name)
 
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
-            self.stat_analysis.load(saved_info_file) 
-        else:   
+            self.stat_analysis.load(saved_info_file)
+        else:
             self.stat_analysis.calculate_saved_info()
             self.stat_analysis.save(saved_info_file)
 
         train_score = self.model.predict(self.training_set["data"])
         train_results = self.stat_analysis.compute_mu(
-            train_score, self.training_set["weights"],plot=True)
-        
+            train_score, self.training_set["weights"], plot=True
+        )
+
         print("Train Results: ")
         for key in train_results.keys():
             print("\t", key, " : ", train_results[key])
 
     def balance_set(self):
+        """
+        Balances the training set by equalizing the number of background and signal events.
+
+        :returns: A dictionary with the balanced training set.
+        """
         balanced_set = self.training_set.copy()
 
         weights_train = self.training_set["weights"].copy()
@@ -229,11 +193,10 @@ class Model:
         """
         Predicts the values for the test set.
 
-        Parameters:
-            test_set (dict): A dictionary containing the test data, and weights.
+        :param test_set: A dictionary containing the test data and weights.
+        :type test_set: dict
 
-        Returns:
-            dict: A dictionary with the following keys:
+        :returns: A dictionary with the following keys:
             - 'mu_hat': The predicted value of mu.
             - 'delta_mu_hat': The uncertainty in the predicted value of mu.
             - 'p16': The lower bound of the 16th percentile of mu.
@@ -248,6 +211,4 @@ class Model:
         result = self.stat_analysis.compute_mu(predictions, test_weights)
 
         print("Test Results: ", result)
-
-
         return result

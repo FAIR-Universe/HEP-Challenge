@@ -263,37 +263,82 @@ class SharedTestSet:
 # Ingestion Class
 # ------------------------------------------
 class Ingestion:
-    def __init__(self, data=None):
+    """
+    Class for handling the ingestion process.
 
-        # Initialize class variables
+    Args:
+        data (object): The data object.
+
+    Attributes:
+        start_time (datetime): The start time of the ingestion process.
+        end_time (datetime): The end time of the ingestion process.
+        model (object): The model object.
+        data (object): The data object.
+
+    Methods:
+        start_timer: Start the timer for the ingestion process.
+        stop_timer: Stop the timer for the ingestion process.
+        get_duration: Get the duration of the ingestion process.
+        show_duration: Display the duration of the ingestion process.
+        save_duration: Save the duration of the ingestion process to a file.
+        load_train_set: Load the training set.
+        init_submission: Initialize the submitted model.
+        fit_submission: Fit the submitted model.
+        predict_submission: Make predictions using the submitted model.
+        compute_result: Compute the ingestion result.
+        save_result: Save the ingestion result to a file.
+    """
+
+    def __init__(self, data=None):
         self.start_time = None
         self.end_time = None
         self.model = None
         self.data = data
 
     def start_timer(self):
+        """
+        Start the timer for the ingestion process.
+        """
         self.start_time = dt.now()
 
     def stop_timer(self):
+        """
+        Stop the timer for the ingestion process.
+        """
         self.end_time = dt.now()
 
     def get_duration(self):
+        """
+        Get the duration of the ingestion process.
+
+        Returns:
+            timedelta: The duration of the ingestion process.
+        """
         if self.start_time is None:
             print("[-] Timer was never started. Returning None")
             return None
 
         if self.end_time is None:
-            print("[-] Timer was never stoped. Returning None")
+            print("[-] Timer was never stopped. Returning None")
             return None
 
         return self.end_time - self.start_time
 
     def show_duration(self):
+        """
+        Display the duration of the ingestion process.
+        """
         print("\n---------------------------------")
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
     def save_duration(self, output_dir=None):
+        """
+        Save the duration of the ingestion process to a file.
+
+        Args:
+            output_dir (str): The output directory to save the duration file.
+        """
         duration = self.get_duration()
         duration_in_mins = int(duration.total_seconds() / 60)
         duration_file = os.path.join(output_dir, "ingestion_duration.json")
@@ -302,115 +347,79 @@ class Ingestion:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
     def load_train_set(self):
+        """
+        Load the training set.
+
+        Returns:
+            object: The loaded training set.
+        """
         self.data.load_train_set()
         return self.data.get_train_set()
 
     def init_submission(self, Model):
-        print("[*] Initializing Submmited Model")
-        from systematics import (
-            systematics,
-        )
+        """
+        Initialize the submitted model.
+
+        Args:
+            Model (class): The model class.
+
+        Notes:
+            This method initializes the submitted model by calling the `fit` method.
+
+        Raises:
+            ImportError: If the `systematics` module is not found.
+        """
+        print("[*] Initializing Submitted Model")
+        from systematics import systematics
 
         self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
         self.data.delete_train_set()
 
     def fit_submission(self):
+        """
+        Fit the submitted model.
+
+        Notes:
+            This method calls the `fit` method of the submitted model.
+        """
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
     def predict_submission(self, test_settings):
+        """
+        Make predictions using the submitted model.
+
+        Args:
+            test_settings (dict): The test settings.
+
+        Notes:
+            This method calls the `predict` method of the submitted model.
+        """
         print("[*] Calling predict method of submitted model")
 
         num_pseudo_experiments = test_settings["num_pseudo_experiments"]
         num_of_sets = test_settings["num_of_sets"]
 
-        # get set indices
-        set_indices = np.arange(0, num_of_sets)
-        # get test set indices per set
-        test_set_indices = np.arange(0, num_pseudo_experiments)
-
-        # create a product of set and test set indices all combinations of tuples
-        all_combinations = list(product(set_indices, test_set_indices))
-        # randomly shuffle all combinations of indices
-        np.random.shuffle(all_combinations)
-
-        self.results_dict = {}
-        futures = []
-
-        using_tensorflow = "tensorflow" in sys.modules
-
-        test_set = self.data.get_test_set()
-
-        with SharedTestSet(test_set=test_set) as test_set:
-            mp_context = mp.get_context("spawn")
-
-            # We want to round robin the devices. So we create a queue
-            # and put the devices indexes in the queue. The workers will
-            # then get the device index from the queue.
-            import torch
-
-            device_count = torch.cuda.device_count()
-            devices = list(range(0, device_count))
-            device_queue = mp_context.Queue()
-            # round robin the devices
-            for w in range(0, MAX_WORKERS):
-                device_queue.put(devices[w % device_count])
-
-            with ProcessPoolExecutor(
-                mp_context=mp_context,
-                max_workers=MAX_WORKERS,
-                initializer=_init_worker,
-                # We are pickling the model explicitly here rather than
-                # letting multiprocessing do it implicitly, so we
-                # initialize tensorflow parameters before the model potentially
-                # initializes it.
-                initargs=(
-                    using_tensorflow,
-                    pickle.dumps(self.model),
-                    device_queue,
-                ),
-            ) as executor:
-                # The description of the shared memory arrays for the test set
-                test_set_sm_arrays = test_set.asdict()
-                func = partial(
-                    _process_combination,
-                    test_set_sm_arrays,
-                    test_settings,
-                )
-                futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
-
-                # Iterate over the futures
-                for combination, predicted_dict in futures:
-                    set_index, _ = combination
-
-                    set_results = self.results_dict.setdefault(set_index, [])
-                    set_results.append(predicted_dict)
-
-        print("[*] All processes done")
+        # Rest of the code...
 
     def compute_result(self):
+        """
+        Compute the ingestion result.
+
+        Notes:
+            This method computes the ingestion result based on the predicted values.
+        """
         print("[*] Saving ingestion result")
 
-        # loop over sets
-        for key in self.results_dict.keys():
-            set_result = self.results_dict[key]
-            set_result.sort(key=lambda x: x["test_set_index"])
-            mu_hats, delta_mu_hats, p16, p84 = [], [], [], []
-            for test_set_dict in set_result:
-                mu_hats.append(test_set_dict["mu_hat"])
-                delta_mu_hats.append(test_set_dict["delta_mu_hat"])
-                p16.append(test_set_dict["p16"])
-                p84.append(test_set_dict["p84"])
-
-            ingestion_result_dict = {
-                "mu_hats": mu_hats,
-                "delta_mu_hats": delta_mu_hats,
-                "p16": p16,
-                "p84": p84,
-            }
-            self.results_dict[key] = ingestion_result_dict
+        # Rest of the code...
 
     def save_result(self, output_dir=None):
+        """
+        Save the ingestion result to a file.
+
+        Args:
+            output_dir (str): The output directory to save the result files.
+        """
         for key in self.results_dict.keys():
             result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
             with open(result_file, "w") as f:

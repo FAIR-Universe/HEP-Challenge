@@ -1,14 +1,13 @@
-Ingestion_program
+Ingestion Program
 =================
 
 .. toctree::
    :maxdepth: 4
 
+   data_io
+   datasets
+   derived_quantities
    ingestion
    ingestion_parallel
-   datasets
-   run_ingestion
-   visualization
    systematics
-   data_io
-   
+   visualization

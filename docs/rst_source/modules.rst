@@ -4,6 +4,6 @@ HEP-Challenge
 .. toctree::
    :maxdepth: 4
 
-   Ingestion_program
+   ingestion_program
    sample_code_submission
-   score
+   scoring_program

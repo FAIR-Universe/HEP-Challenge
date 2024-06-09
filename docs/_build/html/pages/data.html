@@ -51,9 +51,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#higgs-signal">Higgs Signal:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#z-boson-background">Z boson Background:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#preselection-cuts">Preselection Cuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#features-in-this-data-set">Features in this data set.**</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#preselection-cuts">Preselection Cuts</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-get-public-data">How to get Public Data?</a></li>
 </ul>
 </li>
@@ -87,31 +89,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="data">
+  <hr class="docutils" />
+<section class="tex2jax_ignore mathjax_ignore" id="data">
 <h1>Data<a class="headerlink" href="#data" title="Link to this heading"></a></h1>
 <hr class="docutils" />
-<p>The dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups:</p>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are from 4 main processes</p>
 <ol class="arabic simple">
 <li><p>Higgs boson signal (<span class="math notranslate nohighlight">\(H \rightarrow \tau \tau\)</span>)</p></li>
 <li><p><span class="math notranslate nohighlight">\(Z\)</span> boson background (<span class="math notranslate nohighlight">\(Z \rightarrow \tau \tau\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(t\bar{t}\)</span> background</p></li>
+<li><p>Diboson background (<span class="math notranslate nohighlight">\(V V \rightarrow \tau \tau\)</span>)</p></li>
 </ol>
-<section id="higgs-signal">
-<h2>Higgs Signal:<a class="headerlink" href="#higgs-signal" title="Link to this heading"></a></h2>
-<p>The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states.</p>
-</section>
-<section id="z-boson-background">
-<h2>Z boson Background:<a class="headerlink" href="#z-boson-background" title="Link to this heading"></a></h2>
-<p>Only background events coming from <span class="math notranslate nohighlight">\(Z\)</span> bosons are included in this challenge. While simulating the process, interference effects between <span class="math notranslate nohighlight">\(Z\)</span> bosons and photons are included. Similar to signal events, only the tau-tau decay mode of the <span class="math notranslate nohighlight">\(Z\)</span> boson is included in the dataset.</p>
 <blockquote>
 <div><h4 class="rubric" id="note">⚠️ Note:</h4>
 <p>The training events have weights.</p>
 <p><strong>Event Weights:</strong></p>
-<p>The challenge is considering a scenario of analyzing <span class="math notranslate nohighlight">\(139 ~\textrm{fb} ^{-1}\)</span> of proton-proton collision data collected by the ATLAS experiment during the Run-II phase (2015-2018) of the LHC.</p>
+<p>The challenge is considering a scenario of analyzing <span class="math notranslate nohighlight">\(36 ~\textrm{fb} ^{-1}\)</span> of proton-proton collision data collected by the ATLAS experiment during the Run-II phase (2015-2018) of the LHC.</p>
 <p>Event weights are defined as:</p>
 <p><span class="math notranslate nohighlight">\( w = \frac{\textrm{Cross-Section} ~ \times ~ \textrm{Luminosity}}{\textrm{Total number of generated events}} \)</span></p>
 </div></blockquote>
+</section>
 <hr class="docutils" />
-<p><strong>The following are the features in this data set.</strong></p>
+<section id="features-in-this-data-set">
+<h2>Features in this data set.**<a class="headerlink" href="#features-in-this-data-set" title="Link to this heading"></a></h2>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p></p></th>
@@ -254,9 +256,8 @@
 </tr>
 </tbody>
 </table>
-</section>
 <section id="preselection-cuts">
-<h2>Preselection Cuts<a class="headerlink" href="#preselection-cuts" title="Link to this heading"></a></h2>
+<h3>Preselection Cuts<a class="headerlink" href="#preselection-cuts" title="Link to this heading"></a></h3>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Criteria</p></th>
@@ -288,6 +289,7 @@
 </tbody>
 </table>
 <p><strong>⚠️ Note:</strong> The Post selection cuts are the cuts made after systematics is applied.</p>
+</section>
 </section>
 <section id="how-to-get-public-data">
 <h2>How to get Public Data?<a class="headerlink" href="#how-to-get-public-data" title="Link to this heading"></a></h2>

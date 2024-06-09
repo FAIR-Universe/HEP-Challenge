@@ -4,7 +4,7 @@ To be eligible for participation in the FAIR UNIVERSE: HIGGSML UNCERTAINTY CHALL
 
 This challenge is for educational purposes only and no prizes are granted. It is governed by the [General ChaLearn Contest Rules](http://www.causality.inf.ethz.ch/GeneralChalearnContestRuleTerms.html)
 
-### Disqualification Terms:
+## Disqualification Terms:
 
 - Participant's code is called multiple times to make predictions for multiple test sets. All the test sets are provided independently. Using information from other test sets in any way could lead to disqualification from the competition.
 - Any kind of information sharing is not allowed. Doing this will lead to disqualification from the competition.
