@@ -223,6 +223,33 @@ class Model:
 
         return balanced_set
 
+    def predict(self, test_set):
+        """
+        Predicts the values for the test set.
+
+        Parameters:
+            test_set (dict): A dictionary containing the test data, and weights.
+
+        Returns:
+            dict: A dictionary with the following keys:
+            - 'mu_hat': The predicted value of mu.
+            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
+            - 'p16': The lower bound of the 16th percentile of mu.
+            - 'p84': The upper bound of the 84th percentile of mu.
+        """
+
+        test_data = test_set["data"]
+        test_weights = test_set["weights"]
+
+        predictions = self.model.predict(test_data)
+
+        result = self.stat_analysis.compute_mu(predictions, test_weights)
+
+        print("Test Results: ", result)
+
+        return result
+
+
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     data = data_set["data"].copy()
     train_set = {}
@@ -279,31 +306,3 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
         ] * (background_weight / background_weight_test)
 
     return train_set, test_set
-
-
-    def predict(self, test_set):
-        """
-        Predicts the values for the test set.
-
-        Parameters:
-            test_set (dict): A dictionary containing the test data, and weights.
-
-        Returns:
-            dict: A dictionary with the following keys:
-            - 'mu_hat': The predicted value of mu.
-            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
-            - 'p16': The lower bound of the 16th percentile of mu.
-            - 'p84': The upper bound of the 84th percentile of mu.
-        """
-
-        test_data = test_set["data"]
-        test_weights = test_set["weights"]
-
-        predictions = self.model.predict(test_data)
-
-        result = self.stat_analysis.compute_mu(predictions, test_weights)
-
-        print("Test Results: ", result)
-
-
-        return result
