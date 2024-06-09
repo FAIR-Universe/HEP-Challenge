@@ -2,8 +2,8 @@
 # Dummy Sample Submission
 # ------------------------------
 
-XGBOOST = False
-TENSORFLOW = True
+XGBOOST = True
+TENSORFLOW = False
 TORCH = False
 
 from statistical_analysis import  StatisticalAnalysis
@@ -127,7 +127,7 @@ class Model:
             from boosted_decision_tree import BoostedDecisionTree
 
             self.model = BoostedDecisionTree()
-            module_file = current_file + "/model_XGB.pkl"
+            module_file = current_file + "/model_XGB.json"
             if os.path.exists(module_file):
                 self.model.load(module_file)
                 self.re_train = False  # if model is already trained, no need to retrain
