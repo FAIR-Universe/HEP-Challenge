@@ -80,6 +80,8 @@ class Dataset_visualise:
 
         Parameters:
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+        
+        .. Image:: ../images/histogram_datasets.png
         """
         if columns == None:
             columns = self.columns
@@ -123,6 +125,8 @@ class Dataset_visualise:
 
         Parameters:
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+        
+        .. Image:: ../images/correlation_plots.png
         """
         caption = ["Signal feature", "Background feature"]
         if columns == None:
@@ -146,6 +150,8 @@ class Dataset_visualise:
         Parameters:
         - sample_size (int): The number of samples to consider (default: 10).
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+        
+        .. Image:: ../images/pair_plot.png
         """
         if columns == None:
             columns = self.columns
@@ -190,6 +196,8 @@ class Dataset_visualise:
         - field_name (str): The name of the field to plot.
         - mu_hat (float): The value of mu (default: 1.0).
         - bins (int): The number of bins for the histogram (default: 30).
+        
+        .. Image:: ../images/stacked_histogram.png
         """
         field = self.dfall[field_name]
         sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
@@ -254,7 +262,7 @@ def histgram_compare(
     data_set1, data_set2, field_name, bins=30, plot_label=["data_set1", "data_set2"]
 ):
     """Compare the histograms of two data sets based on a given field.
-
+    
     This function plots and compares the histograms of two data sets based on a specified field.
     It uses the seaborn and matplotlib libraries for visualization.
 
@@ -267,6 +275,9 @@ def histgram_compare(
 
     Returns:
         None
+        
+    .. Image:: ../images/histogram_compare.png
+
     """
 
     field_1 = data_set1["data"][field_name]
@@ -311,6 +322,8 @@ def roc_curve_wrapper(score, labels, weights, plot_label="model", color="b", lw=
 
     Returns:
     None
+    
+    .. Image:: ../images/roc_curve.png
 
     """
     auc = roc_auc_score(y_true=labels, y_score=score, sample_weight=weights)
