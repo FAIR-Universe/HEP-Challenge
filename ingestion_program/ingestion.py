@@ -15,38 +15,75 @@ warnings.filterwarnings("ignore")
 # Ingestion Class
 # ------------------------------------------
 class Ingestion:
+    """
+    Class for handling the ingestion process.
+
+    Args:
+        data (object): The data object.
+
+    Attributes:
+        start_time (datetime): The start time of the ingestion process.
+        end_time (datetime): The end time of the ingestion process.
+        model (object): The model object.
+        data (object): The data object.
+    """
 
     def __init__(self, data=None):
+        """
+        Initialize the Ingestion class.
 
-        # Initialize class variables
+        Args:
+            data (object): The data object.
+        """
         self.start_time = None
         self.end_time = None
         self.model = None
         self.data = data
 
     def start_timer(self):
+        """
+        Start the timer for the ingestion process.
+        """
         self.start_time = dt.now()
 
     def stop_timer(self):
+        """
+        Stop the timer for the ingestion process.
+        """
         self.end_time = dt.now()
 
     def get_duration(self):
+        """
+        Get the duration of the ingestion process.
+
+        Returns:
+            timedelta: The duration of the ingestion process.
+        """
         if self.start_time is None:
             print("[-] Timer was never started. Returning None")
             return None
 
         if self.end_time is None:
-            print("[-] Timer was never stoped. Returning None")
+            print("[-] Timer was never stopped. Returning None")
             return None
 
         return self.end_time - self.start_time
 
     def show_duration(self):
+        """
+        Show the duration of the ingestion process.
+        """
         print("\n---------------------------------")
         print(f"[✔] Total duration: {self.get_duration()}")
         print("---------------------------------")
 
     def save_duration(self, output_dir=None):
+        """
+        Save the duration of the ingestion process to a file.
+
+        Args:
+            output_dir (str): The output directory to save the duration file.
+        """
         duration = self.get_duration()
         duration_in_mins = int(duration.total_seconds() / 60)
         duration_file = os.path.join(output_dir, "ingestion_duration.json")
@@ -55,10 +92,22 @@ class Ingestion:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
     def load_train_set(self):
+        """
+        Load the training set.
+
+        Returns:
+            object: The loaded training set.
+        """
         self.data.load_train_set()
         return self.data.get_train_set()
 
     def init_submission(self, Model):
+        """
+        Initialize the submitted model.
+
+        Args:
+            Model (object): The model class.
+        """
         print("[*] Initializing Submmited Model")
         from systematics import systematics
 
@@ -66,10 +115,19 @@ class Ingestion:
         self.data.delete_train_set()
 
     def fit_submission(self):
+        """
+        Fit the submitted model.
+        """
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
     def predict_submission(self, test_settings):
+        """
+        Make predictions using the submitted model.
+
+        Args:
+            test_settings (dict): The test settings.
+        """
         print("[*] Calling predict method of submitted model")
 
         dict_systematics = test_settings["systematics"]
@@ -106,7 +164,7 @@ class Ingestion:
                 ttbar_scale = np.random.uniform(0.5, 2)
             else:
                 ttbar_scale = None
-                
+
             if dict_systematics["diboson_scale"]:
                 diboson_scale = np.random.uniform(0.5, 2)
             else:
@@ -130,7 +188,7 @@ class Ingestion:
                 ttbar_scale=ttbar_scale,
                 diboson_scale=diboson_scale,
                 bkg_scale=bkg_scale,
-                seed=42,
+                seed=seed,
             )
 
             predicted_dict = self.model.predict(test_set)
@@ -145,6 +203,9 @@ class Ingestion:
             self.results_dict[set_index].append(predicted_dict)
 
     def compute_result(self):
+        """
+        Compute the ingestion result.
+        """
         print("[*] Saving ingestion result")
 
         # loop over sets
@@ -167,6 +228,12 @@ class Ingestion:
             self.results_dict[key] = ingestion_result_dict
 
     def save_result(self, output_dir=None):
+        """
+        Save the ingestion result to files.
+
+        Args:
+            output_dir (str): The output directory to save the result files.
+        """
         for key in self.results_dict.keys():
             result_file = os.path.join(output_dir, "result_" + str(key) + ".json")
             with open(result_file, "w") as f:
