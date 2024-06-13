@@ -149,11 +149,16 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 parent_path = os.path.dirname(current_path)
 
 
-def Neurips2024_public_dataset():
+def Neurips2024_public_dataset(public_data_path: Path=None):
     current_path = Path.cwd()
-    file_read_loc = current_path / "public_data"
-    if not file_read_loc.exists():
-        file_read_loc.mkdir()
+    file_read_loc = public_data_path or (current_path / "public_data")
+
+    file_read_loc.mkdir(parents=True, exist_ok=True)
+
+    if ( file_read_loc / "input_data" ).exists():
+        return Data(
+            str(file_read_loc / "input_data")
+        )
 
     url = "https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/"
     file = file_read_loc / "public_data.zip"
