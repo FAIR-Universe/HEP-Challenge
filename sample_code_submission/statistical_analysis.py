@@ -241,7 +241,7 @@ class StatisticalAnalysis:
         b_array = np.zeros((len(alpha_list), self.bins))
         
         for i in range(len(alpha_list)):
-            s_array[i], s_array[i] = self.nominal_histograms(alpha_list[i], key)
+            s_array[i], b_array[i] = self.nominal_histograms(alpha_list[i], key)
 
         s_array = s_array.T
         b_array = b_array.T
