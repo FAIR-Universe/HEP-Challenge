@@ -39,6 +39,7 @@ class StatisticalAnalysis:
     def __init__(self,model,holdout_set,bins=10):
         self.model = model
         self.bins = bins
+        self.bin_edges = np.linspace(0, 1, bins + 1)
         self.syst_settings = {
             'tes': 1.0,
             'bkg_scale': 1.0,
@@ -75,8 +76,8 @@ class StatisticalAnalysis:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
         
-        N_obs, _ = np.histogram(score, bins=self.bins, density=False, weights=weight)
-                    
+        N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
+
         def combined_fit_function_s(x):
             combined_function_s = np.zeros(self.bins)
             for j in range(len(x)):
@@ -179,7 +180,7 @@ class StatisticalAnalysis:
                 "coef_s": coef_s_list,
                 "coef_b": coef_b_list,
             }
-                 
+
         self.alpha_function()
 
     def nominal_histograms(self, alpha, key):
@@ -219,6 +220,13 @@ class StatisticalAnalysis:
         
         holdout_background_hist , _ = np.histogram(holdout_val[label_holdout == 0],
                     bins=self.bins, density=False, weights=weights_holdout_background)
+        holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
+                                                        bins=self.bin_edges, density=False, weights=weights_holdout_signal)
+
+        holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
+                                                                bins=self.bin_edges, density=False,
+                                                                weights=weights_holdout_background)
+
 
         return holdout_signal_hist, holdout_background_hist
 
