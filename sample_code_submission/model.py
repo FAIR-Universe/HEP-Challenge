@@ -223,7 +223,6 @@ class Model:
 
         return balanced_set
 
-
     def predict(self, test_set):
         """
         Predicts the values for the test set.
@@ -248,8 +247,8 @@ class Model:
 
         print("Test Results: ", result)
 
-
         return result
+
 
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     data = data_set["data"].copy()

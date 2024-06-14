@@ -80,8 +80,10 @@ class Dataset_visualise:
 
         Parameters:
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+
+        .. Image:: ../images/histogram_datasets.png
         """
-        if columns == None:
+        if columns is None:
             columns = self.columns
         sns.set_theme(rc={"figure.figsize": (40, 40)}, style="whitegrid")
 
@@ -123,9 +125,11 @@ class Dataset_visualise:
 
         Parameters:
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+
+        .. Image:: ../images/correlation_plots.png
         """
         caption = ["Signal feature", "Background feature"]
-        if columns == None:
+        if columns is None:
             columns = self.columns
         sns.set_theme(rc={"figure.figsize": (10, 10)}, style="whitegrid")
 
@@ -146,8 +150,10 @@ class Dataset_visualise:
         Parameters:
         - sample_size (int): The number of samples to consider (default: 10).
         - columns (list): The list of column names to consider (default: None, which includes all columns).
+
+        .. Image:: ../images/pair_plot.png
         """
-        if columns == None:
+        if columns is None:
             columns = self.columns
         df_sample = self.dfall[columns].copy()
         df_sample["Label"] = self.target
@@ -190,6 +196,8 @@ class Dataset_visualise:
         - field_name (str): The name of the field to plot.
         - mu_hat (float): The value of mu (default: 1.0).
         - bins (int): The number of bins for the histogram (default: 30).
+
+        .. Image:: ../images/stacked_histogram.png
         """
         field = self.dfall[field_name]
         sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
@@ -209,7 +217,7 @@ class Dataset_visualise:
         )
 
         hist_bkg = hist_b.copy()
-        
+
         higgs = "htautau"
 
         for key in self.keys:
