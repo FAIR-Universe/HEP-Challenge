@@ -6,56 +6,8 @@ from __future__ import absolute_import
 
 
 __doc__ = """
-ATLAS Higgs Machine Learning Challenge 2014
-Read CERN Open Data Portal Dataset http://opendata.cern.ch/record/328
-and manipulate it
- - KaggleWeight and KaggleSet are removed
-  - Label is changd from charcter to integer 0 or 1
- - DetailLabel is introduced indicating subpopulations
- - systematics effect are simulated
-     - bkg_weight_norm : manipulates the background weight of the W background
-     - had_energy_scale : manipulates PRI_had_pt and recompute other quantities accordingly
-             Some WARNING : variable DER_mass_MMC is not properly manipulated (modification is linearised), 
-             and I advocate to NOT use DER_mass_MMC when doSystTauEnergyScale is enabled
-             There is a threshold in the original HiggsML file at 20GeV on PRI_had_energy. 
-             This threshold is moved when changing sysTauEnergyScale which is unphysicsal. 
-             So if you're going to play with sysTauEnergyScale (within 0.9-1.1), 
-             I suggest you remove events below say 22 GeV *after* the manipulation
-             applying doSystTauEnergyScale with sysTauENergyScale=1. does NOT yield identical results as not applyield 
-             doSystTauEnergyScale, this is because of rounding error and zero mass approximation.
-             doSysTauEnerbyScale impacts PRI_had_pt as well as PRI_met and PRI_met_phi
-    - so overall I suggest that when playing with doSystTauEnergyScale, the reference is
-          - not using DER_mass_MMC
-          - applying *after* this manipulation PRI_had_pt>22
-          - run with sysTauENergyScale=1. to have the reference
-          
-Author D. Rousseau LAL, Nov 2016
-
-Modification Dec 2016 (V. Estrade):
-- Wrap everything into separated functions.
-- V4 class now handle 1D-vector values (to improve computation efficiency).
-- Fix compatibility with both python 2 and 3.
-- Use pandas.DataFrame to ease computation along columns
-- Loading function for the base HiggsML dataset (fetch it on the internet if needed)
-
-Refactor March 2017 (V. Estrade):
-- Split load function (cleaner)
-
-July 06 2017 (V. Estrade):
-- Add normalization_weight function
-
-May 2019 (D. Rousseau) :
-- Major hack, in preparation for Centralesupelec EI,
-python syst/datawarehouse/datawarehouse/higgsml.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-s0.csv
-
-python higgsml_syst.py -i atlas-higgs-challenge-2014-v2.csv.gz -o atlas-higgs-challenge-2014-v2-syst1.csv --csv -p --BKGnorm 1. --Wnorm 1. --tes 1. --jes 1. --soft_met 0. --seed 31415926
-python higgsml_syst.py --help # for command help
-reasonable values for parameters
-BKGnorm : 1.05  
-Wnorm : 1.5 
-tes : 1.03
-jes : 1.03
-soft_met : 3 GeV
+This module contains the functions to calculate the derived quantities of the HEP dataset.
+Originally written by David Rousseau, and Victor Estrade.
 """
 __version__ = "4.0"
 __author__ = "David Rousseau, and Victor Estrade "
@@ -67,7 +19,15 @@ from numpy import sin, cos, cosh, sinh, sqrt, exp
 
 
 def calcul_int(data):
+    """
+    Calculate the px py pz E components of the particles' 4 momentum.
 
+    Args:
+        data (pandas.DataFrame): Input data containing the particle properties.
+
+    Returns:
+        pandas.DataFrame: Dataframe with the derived quantities calculated.
+    """
     # Definition of the x and y components of the hadron's momentum
     data["had_px"] = data.PRI_had_pt * cos(data.PRI_had_phi)
     data["had_py"] = data.PRI_had_pt * sin(data.PRI_had_phi)
@@ -220,6 +180,9 @@ def f_DER_prodeta_jet_jet(data):
 
 
 def f_DER_deltar_had_lep(data):
+    """
+    Calculate the delta R between the hadron and the lepton
+    """
     data["difference2_eta"] = (data.PRI_lep_eta - data.PRI_had_eta) ** 2
     data["difference2_phi"] = (
         np.abs(
@@ -387,5 +350,3 @@ def DER_data(data):
     data = f_DER_lep_eta_centrality(data)
     data = f_del_DER(data)
     return data
-
-
