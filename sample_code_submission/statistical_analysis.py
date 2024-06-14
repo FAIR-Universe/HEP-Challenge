@@ -215,11 +215,6 @@ class StatisticalAnalysis:
         weights_holdout_signal = weights_holdout[label_holdout == 1]
         weights_holdout_background = weights_holdout[label_holdout == 0]
 
-        holdout_signal_hist , _ = np.histogram(holdout_val[label_holdout == 1],
-                    bins=self.bins, density=False, weights=weights_holdout_signal)
-        
-        holdout_background_hist , _ = np.histogram(holdout_val[label_holdout == 0],
-                    bins=self.bins, density=False, weights=weights_holdout_background)
         holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
                                                         bins=self.bin_edges, density=False, weights=weights_holdout_signal)
 
@@ -227,6 +222,7 @@ class StatisticalAnalysis:
                                                                 bins=self.bin_edges, density=False,
                                                                 weights=weights_holdout_background)
 
+        self.plot_histograms(holdout_signal_hist, bins_signal, holdout_background_hist, bins_background, f'histogram_{key}_alpha_{alpha}')
 
         return holdout_signal_hist, holdout_background_hist
 
