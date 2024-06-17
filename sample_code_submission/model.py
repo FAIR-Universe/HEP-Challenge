@@ -208,6 +208,14 @@ class Model:
         for key in train_results.keys():
             print("\t", key, " : ", train_results[key])
 
+        test_score = self.model.predict(self.valid_set["data"])
+        test_results = self.stat_analysis.compute_mu(
+            test_score, self.valid_set["weights"],plot=True)
+
+        print("Test Results: ")
+        for key in test_results.keys():
+            print("\t", key, " : ", test_results[key])
+
     def balance_set(self):
         balanced_set = self.training_set.copy()
 
