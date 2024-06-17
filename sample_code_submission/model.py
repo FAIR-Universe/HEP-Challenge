@@ -87,7 +87,7 @@ class Model:
         )
         print(" \n ")
 
-        self.training_set, valid_set = train_test_split(
+        self.training_set, self.valid_set = train_test_split(
             data_set=self.train_set, test_size=0.5, random_state=42, reweight=True
         )
 
@@ -105,16 +105,16 @@ class Model:
             self.training_set["weights"][self.training_set["labels"] == 0].sum(),
         )
         print()
-        print("Valid Data: ", valid_set["data"].shape)
-        print("Valid Labels: ", valid_set["labels"].shape)
-        print("Valid Weights: ", valid_set["weights"].shape)
+        print("Valid Data: ", self.valid_set["data"].shape)
+        print("Valid Labels: ", self.valid_set["labels"].shape)
+        print("Valid Weights: ", self.valid_set["weights"].shape)
         print(
             "sum_signal_weights: ",
-            valid_set["weights"][valid_set["labels"] == 1].sum(),
+            self.valid_set["weights"][self.valid_set["labels"] == 1].sum(),
         )
         print(
             "sum_bkg_weights: ",
-            valid_set["weights"][valid_set["labels"] == 0].sum(),
+            self.valid_set["weights"][self.valid_set["labels"] == 0].sum(),
         )
         print(" \n ")
 
@@ -158,7 +158,7 @@ class Model:
 
             self.name = "model_torch"
             print("Model is Torch NN")
-        self.stat_analysis = StatisticalAnalysis(self.model, valid_set)
+        self.stat_analysis = StatisticalAnalysis(self.model, self.valid_set)
 
 
     def fit(self):
@@ -181,11 +181,17 @@ class Model:
         if self.re_train:
 
             balanced_set = self.balance_set()
-            self.model.fit(
-                balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
-            )
-            self.model.save( current_file + "/" + self.name)
 
+            if XGBOOST:
+                self.model.fit(
+                    balanced_set["data"], balanced_set["labels"], balanced_set["weights"],
+                    eval_set=[self.valid_set["data"], self.valid_set["labels"], self.valid_set["weights"]],
+                )
+            else:
+                self.model.fit(
+                    balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
+                )
+            self.model.save( current_file + "/" + self.name)
 
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
