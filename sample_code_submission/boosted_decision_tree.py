@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error
 import pickle
 
 
@@ -23,10 +24,15 @@ class BoostedDecisionTree:
     """
 
     def __init__(self):
-        self.model = XGBClassifier()
+        self.model = XGBClassifier(
+            n_estimators=200,
+            max_depth=4,
+            learning_rate=0.15,
+            # eval_metric=mean_squared_error,
+        )
         self.scaler = StandardScaler()
 
-    def fit(self, train_data, labels, weights=None):
+    def fit(self, train_data, labels, weights=None, eval_set=None):
         """
         Fits the model to the training data.
 
@@ -39,7 +45,19 @@ class BoostedDecisionTree:
         self.scaler.fit_transform(train_data)
 
         X_train_data = self.scaler.transform(train_data)
-        self.model.fit(X_train_data, labels, weights, eval_metric="logloss")
+        X_test_data = self.scaler.transform(eval_set[0])
+        self.model.fit(
+            X_train_data, labels, weights,
+            eval_set=[(X_test_data, eval_set[1])],
+            sample_weight_eval_set=[eval_set[2]],
+            eval_metric=["error", "logloss", "rmse"],
+            early_stopping_rounds=10,
+            verbose=True,
+        )
+
+        # printout the accuracy and AUC of the test set using sklearn
+        print(f"Accuracy: {accuracy_score(eval_set[1], self.model.predict(X_test_data)):.3%}")
+        print(f"AUC: {roc_auc_score(eval_set[1], self.model.predict_proba(X_test_data)[:, 1]):.3f}")
 
     def predict(self, test_data):
         """
