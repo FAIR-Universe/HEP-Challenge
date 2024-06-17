@@ -57,8 +57,7 @@ class StatisticalAnalysis:
             "ttbar_scale": np.linspace(0.5, 2.0, 10),
             "diboson_scale": np.linspace(0.5, 2.0, 10),
         }
-            
-        
+
         holdout_set["data"].reset_index(drop=True, inplace=True)
         
         self.holdout_set = holdout_set
@@ -97,9 +96,8 @@ class StatisticalAnalysis:
             return combined_function_b/len(self.syst_settings.keys())
             
         def sigma_asimov(mu,alpha):
-                return mu*combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
+            return mu*combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
 
-        
         def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
             """
             Calculate the negative log-likelihood (NLL) for a given set of parameters.
@@ -221,8 +219,6 @@ class StatisticalAnalysis:
         holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
                                                                 bins=self.bin_edges, density=False,
                                                                 weights=weights_holdout_background)
-
-        self.plot_histograms(holdout_signal_hist, bins_signal, holdout_background_hist, bins_background, f'histogram_{key}_alpha_{alpha}')
 
         return holdout_signal_hist, holdout_background_hist
 
