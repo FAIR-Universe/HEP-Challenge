@@ -49,15 +49,17 @@ This competition allows code submissions. Participants can submit either of the 
 ***
 #### Lawrence Berkeley National Laboratory 
 - Benjamin Nachman
-- Ben Thorne
 - Chris Harris
 - Sascha Diefenbacher
 - Steven Farrell
 - Wahid Bhimji
+- Jordan Dudley 
 
 #### University of Washington
 - Elham E Khoda
 - Shih-Chieh Hsu
+- Yulei Zhang
+- Yaun-Tang Chou
 
 #### ChaLearn
 - Isabelle Guyon
