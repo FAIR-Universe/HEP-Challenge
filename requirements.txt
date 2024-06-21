@@ -1,0 +1,14 @@
+numpy
+pandas
+pyarrow
+matplotlib
+xgboost
+scikit-learn
+nflows
+lightgbm
+seaborn
+iminuit
+keras
+torch
+torchvision
+tensorflow==2.15.0
