@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import os
 import requests
-from pathlib import Path
 from zipfile import ZipFile
 
 test_set_settings = None
@@ -200,7 +199,7 @@ def Neurips2024_public_dataset():
         FileNotFoundError: If the downloaded dataset file is not found.
         zipfile.BadZipFile: If the downloaded file is not a valid zip file.
     """
-    current_path = Path.cwd()
+    current_path = os.getcwd()
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
     public_data_zip_path = os.path.join(current_path, "public_data.zip")
