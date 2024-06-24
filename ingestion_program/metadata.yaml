@@ -1,2 +1,13 @@
-command: python3 run_ingestion.py --codabench --use-random-mus --systematics-tes --systematics-soft-met --systematics-jes --systematics-ttbar-scale --systematics-diboson-scale --systematics-bkg-scale --num-pseudo-experiments 100 --num-of-sets 1 --parallel
+command: python3 run_ingestion.py \
+--use-random-mus \
+--systematics-tes \
+--systematics-soft-met \
+--systematics-jes \
+--systematics-ttbar-scale \
+--systematics-diboson-scale \
+--systematics-bkg-scale \
+--num-pseudo-experiments 100 \
+--num-of-sets 1 \
+--codabench \
+--parallel
 
