@@ -20,8 +20,11 @@ conda activate fair
 pip install -r requirements.txt
 ```
 
-5. (Optional) Remove env
-After you have used the env and you want to remove it, use the following command
+5. (Optional) Deactivate and remove env
+To deactivate or/and remove the env after you have used it, you can use the following commands
+```
+conda deactivate
+```
 ```
 conda env remove --name fair
 ```
