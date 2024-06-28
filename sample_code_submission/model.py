@@ -2,8 +2,8 @@
 # Dummy Sample Submission
 # ------------------------------
 
-XGBOOST = False
-TENSORFLOW = True
+XGBOOST = True
+TENSORFLOW = False
 TORCH = False
 
 from statistical_analysis import  StatisticalAnalysis
@@ -87,47 +87,40 @@ class Model:
         )
         print(" \n ")
 
-        self.training_set, valid_set = train_test_split(
-            data_set=self.train_set, test_size=0.5, random_state=42, reweight=True
-        )
+        # First, split the data into two parts: 1/2 and 1/2
+        train_set, temp_set = train_test_split(self.train_set, test_size=0.5, random_state=42)
+
+        # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
+        temp_set['data'] = temp_set['data'].reset_index(drop=True)
+        valid_set, holdout_set = train_test_split(temp_set, test_size=0.5, random_state=42)
+
+        self.training_set = train_set
+        self.valid_set = valid_set
+        self.holdout_set = holdout_set
 
         del self.train_set
 
-        print("Training Data: ", self.training_set["data"].shape)
-        print("Training Labels: ", self.training_set["labels"].shape)
-        print("Training Weights: ", self.training_set["weights"].shape)
-        print(
-            "sum_signal_weights: ",
-            self.training_set["weights"][self.training_set["labels"] == 1].sum(),
-        )
-        print(
-            "sum_bkg_weights: ",
-            self.training_set["weights"][self.training_set["labels"] == 0].sum(),
-        )
-        print()
-        print("Valid Data: ", valid_set["data"].shape)
-        print("Valid Labels: ", valid_set["labels"].shape)
-        print("Valid Weights: ", valid_set["weights"].shape)
-        print(
-            "sum_signal_weights: ",
-            valid_set["weights"][valid_set["labels"] == 1].sum(),
-        )
-        print(
-            "sum_bkg_weights: ",
-            valid_set["weights"][valid_set["labels"] == 0].sum(),
-        )
-        print(" \n ")
+        def print_set_info(name, dataset):
+            print(f"{name} Set:")
+            print(f"{'-' * len(name)} ")
+            print(f"  Data Shape:          {dataset['data'].shape}")
+            print(f"  Labels Shape:        {dataset['labels'].shape}")
+            print(f"  Weights Shape:       {dataset['weights'].shape}")
+            print(f"  Sum Signal Weights:  {dataset['weights'][dataset['labels'] == 1].sum():.2f}")
+            print(f"  Sum Background Weights: {dataset['weights'][dataset['labels'] == 0].sum():.2f}")
+            print("\n")
 
-
-        print("Training Data: ", self.training_set["data"].shape)
+        print_set_info("Training", self.training_set)
+        print_set_info("Validation", self.valid_set)
+        print_set_info("Holdout (For Statistical Template)", self.holdout_set)
 
         self.re_train = True
-        
+
         if XGBOOST:
             from boosted_decision_tree import BoostedDecisionTree
 
             self.model = BoostedDecisionTree()
-            module_file = current_file + "/model_XGB.pkl"
+            module_file = current_file + "/model_XGB.json"
             if os.path.exists(module_file):
                 self.model.load(module_file)
                 self.re_train = False  # if model is already trained, no need to retrain
@@ -158,7 +151,7 @@ class Model:
 
             self.name = "model_torch"
             print("Model is Torch NN")
-        self.stat_analysis = StatisticalAnalysis(self.model, valid_set)
+        self.stat_analysis = StatisticalAnalysis(self.model, self.holdout_set)
 
 
     def fit(self):
@@ -181,26 +174,44 @@ class Model:
         if self.re_train:
 
             balanced_set = self.balance_set()
-            self.model.fit(
-                balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
-            )
-            self.model.save( current_file + "/" + self.name)
 
+            if XGBOOST:
+                self.model.fit(
+                    balanced_set["data"], balanced_set["labels"], balanced_set["weights"],
+                    valid_set=[self.valid_set["data"], self.valid_set["labels"], self.valid_set["weights"]],
+                )
+            else:
+                self.model.fit(
+                    balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
+                )
+            self.model.save( current_file + "/" + self.name)
 
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
-            self.stat_analysis.load(saved_info_file) 
-        else:   
+            self.stat_analysis.load(saved_info_file)
+        else:
             self.stat_analysis.calculate_saved_info()
             self.stat_analysis.save(saved_info_file)
 
-        train_score = self.model.predict(self.training_set["data"])
-        train_results = self.stat_analysis.compute_mu(
-            train_score, self.training_set["weights"],plot=True)
-        
-        print("Train Results: ")
-        for key in train_results.keys():
-            print("\t", key, " : ", train_results[key])
+        def predict_and_analyze(dataset_name, data_set, fig_name):
+            score = self.model.predict(data_set["data"])
+            results = self.stat_analysis.compute_mu(score, data_set["weights"], plot=fig_name)
+
+            print(f"{dataset_name} Results:")
+            print(f"{'-' * len(dataset_name)} Results:")
+            for key, value in results.items():
+                print(f"\t{key} : {value}")
+            print("\n")
+
+        # Predict and analyze for each set
+        datasets = [
+            ("Training", self.training_set, "train_mu"),
+            ("Validation", self.valid_set, "valid_mu"),
+            ("Holdout", self.holdout_set, "holdout_mu")
+        ]
+
+        for name, dataset, plot_name in datasets:
+            predict_and_analyze(name, dataset, plot_name)
 
     def balance_set(self):
         balanced_set = self.training_set.copy()
@@ -255,9 +266,9 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     train_set = {}
     test_set = {}
     full_size = len(data)
-    
+
     print(f"Full size of the data is {full_size}")
-    
+
     np.random.seed(random_state)
     if isinstance(test_size, float):
         test_number = int(test_size * full_size)
@@ -273,7 +284,7 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     
     print(f"Train size is {len(remaining_index)}")
     print(f"Test size is {len(random_index)}")
-    
+
     for key in data_set.keys():
         if (key != "data") and (key != "settings"):
             array = np.array(data_set[key])
@@ -306,3 +317,4 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
         ] * (background_weight / background_weight_test)
 
     return train_set, test_set
+
