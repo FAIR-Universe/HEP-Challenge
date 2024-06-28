@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error
 import pickle
 
 
@@ -23,10 +24,15 @@ class BoostedDecisionTree:
     """
 
     def __init__(self):
-        self.model = XGBClassifier()
+        self.model = XGBClassifier(
+            n_estimators=50,
+            max_depth=6,
+            learning_rate=0.25,
+            # eval_metric=mean_squared_error,
+        )
         self.scaler = StandardScaler()
 
-    def fit(self, train_data, labels, weights=None):
+    def fit(self, train_data, labels, weights=None, valid_set=None):
         """
         Fits the model to the training data.
 
@@ -36,24 +42,47 @@ class BoostedDecisionTree:
             weights (array-like, optional): The sample weights for the training data.
 
         """
+        # remove the `entry` column if exists
+        if "entry" in train_data.columns:
+            train_data = train_data.drop(columns=["entry"])
+        if "entry" in valid_set[0].columns:
+            valid_set[0] = valid_set[0].drop(columns=["entry"])
+
         self.scaler.fit_transform(train_data)
 
         X_train_data = self.scaler.transform(train_data)
-        self.model.fit(X_train_data, labels, weights, eval_metric="logloss")
+        X_valid_data = self.scaler.transform(valid_set[0])
+        self.model.fit(
+            X_train_data, labels, weights,
+            eval_set=[(X_valid_data, valid_set[1])],
+            sample_weight_eval_set=[valid_set[2]],
+            eval_metric=["error", "logloss", "rmse"],
+            early_stopping_rounds=10,
+            verbose=True,
+        )
 
-    def predict(self, test_data):
+        # printout the accuracy and AUC of the test set using sklearn
+        print(f"Accuracy: {accuracy_score(valid_set[1], self.model.predict(X_valid_data)):.3%}")
+        print(f"AUC: {roc_auc_score(valid_set[1], self.model.predict_proba(X_valid_data)[:, 1]):.3f}")
+
+    def predict(self, data):
         """
-        Predicts the class probabilities for the test data.
+        Predicts the class probabilities for the input data.
 
         Args:
-            test_data (pandas.DataFrame): The test data.
+            data (pandas.DataFrame): The input data.
 
         Returns:
             array-like: The predicted class probabilities.
 
         """
-        test_data = self.scaler.transform(test_data)
-        return self.model.predict_proba(test_data)[:, 1]
+
+        # remove the `entry` column if exists
+        if "entry" in data.columns:
+            data = data.drop(columns=["entry"])
+
+        data = self.scaler.transform(data)
+        return self.model.predict_proba(data)[:, 1]
 
     def save(self, model_name):
         """
