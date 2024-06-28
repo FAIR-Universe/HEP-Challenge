@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from sys import path
 from systematics import systematics
@@ -62,7 +64,7 @@ class StatisticalAnalysis:
         
         self.holdout_set = holdout_set
         
-    def compute_mu(self,score, weight, plot: str="mu_plot"):
+    def compute_mu(self,score, weight, plot=None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -156,6 +158,7 @@ class StatisticalAnalysis:
             result.draw_mnprofile('mu')
             plt.show()
 
+            os.makedirs("plots", exist_ok=True)
             # alpha_test = [1.0, 1.0, 1.0, 0.0, 1.0, 1.0]
             alpha_test = [result.values['tes'], result.values['bkg_scale'], result.values['jes'], result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']]
             self.plot_stacked_histogram(
