@@ -286,7 +286,7 @@ def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     return weights
 
 
-def dibosn_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
+def diboson_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     """
     Apply a scaling to the weight. For Diboson background
 
@@ -515,7 +515,7 @@ def systematics(
             )
 
         if diboson_scale is not None:
-            weights = dibosn_bkg_weight_norm(
+            weights = diboson_bkg_weight_norm(
                 weights, data_set["detailed_labels"], diboson_scale
             )
 
