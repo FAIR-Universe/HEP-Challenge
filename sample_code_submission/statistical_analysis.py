@@ -156,7 +156,7 @@ class StatisticalAnalysis:
             result.draw_mnprofile('mu')
             plt.show()
 
-            # alpha_test = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            # alpha_test = [1.0, 1.0, 1.0, 0.0, 1.0, 1.0]
             alpha_test = [result.values['tes'], result.values['bkg_scale'], result.values['jes'], result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']]
             self.plot_stacked_histogram(
                 bins,
@@ -167,12 +167,6 @@ class StatisticalAnalysis:
                 save_name=f"plots/{plot}.png"
             )
 
-            print(f"[*] --- N_obs: {N_obs}")
-            print(f"[*] --- bins: {bins}")
-            print(f"[*] --- combined_fit_function_s(alpha_test): {combined_fit_function_s(alpha_test)}")
-            print(f"[*] --- combined_fit_function_b(alpha_test): {combined_fit_function_b(alpha_test)}")
-            print(f"[*] --- N_diff: {N_obs - (combined_fit_function_s(alpha_test) + combined_fit_function_b(alpha_test))}")
-        
         return {
             "mu_hat": mu_hat,
             "delta_mu_hat" : result.errors['mu'] * 2,

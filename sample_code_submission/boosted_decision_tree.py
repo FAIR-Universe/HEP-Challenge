@@ -32,7 +32,7 @@ class BoostedDecisionTree:
         )
         self.scaler = StandardScaler()
 
-    def fit(self, train_data, labels, weights=None, eval_set=None):
+    def fit(self, train_data, labels, weights=None, valid_set=None):
         """
         Fits the model to the training data.
 
@@ -45,32 +45,32 @@ class BoostedDecisionTree:
         # remove the `entry` column if exists
         if "entry" in train_data.columns:
             train_data = train_data.drop(columns=["entry"])
-        if "entry" in eval_set[0].columns:
-            eval_set[0] = eval_set[0].drop(columns=["entry"])
+        if "entry" in valid_set[0].columns:
+            valid_set[0] = valid_set[0].drop(columns=["entry"])
 
         self.scaler.fit_transform(train_data)
 
         X_train_data = self.scaler.transform(train_data)
-        X_test_data = self.scaler.transform(eval_set[0])
+        X_valid_data = self.scaler.transform(valid_set[0])
         self.model.fit(
             X_train_data, labels, weights,
-            eval_set=[(X_test_data, eval_set[1])],
-            sample_weight_eval_set=[eval_set[2]],
+            eval_set=[(X_valid_data, valid_set[1])],
+            sample_weight_eval_set=[valid_set[2]],
             eval_metric=["error", "logloss", "rmse"],
             early_stopping_rounds=10,
             verbose=True,
         )
 
         # printout the accuracy and AUC of the test set using sklearn
-        print(f"Accuracy: {accuracy_score(eval_set[1], self.model.predict(X_test_data)):.3%}")
-        print(f"AUC: {roc_auc_score(eval_set[1], self.model.predict_proba(X_test_data)[:, 1]):.3f}")
+        print(f"Accuracy: {accuracy_score(valid_set[1], self.model.predict(X_valid_data)):.3%}")
+        print(f"AUC: {roc_auc_score(valid_set[1], self.model.predict_proba(X_valid_data)[:, 1]):.3f}")
 
-    def predict(self, test_data):
+    def predict(self, data):
         """
-        Predicts the class probabilities for the test data.
+        Predicts the class probabilities for the input data.
 
         Args:
-            test_data (pandas.DataFrame): The test data.
+            data (pandas.DataFrame): The input data.
 
         Returns:
             array-like: The predicted class probabilities.
@@ -78,11 +78,11 @@ class BoostedDecisionTree:
         """
 
         # remove the `entry` column if exists
-        if "entry" in test_data.columns:
-            test_data = test_data.drop(columns=["entry"])
+        if "entry" in data.columns:
+            data = data.drop(columns=["entry"])
 
-        test_data = self.scaler.transform(test_data)
-        return self.model.predict_proba(test_data)[:, 1]
+        data = self.scaler.transform(data)
+        return self.model.predict_proba(data)[:, 1]
 
     def save(self, model_name):
         """
