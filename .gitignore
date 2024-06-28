@@ -7,3 +7,5 @@ public_data.zip
 HiggsML-code_submission_24*
 sample_result_submission/
 XGB_saved/
+docs/_build/doctrees/
+*.doctrees
