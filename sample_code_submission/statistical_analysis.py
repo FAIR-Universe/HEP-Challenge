@@ -62,7 +62,7 @@ class StatisticalAnalysis:
         
         self.holdout_set = holdout_set
         
-    def compute_mu(self,score, weight, plot=False):
+    def compute_mu(self,score, weight, plot: str="mu_plot"):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -119,6 +119,10 @@ class StatisticalAnalysis:
 
             sigma_asimov_mu = sigma_asimov(mu, alpha)
 
+            # Add a small epsilon to avoid log(0) or very small values
+            epsilon = 1e-10
+            sigma_asimov_mu = np.clip(sigma_asimov_mu, epsilon, None)
+
             hist_llr = (
                 - N_obs
                 * np.log((sigma_asimov_mu))
@@ -139,14 +143,35 @@ class StatisticalAnalysis:
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()
 
+        if not result.fmin.is_valid:
+            print("Warning: migrad did not converge. Hessian errors might be unreliable.")
+
         mu_hat = result.values['mu']
         mu_p16 = mu_hat - result.errors['mu']
-        mu_p84 = mu_hat  + result.errors['mu']
+        mu_p84 = mu_hat + result.errors['mu']
 
         if plot:
+            print(result)
             result.draw_profile('mu')
             result.draw_mnprofile('mu')
             plt.show()
+
+            # alpha_test = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            alpha_test = [result.values['tes'], result.values['bkg_scale'], result.values['jes'], result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']]
+            self.plot_stacked_histogram(
+                bins,
+                combined_fit_function_s(alpha_test),
+                combined_fit_function_b(alpha_test),
+                mu=mu_hat,
+                N_obs=N_obs,
+                save_name=f"plots/{plot}.png"
+            )
+
+            print(f"[*] --- N_obs: {N_obs}")
+            print(f"[*] --- bins: {bins}")
+            print(f"[*] --- combined_fit_function_s(alpha_test): {combined_fit_function_s(alpha_test)}")
+            print(f"[*] --- combined_fit_function_b(alpha_test): {combined_fit_function_b(alpha_test)}")
+            print(f"[*] --- N_diff: {N_obs - (combined_fit_function_s(alpha_test) + combined_fit_function_b(alpha_test))}")
         
         return {
             "mu_hat": mu_hat,
@@ -154,7 +179,6 @@ class StatisticalAnalysis:
             "p16": mu_p16,
             "p84": mu_p84,
         }
-        
 
 
     def calculate_saved_info(self):
@@ -197,7 +221,7 @@ class StatisticalAnalysis:
         syst_settings[key] = alpha
         holdout_syst = systematics(
             self.holdout_set.copy(),
-            tes=syst_settings['tes'],        
+            tes=syst_settings['tes'],
             bkg_scale=syst_settings['bkg_scale'],
             jes=syst_settings['jes'],
             soft_met=syst_settings['soft_met'],
@@ -256,7 +280,7 @@ class StatisticalAnalysis:
         print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
         
         return coef_s_list, coef_b_list
-       
+
     def alpha_function(self):
         
         self.fit_function_s = [[] for _ in range(len(self.syst_settings.keys()))]
@@ -275,7 +299,7 @@ class StatisticalAnalysis:
                 self.fit_function_s[index].append(np.poly1d(coef_s))
                 self.fit_function_b[index].append(np.poly1d(coef_b))
                 
-           
+
     def save(self, file_path):
         """
         Save the saved_info dictionary to a file.
@@ -302,3 +326,37 @@ class StatisticalAnalysis:
         with open(file_path, "rb") as f:
             self.saved_info = pickle.load(f)
         self.alpha_function()
+
+    def plot_stacked_histogram(self, bins, signal_fit, background_fit, mu, N_obs, save_name=None):
+        """
+        Plot a stacked histogram with combined signal and background fits and observed data points.
+
+        Parameters:
+            bins (numpy.ndarray): Bin edges.
+            signal_fit (numpy.ndarray): Combined signal fit values.
+            background_fit (numpy.ndarray): Combined background fit values.
+            N_obs (numpy.ndarray): Observed data points.
+        """
+        plt.figure(figsize=(10, 5))
+
+        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        bin_widths = np.diff(bins)
+
+        # Plot stacked histograms for signal and background
+        plt.bar(bin_centers, signal_fit, width=bin_widths, color='g', align='center', label='Signal')
+        plt.bar(bin_centers, background_fit, width=bin_widths, alpha=0.5, label='Background', color='b', align='center')
+        plt.bar(bin_centers, signal_fit * mu, width=bin_widths, alpha=0.5, label=f'Signal * {mu:.1f}', color='r', align='center', bottom=background_fit)
+
+        # Plot observed data points
+        plt.errorbar(bin_centers, N_obs, yerr=np.sqrt(N_obs), fmt='o', color='k', label='Observed Data')
+
+        plt.xlabel('Score')
+        plt.ylabel('Counts')
+        plt.yscale('log')  # Set y-axis to logarithmic scale
+        plt.title('Stacked Histogram: Signal and Background Fits with Observed Data')
+        plt.legend()
+
+        # Save the plot
+        if save_name:
+            plt.savefig(save_name)
+        plt.show()

@@ -202,7 +202,7 @@ class Model:
 
         train_score = self.model.predict(self.training_set["data"])
         train_results = self.stat_analysis.compute_mu(
-            train_score, self.training_set["weights"],plot=True)
+            train_score, self.training_set["weights"],plot="train_mu")
         
         print("Train Results: ")
         for key in train_results.keys():
@@ -210,7 +210,7 @@ class Model:
 
         test_score = self.model.predict(self.valid_set["data"])
         test_results = self.stat_analysis.compute_mu(
-            test_score, self.valid_set["weights"],plot=True)
+            test_score, self.valid_set["weights"],plot="test_mu")
 
         print("Test Results: ")
         for key in test_results.keys():
