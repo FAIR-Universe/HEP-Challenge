@@ -188,7 +188,7 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 parent_path = os.path.dirname(current_path)
 
 
-def Neurips2024_public_dataset(public_data_path=None):
+def Neurips2024_public_dataset():
     """
     Downloads and extracts the Neurips 2024 public dataset.
 
@@ -200,31 +200,39 @@ def Neurips2024_public_dataset(public_data_path=None):
         FileNotFoundError: If the downloaded dataset file is not found.
         zipfile.BadZipFile: If the downloaded file is not a valid zip file.
     """
-    current_path = Path.cwd()
-    file_read_loc = public_data_path or (current_path / "public_data")
+    current_path = os.getcwd()
+    public_data_folder_path = os.path.join(current_path, "public_data")
+    public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
+    public_data_zip_path = os.path.join(current_path, "public_data.zip")
 
-    file_read_loc.mkdir(parents=True, exist_ok=True)
+    # Check if public_data dir exists
+    if os.path.isdir(public_data_folder_path):
+        # Check if public_data/input_data dir exists
+        if os.path.isdir(public_input_data_folder_path):
+            return Data(public_input_data_folder_path)
+        else:
+            print("[!] public_data/input_dir directory not found")
+    else:
+        print("[!] public_data directory not found")
 
-    if ( file_read_loc / "input_data" ).exists():
-        return Data(
-            str(file_read_loc / "input_data")
-        )
+    # Check if public_data.zip exists
+    if not os.path.isfile(public_data_zip_path):
+        print("[!] public_data.zip does not exist")
+        print("[*] Downloading public data, this may take few minutes")
+        url = "https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/"
+        chunk_size = 1024 * 1024
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            with open(public_data_zip_path, 'wb') as file:
+                # Iterate over the response in chunks
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    # Filter out keep-alive new chunks
+                    if chunk:
+                        file.write(chunk)
 
-    url = "https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/"
-    file = file_read_loc / "public_data.zip"
-    chunk_size = 1024 * 1024
-    if not file.exists():
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with file.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
-                    f.write(chunk)
+    # Extract public_data.zip
+    print("[*] Extracting public_data.zip")
+    with ZipFile(public_data_zip_path, 'r') as zip_ref:
+        zip_ref.extractall(current_path)
 
-    input_data = file_read_loc / "input_data"
-    if not input_data.exists():
-        with ZipFile(file) as zip:
-            zip.extractall(path=file_read_loc)
-
-    return Data(
-        str(current_path / "public_data" / "input_data")
-    )
+    return Data(public_input_data_folder_path)
