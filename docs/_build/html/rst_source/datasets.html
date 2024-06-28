@@ -167,7 +167,16 @@ dict: The train dataset.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="datasets.Neurips2024_public_dataset">
 <span class="sig-prename descclassname"><span class="pre">datasets.</span></span><span class="sig-name descname"><span class="pre">Neurips2024_public_dataset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datasets.Neurips2024_public_dataset" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Downloads and extracts the Neurips 2024 public dataset.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Data: The path to the extracted input data.</p>
+</dd>
+<dt>Raises:</dt><dd><p>HTTPError: If there is an error while downloading the dataset.
+FileNotFoundError: If the downloaded dataset file is not found.
+zipfile.BadZipFile: If the downloaded file is not a valid zip file.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

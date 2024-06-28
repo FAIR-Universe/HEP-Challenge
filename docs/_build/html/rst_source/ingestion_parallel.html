@@ -131,20 +131,12 @@ save_result: Save the ingestion result to a file.</p>
 <dt class="sig sig-object py" id="ingestion_parallel.Ingestion.compute_result">
 <span class="sig-name descname"><span class="pre">compute_result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ingestion_parallel.Ingestion.compute_result" title="Link to this definition"></a></dt>
 <dd><p>Compute the ingestion result.</p>
-<dl class="simple">
-<dt>Notes:</dt><dd><p>This method computes the ingestion result based on the predicted values.</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ingestion_parallel.Ingestion.fit_submission">
 <span class="sig-name descname"><span class="pre">fit_submission</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ingestion_parallel.Ingestion.fit_submission" title="Link to this definition"></a></dt>
 <dd><p>Fit the submitted model.</p>
-<dl class="simple">
-<dt>Notes:</dt><dd><p>This method calls the <cite>fit</cite> method of the submitted model.</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -162,11 +154,7 @@ save_result: Save the ingestion result to a file.</p>
 <span class="sig-name descname"><span class="pre">init_submission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ingestion_parallel.Ingestion.init_submission" title="Link to this definition"></a></dt>
 <dd><p>Initialize the submitted model.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>Model (class): The model class.</p>
-</dd>
-<dt>Notes:</dt><dd><p>This method initializes the submitted model by calling the <cite>fit</cite> method.</p>
-</dd>
-<dt>Raises:</dt><dd><p>ImportError: If the <cite>systematics</cite> module is not found.</p>
+<dt>Args:</dt><dd><p>Model (object): The model class.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -188,8 +176,6 @@ save_result: Save the ingestion result to a file.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>test_settings (dict): The test settings.</p>
 </dd>
-<dt>Notes:</dt><dd><p>This method calls the <cite>predict</cite> method of the submitted model.</p>
-</dd>
 </dl>
 </dd></dl>
 
@@ -206,7 +192,7 @@ save_result: Save the ingestion result to a file.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="ingestion_parallel.Ingestion.save_result">
 <span class="sig-name descname"><span class="pre">save_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ingestion_parallel.Ingestion.save_result" title="Link to this definition"></a></dt>
-<dd><p>Save the ingestion result to a file.</p>
+<dd><p>Save the ingestion result to files.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>output_dir (str): The output directory to save the result files.</p>
 </dd>
@@ -216,7 +202,7 @@ save_result: Save the ingestion result to a file.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="ingestion_parallel.Ingestion.show_duration">
 <span class="sig-name descname"><span class="pre">show_duration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ingestion_parallel.Ingestion.show_duration" title="Link to this definition"></a></dt>
-<dd><p>Display the duration of the ingestion process.</p>
+<dd><p>Show the duration of the ingestion process.</p>
 </dd></dl>
 
 <dl class="py method">
