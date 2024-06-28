@@ -63,7 +63,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#systematics.V4"><code class="docutils literal notranslate"><span class="pre">V4</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.all_bkg_weight_norm"><code class="docutils literal notranslate"><span class="pre">all_bkg_weight_norm()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.dibosn_bkg_weight_norm"><code class="docutils literal notranslate"><span class="pre">dibosn_bkg_weight_norm()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#systematics.get_bootstraped_dataset"><code class="docutils literal notranslate"><span class="pre">get_bootstraped_dataset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.get_bootstrapped_dataset"><code class="docutils literal notranslate"><span class="pre">get_bootstrapped_dataset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.get_systematics_dataset"><code class="docutils literal notranslate"><span class="pre">get_systematics_dataset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.mom4_manipulate"><code class="docutils literal notranslate"><span class="pre">mom4_manipulate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.postprocess"><code class="docutils literal notranslate"><span class="pre">postprocess()</span></code></a></li>
@@ -334,9 +334,9 @@ systBkgNorm (float): The scaling factor</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="systematics.get_bootstraped_dataset">
-<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">get_bootstraped_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">31415</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ttbar_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diboson_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.get_bootstraped_dataset" title="Link to this definition"></a></dt>
-<dd><p>Generate a bootstraped dataset</p>
+<dt class="sig sig-object py" id="systematics.get_bootstrapped_dataset">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">get_bootstrapped_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">31415</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ttbar_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diboson_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.get_bootstrapped_dataset" title="Link to this definition"></a></dt>
+<dd><p>Generate a bootstrapped dataset</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>test_set (dict): The original test dataset
 mu (float): The scaling factor for htautau background
@@ -345,7 +345,7 @@ ttbar_scale (float): The scaling factor for ttbar background
 diboson_scale (float): The scaling factor for diboson background
 bkg_scale (float): The scaling factor for other backgrounds</p>
 </dd>
-<dt>Returns:</dt><dd><p>pandas.DataFrame: The bootstraped dataset</p>
+<dt>Returns:</dt><dd><p>pandas.DataFrame: The bootstrapped dataset</p>
 </dd>
 </dl>
 </dd></dl>

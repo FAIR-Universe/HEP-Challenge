@@ -468,8 +468,8 @@ def postprocess(data):
         pandas.DataFrame: The postprocessed dataset
     """
     data = data.drop(data[data.PRI_had_pt < 26].index)
-    data = data.drop(data[data.PRI_jet_leading_pt < 26 and data.PRI_n_jets > 0].index)
-    data = data.drop(data[data.PRI_jet_subleading_pt < 26 and data.PRI_n_jets > 1].index)
+    data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
+    data = data.drop(data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index)
     data = data.drop(data[data.PRI_lep_pt < 20].index)
 
     return data
@@ -560,7 +560,7 @@ LHC_NUMBERS = {
 }
 
 
-def get_bootstraped_dataset(
+def get_bootstrapped_dataset(
     test_set,
     mu=1.0,
     seed=31415,
@@ -570,7 +570,7 @@ def get_bootstraped_dataset(
     poisson = True
 ):
     """
-    Generate a bootstraped dataset
+    Generate a bootstrapped dataset
 
     Args:
         test_set (dict): The original test dataset
@@ -581,7 +581,7 @@ def get_bootstraped_dataset(
         bkg_scale (float): The scaling factor for other backgrounds
 
     Returns:
-        pandas.DataFrame: The bootstraped dataset
+        pandas.DataFrame: The bootstrapped dataset
     """
     bkg_norm = LHC_NUMBERS.copy()
     if ttbar_scale is not None:
