@@ -507,7 +507,7 @@ def systematics(
     data_set_new = data_set.copy()
 
     if "weights" in data_set_new.keys():
-        weights = data_set_new["weights"]
+        weights = data_set_new["weights"].copy()
 
         if ttbar_scale is not None:
             weights = ttbar_bkg_weight_norm(
@@ -529,7 +529,7 @@ def systematics(
     if verbose > 0:
         print("Tau energy rescaling :", tes)
     data = mom4_manipulate(
-        data=data_set_new["data"].copy(),
+        data=data_set["data"].copy(),
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
         soft_met=soft_met,
