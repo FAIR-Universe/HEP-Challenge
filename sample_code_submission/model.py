@@ -195,7 +195,7 @@ class Model:
 
         def predict_and_analyze(dataset_name, data_set, fig_name):
             score = self.model.predict(data_set["data"])
-            results = self.stat_analysis.compute_mu(score, data_set["weights"], plot=fig_name)
+            results = self.stat_analysis.compute_mu(score, data_set["weights"], plot=fig_name, stat_only=True)
 
             print(f"{dataset_name} Results:")
             print(f"{'-' * len(dataset_name)} Results:")
@@ -254,7 +254,7 @@ class Model:
 
         predictions = self.model.predict(test_data)
 
-        result = self.stat_analysis.compute_mu(predictions, test_weights)
+        result = self.stat_analysis.compute_mu(predictions, test_weights, stat_only=True)
 
         print("Test Results: ", result)
 

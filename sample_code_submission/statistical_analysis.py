@@ -38,10 +38,11 @@ class StatisticalAnalysis:
         save: Save the saved_info dictionary to a file.
         load: Load the saved_info dictionary from a file.
     """
-    def __init__(self,model,holdout_set,bins=10):
+    def __init__(self,model,holdout_set,bins=10,stat_only=False):
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
+        self.stat_only = stat_only
         self.syst_settings = {
             'tes': 1.0,
             'bkg_scale': 1.0,
@@ -64,7 +65,7 @@ class StatisticalAnalysis:
         
         self.holdout_set = holdout_set
         
-    def compute_mu(self,score, weight, plot=None):
+    def compute_mu(self,score, weight, plot=None, stat_only=None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -72,11 +73,14 @@ class StatisticalAnalysis:
         Args:
             score (numpy.ndarray): Array of scores.
             weight (numpy.ndarray): Array of weights.
-
+            stat_only (bool, optional): If assigned, will overwrite stat_only option. Defaults to None.
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
-        
+
+        if stat_only is not None:
+            self.stat_only = stat_only
+
         N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
 
         def combined_fit_function_s(x):
@@ -141,6 +145,14 @@ class StatisticalAnalysis:
                         ttbar_scale=1.0,
                         diboson_scale=1.0,
                         )
+
+        if self.stat_only:
+            result.fixed['tes'] = True
+            result.fixed['bkg_scale'] = True
+            result.fixed['jes'] = True
+            result.fixed['soft_met'] = True
+            result.fixed['ttbar_scale'] = True
+            result.fixed['diboson_scale'] = True
 
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()
