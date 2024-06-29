@@ -65,6 +65,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#systematics.dibosn_bkg_weight_norm"><code class="docutils literal notranslate"><span class="pre">dibosn_bkg_weight_norm()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.get_bootstraped_dataset"><code class="docutils literal notranslate"><span class="pre">get_bootstraped_dataset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.get_systematics_dataset"><code class="docutils literal notranslate"><span class="pre">get_systematics_dataset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#systematics.make_unweighted_set"><code class="docutils literal notranslate"><span class="pre">make_unweighted_set()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.mom4_manipulate"><code class="docutils literal notranslate"><span class="pre">mom4_manipulate()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.postprocess"><code class="docutils literal notranslate"><span class="pre">postprocess()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#systematics.systematics"><code class="docutils literal notranslate"><span class="pre">systematics()</span></code></a></li>
@@ -134,7 +135,7 @@ Originally written by David Rousseau, and Victor Estrade.</p>
 <dl class="simple">
 <dt>Parameters:</dt><dd><p>v (V4): the other V4 object</p>
 </dd>
-<dt>Returns:</dt><dd><p>deltaEta (float): pseudo-rapidity difference</p>
+<dt>Returns:</dt><dd><p>deltaPhi (float): azimuthal angle difference</p>
 </dd>
 </dl>
 </dd></dl>
@@ -142,13 +143,9 @@ Originally written by David Rousseau, and Victor Estrade.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="systematics.V4.deltaPhi">
 <span class="sig-name descname"><span class="pre">deltaPhi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.V4.deltaPhi" title="Link to this definition"></a></dt>
-<dd><p>Compute the azimuthal angle difference with another V4 object</p>
-<dl class="simple">
-<dt>Parameters:</dt><dd><p>v (V4): the other V4 object</p>
-</dd>
-<dt>Returns:</dt><dd><p>deltaPhi (float): azimuthal angle difference</p>
-</dd>
-</dl>
+<dd><p>Compute the azimuthal angle difference with another V4 object
+Parameters: v (V4) - the other V4 object
+Returns: deltaPhi (float) - azimuthal angle difference</p>
 </dd></dl>
 
 <dl class="py method">
@@ -158,7 +155,7 @@ Originally written by David Rousseau, and Victor Estrade.</p>
 <dl class="simple">
 <dt>Parameters:</dt><dd><p>v (V4): the other V4 object</p>
 </dd>
-<dt>Returns:</dt><dd><p>deltaR (float): delta R with another V4 object</p>
+<dt>Returns:</dt><dd><p>deltaEta (float): pseudo-rapidity difference</p>
 </dd>
 </dl>
 </dd></dl>
@@ -353,6 +350,11 @@ bkg_scale (float): The scaling factor for other backgrounds</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="systematics.get_systematics_dataset">
 <span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">get_systematics_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">soft_met</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.get_systematics_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systematics.make_unweighted_set">
+<span class="sig-prename descclassname"><span class="pre">systematics.</span></span><span class="sig-name descname"><span class="pre">make_unweighted_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_set</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systematics.make_unweighted_set" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">

@@ -147,7 +147,7 @@ file_path (str, optional): File path to save the calculated saved_info dictionar
 
 <dl class="py method">
 <dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.compute_mu">
-<span class="sig-name descname"><span class="pre">compute_mu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.compute_mu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_mu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.compute_mu" title="Link to this definition"></a></dt>
 <dd><p>Perform calculations to calculate mu using the profile likelihood method.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>score (numpy.ndarray): Array of scores.
@@ -192,6 +192,19 @@ weight (numpy.ndarray): Array of weights.</p>
 <p>Returns:
 - holdout_signal_hist (numpy.ndarray): The histogram of signal events in the holdout set.
 - holdout_background_hist (numpy.ndarray): The histogram of background events in the holdout set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.plot_stacked_histogram">
+<span class="sig-name descname"><span class="pre">plot_stacked_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.plot_stacked_histogram" title="Link to this definition"></a></dt>
+<dd><p>Plot a stacked histogram with combined signal and background fits and observed data points.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>bins (numpy.ndarray): Bin edges.
+signal_fit (numpy.ndarray): Combined signal fit values.
+background_fit (numpy.ndarray): Combined background fit values.
+N_obs (numpy.ndarray): Observed data points.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
