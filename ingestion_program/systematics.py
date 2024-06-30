@@ -16,6 +16,7 @@ import numpy as np
 from derived_quantities import DER_data
 
 
+
 # ==================================================================================
 #  V4 Class and physic computations
 # ==================================================================================
@@ -285,7 +286,7 @@ def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     return weights
 
 
-def dibosn_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
+def diboson_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     """
     Apply a scaling to the weight. For Diboson background
 
@@ -452,7 +453,13 @@ def make_unweighted_set(data_set):
 
 def postprocess(data):
     """
-    Postprocess the data after manipulation
+    Select the events with the following conditions:
+    PRI_had_pt > 26
+    PRI_jet_leading_pt > 26
+    PRI_jet_subleading_pt > 26
+    PRI_lep_pt > 20
+
+    This is applied to the dataset after the systematics are applied
 
     Args:
         data (pandas.DataFrame): The manipulated dataset
@@ -461,6 +468,8 @@ def postprocess(data):
         pandas.DataFrame: The postprocessed dataset
     """
     data = data.drop(data[data.PRI_had_pt < 26].index)
+    data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
+    data = data.drop(data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index)
     data = data.drop(data[data.PRI_lep_pt < 20].index)
 
     return data
@@ -494,23 +503,28 @@ def systematics(
     Returns:
         dict: The dataset with applied systematics
     """
-    if ttbar_scale is not None:
-        if "weights" in data_set.keys():
-            data_set["weights"] = ttbar_bkg_weight_norm(
-                data_set["weights"], data_set["detailed_labels"], ttbar_scale
+
+    data_set_new = data_set.copy()
+
+    if "weights" in data_set_new.keys():
+        weights = data_set_new["weights"].copy()
+
+        if ttbar_scale is not None:
+            weights = ttbar_bkg_weight_norm(
+                weights, data_set["detailed_labels"], ttbar_scale
             )
 
-    if diboson_scale is not None:
-        if "weights" in data_set.keys():
-            data_set["weights"] = dibosn_bkg_weight_norm(
-                data_set["weights"], data_set["detailed_labels"], diboson_scale
+        if diboson_scale is not None:
+            weights = diboson_bkg_weight_norm(
+                weights, data_set["detailed_labels"], diboson_scale
             )
 
-    if bkg_scale is not None:
-        if "weights" in data_set.keys():
-            data_set["weights"] = all_bkg_weight_norm(
-                data_set["weights"], data_set["labels"], bkg_scale
+        if bkg_scale is not None:
+            weights = all_bkg_weight_norm(
+                weights, data_set["labels"], bkg_scale
             )
+
+        data_set_new["weights"] = weights
 
     if verbose > 0:
         print("Tau energy rescaling :", tes)
@@ -523,14 +537,14 @@ def systematics(
     )
 
     df = DER_data(data)
-    for key in data_set.keys():
+    for key in data_set_new.keys():
         if key is not "data":
-            df[key] = data_set[key]
+            df[key] = data_set_new[key]
 
     data_syst = postprocess(df)
 
     data_syst_set = {}
-    for key in data_set.keys():
+    for key in data_set_new.keys():
         if key is not "data":
             data_syst_set[key] = data_syst.pop(key)
     data_syst_set["data"] = data_syst
@@ -546,16 +560,17 @@ LHC_NUMBERS = {
 }
 
 
-def get_bootstraped_dataset(
+def get_bootstrapped_dataset(
     test_set,
     mu=1.0,
     seed=31415,
     ttbar_scale=None,
     diboson_scale=None,
     bkg_scale=None,
+    poisson = True
 ):
     """
-    Generate a bootstraped dataset
+    Generate a bootstrapped dataset
 
     Args:
         test_set (dict): The original test dataset
@@ -566,25 +581,34 @@ def get_bootstraped_dataset(
         bkg_scale (float): The scaling factor for other backgrounds
 
     Returns:
-        pandas.DataFrame: The bootstraped dataset
+        pandas.DataFrame: The bootstrapped dataset
     """
     bkg_norm = LHC_NUMBERS.copy()
     if ttbar_scale is not None:
-        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        bkg_norm["ttbar"] = (LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
 
     if diboson_scale is not None:
-        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
+        bkg_norm["diboson"] = (LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
 
     if bkg_scale is not None:
-        bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
+        bkg_norm["ztautau"] = (LHC_NUMBERS["ztautau"] * bkg_scale)
 
-    bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
+    bkg_norm["htautau"] = (LHC_NUMBERS["htautau"] * mu)
+
 
     pseudo_data = []
-    for key in test_set.keys():
-        temp = test_set[key].sample(n=bkg_norm[key], replace=True, random_state=seed)
+    Seed = seed
+    for i, key in enumerate(test_set.keys()):
+        Seed = Seed + i
+        if poisson:
+            random_state = np.random.RandomState(seed=Seed)
+            number_of_events = random_state.poisson(bkg_norm[key])
+        else:
+            number_of_events = int(bkg_norm[key])
+        
+        temp_data = test_set[key].sample(n=number_of_events, replace=True, random_state=Seed)
 
-        pseudo_data.append(temp)
+        pseudo_data.append(temp_data)
 
     pseudo_data = pd.concat(pseudo_data)
 

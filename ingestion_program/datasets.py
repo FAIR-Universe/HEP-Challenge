@@ -129,10 +129,10 @@ class Data:
         bkg_scale=None,
         seed=42,
     ):
-        from systematics import get_bootstraped_dataset, get_systematics_dataset
+        from systematics import get_bootstrapped_dataset, get_systematics_dataset
 
         # get bootstrapped dataset from the original test set
-        pesudo_exp_data = get_bootstraped_dataset(
+        pesudo_exp_data = get_bootstrapped_dataset(
             self.__test_set,
             mu=set_mu,
             ttbar_scale=ttbar_scale,
