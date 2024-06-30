@@ -1,8 +1,7 @@
-***
 # Overview 
 ***
 
-## Codabench Walkthrough tutorial: [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/HiggsML_Uncertainty_Challenge-Codabench_Tutorial.pdf)
+## Codabench Walkthrough tutorial: [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf)
 
 ## Introduction 
 ***
@@ -50,15 +49,17 @@ This competition allows code submissions. Participants can submit either of the 
 ***
 ### Lawrence Berkeley National Laboratory 
 - Benjamin Nachman
-- Ben Thorne
 - Chris Harris
 - Sascha Diefenbacher
 - Steven Farrell
 - Wahid Bhimji
+- Jordan Dudley 
 
 ### University of Washington
 - Elham E Khoda
 - Shih-Chieh Hsu
+- Yulei Zhang
+- Yaun-Tang Chou
 
 ### ChaLearn
 - Isabelle Guyon

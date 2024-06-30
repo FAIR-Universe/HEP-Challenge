@@ -63,8 +63,12 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="#">visualization module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.Dataset_visualise"><code class="docutils literal notranslate"><span class="pre">Dataset_visualise</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.events_histogram"><code class="docutils literal notranslate"><span class="pre">events_histogram()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.histgram_compare"><code class="docutils literal notranslate"><span class="pre">histgram_compare()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.feature_importance_plot"><code class="docutils literal notranslate"><span class="pre">feature_importance_plot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.permutation_importance"><code class="docutils literal notranslate"><span class="pre">permutation_importance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.roc_curve_wrapper"><code class="docutils literal notranslate"><span class="pre">roc_curve_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.score_histogram"><code class="docutils literal notranslate"><span class="pre">score_histogram()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.validationcurve"><code class="docutils literal notranslate"><span class="pre">validationcurve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.visualize_scatter"><code class="docutils literal notranslate"><span class="pre">visualize_scatter()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -163,6 +167,15 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="visualization.Dataset_visualise.pair_plots_syst">
+<span class="sig-name descname"><span class="pre">pair_plots_syst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_syst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.pair_plots_syst" title="Link to this definition"></a></dt>
+<dd><p>Plots pair plots between the dataset and a system dataset.</p>
+<p>Parameters:
+- df_syst (DataFrame): The system dataset.
+- sample_size (int): The number of samples to consider (default: 10).</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.stacked_histogram">
 <span class="sig-name descname"><span class="pre">stacked_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.stacked_histogram" title="Link to this definition"></a></dt>
 <dd><p>Plots a stacked histogram of a specific field in the dataset.</p>
@@ -178,51 +191,37 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="visualization.events_histogram">
 <span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">events_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.events_histogram" title="Link to this definition"></a></dt>
-<dd><p>Plot a histogram of events based on a given field, labels, and weights.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>field (array-like): The field values for each event.
-labels (array-like): The labels for each event (0 for background, 1 for signal).
-weights (array-like): The weights for each event.
-plot_label (str, optional): The label for the plot. Defaults to None.
-y_scale (str, optional): The scale of the y-axis. Defaults to “log”.</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="visualization.histgram_compare">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">histgram_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_set1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_set2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['data_set1',</span> <span class="pre">'data_set2']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.histgram_compare" title="Link to this definition"></a></dt>
-<dd><p>Compare the histograms of two data sets based on a given field.</p>
-<p>This function plots and compares the histograms of two data sets based on a specified field.
-It uses the seaborn and matplotlib libraries for visualization.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>data_set1 (dict): The first data set containing the field of interest.
-data_set2 (dict): The second data set containing the field of interest.
-field_name (str): The name of the field to compare.
-bins (int, optional): The number of bins to use for the histogram. Defaults to 30.
-plot_label (list, optional): The labels for the two data sets in the plot legend. Defaults to [“data_set1”, “data_set2”].</p>
-</dd>
-<dt>Returns:</dt><dd><p>None</p>
-</dd>
-</dl>
-<img alt="../_images/histogram_compare.png" src="../_images/histogram_compare.png" />
-</dd></dl>
+<dt class="sig sig-object py" id="visualization.feature_importance_plot">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">feature_importance_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_importance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.feature_importance_plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="visualization.permutation_importance">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">permutation_importance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.permutation_importance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="visualization.roc_curve_wrapper">
 <span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">roc_curve_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.roc_curve_wrapper" title="Link to this definition"></a></dt>
-<dd><p>Plot the Receiver Operating Characteristic (ROC) curve for a binary classification model.</p>
-<p>Parameters:
-score (array-like): The predicted scores or probabilities for the positive class.
-labels (array-like): The true labels for the binary classification problem.
-weights (array-like): The sample weights for each data point.
-plot_label (str, optional): The label to be displayed in the plot legend. Defaults to “model”.
-color (str, optional): The color of the ROC curve. Defaults to “b” (blue).
-lw (int, optional): The linewidth of the ROC curve. Defaults to 2.</p>
-<p>Returns:
-None</p>
-<img alt="../_images/roc_curve.png" src="../_images/roc_curve.png" />
-</dd></dl>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="visualization.score_histogram">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">score_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.score_histogram" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="visualization.validationcurve">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">validationcurve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.validationcurve" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="visualization.visualize_scatter">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">visualize_scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ingestion_result_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_mus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.visualize_scatter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </section>
 
