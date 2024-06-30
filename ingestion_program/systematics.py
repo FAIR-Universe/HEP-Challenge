@@ -585,15 +585,15 @@ def get_bootstrapped_dataset(
     """
     bkg_norm = LHC_NUMBERS.copy()
     if ttbar_scale is not None:
-        bkg_norm["ttbar"] = int(LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        bkg_norm["ttbar"] = (LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
 
     if diboson_scale is not None:
-        bkg_norm["diboson"] = int(LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
+        bkg_norm["diboson"] = (LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
 
     if bkg_scale is not None:
-        bkg_norm["ztautau"] = int(LHC_NUMBERS["ztautau"] * bkg_scale)
+        bkg_norm["ztautau"] = (LHC_NUMBERS["ztautau"] * bkg_scale)
 
-    bkg_norm["htautau"] = int(LHC_NUMBERS["htautau"] * mu)
+    bkg_norm["htautau"] = (LHC_NUMBERS["htautau"] * mu)
 
 
     pseudo_data = []
@@ -604,7 +604,7 @@ def get_bootstrapped_dataset(
             random_state = np.random.RandomState(seed=Seed)
             number_of_events = random_state.poisson(bkg_norm[key])
         else:
-            number_of_events = bkg_norm[key]
+            number_of_events = int(bkg_norm[key])
         
         temp_data = test_set[key].sample(n=number_of_events, replace=True, random_state=Seed)
 
