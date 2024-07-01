@@ -6,11 +6,12 @@ XGBOOST = True
 TENSORFLOW = False
 TORCH = False
 
-from statistical_analysis import  StatisticalAnalysis
+from statistical_analysis import StatisticalAnalysis
 import numpy as np
 import os
 
 current_file = os.path.dirname(os.path.abspath(__file__))
+
 
 class Model:
     """
@@ -153,13 +154,13 @@ class Model:
             print("Model is Torch NN")
         self.stat_analysis = StatisticalAnalysis(self.model, self.holdout_set)
 
-
-    def fit(self):
+    def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
         Trains the model.
 
         Params:
-            None
+            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
 
         Functionality:
             This function can be used to train a model. If `re_train` is True, it balances the dataset,
@@ -184,7 +185,7 @@ class Model:
                 self.model.fit(
                     balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
                 )
-            self.model.save( current_file + "/" + self.name)
+            self.model.save(current_file + "/" + self.name)
 
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
@@ -193,9 +194,15 @@ class Model:
             self.stat_analysis.calculate_saved_info()
             self.stat_analysis.save(saved_info_file)
 
-        def predict_and_analyze(dataset_name, data_set, fig_name):
+        def predict_and_analyze(dataset_name, data_set, fig_name, stat_only, syst_settings):
             score = self.model.predict(data_set["data"])
-            results = self.stat_analysis.compute_mu(score, data_set["weights"], plot=fig_name, stat_only=True)
+            results = self.stat_analysis.compute_mu(
+                score,
+                data_set["weights"],
+                plot=fig_name,
+                stat_only=stat_only,
+                syst_settings=syst_settings
+            )
 
             print(f"{dataset_name} Results:")
             print(f"{'-' * len(dataset_name)} Results:")
@@ -211,7 +218,7 @@ class Model:
         ]
 
         for name, dataset, plot_name in datasets:
-            predict_and_analyze(name, dataset, plot_name)
+            predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings)
 
     def balance_set(self):
         balanced_set = self.training_set.copy()
@@ -226,7 +233,7 @@ class Model:
         for i in range(len(class_weights_train)):  # loop on B then S target
             # training dataset: equalize number of background and signal
             weights_train[train_labels == i] *= (
-                max(class_weights_train) / class_weights_train[i]
+                    max(class_weights_train) / class_weights_train[i]
             )
             # test dataset : increase test weight to compensate for sampling
 
@@ -234,12 +241,13 @@ class Model:
 
         return balanced_set
 
-    def predict(self, test_set):
+    def predict(self, test_set, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
         Predicts the values for the test set.
 
-        Parameters:
-            test_set (dict): A dictionary containing the test data, and weights.
+        Params:
+            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
 
         Returns:
             dict: A dictionary with the following keys:
@@ -254,7 +262,12 @@ class Model:
 
         predictions = self.model.predict(test_data)
 
-        result = self.stat_analysis.compute_mu(predictions, test_weights, stat_only=True)
+        result = self.stat_analysis.compute_mu(
+            predictions,
+            test_weights,
+            stat_only=stat_only,
+            syst_settings=syst_settings
+        )
 
         print("Test Results: ", result)
 
@@ -281,7 +294,7 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     full_range = data.index
     remaining_index = full_range[np.isin(full_range, random_index, invert=True)]
     remaining_index = np.array(remaining_index)
-    
+
     print(f"Train size is {len(remaining_index)}")
     print(f"Test size is {len(random_index)}")
 
@@ -303,18 +316,17 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
         background_weight_test = np.sum(test_set["weights"][test_set["labels"] == 0])
 
         train_set["weights"][train_set["labels"] == 1] = train_set["weights"][
-            train_set["labels"] == 1
-        ] * (signal_weight / signal_weight_train)
+                                                             train_set["labels"] == 1
+                                                             ] * (signal_weight / signal_weight_train)
         test_set["weights"][test_set["labels"] == 1] = test_set["weights"][
-            test_set["labels"] == 1
-        ] * (signal_weight / signal_weight_test)
+                                                           test_set["labels"] == 1
+                                                           ] * (signal_weight / signal_weight_test)
 
         train_set["weights"][train_set["labels"] == 0] = train_set["weights"][
-            train_set["labels"] == 0
-        ] * (background_weight / background_weight_train)
+                                                             train_set["labels"] == 0
+                                                             ] * (background_weight / background_weight_train)
         test_set["weights"][test_set["labels"] == 0] = test_set["weights"][
-            test_set["labels"] == 0
-        ] * (background_weight / background_weight_test)
+                                                           test_set["labels"] == 0
+                                                           ] * (background_weight / background_weight_test)
 
     return train_set, test_set
-

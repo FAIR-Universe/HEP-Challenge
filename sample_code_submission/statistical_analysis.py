@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 path.append("../")
 path.append("../ingestion_program")
 
+
 class StatisticalAnalysis:
     """
     A class that performs statistical analysis on a given model and holdout set.
@@ -38,7 +39,8 @@ class StatisticalAnalysis:
         save: Save the saved_info dictionary to a file.
         load: Load the saved_info dictionary from a file.
     """
-    def __init__(self,model,holdout_set,bins=10,stat_only=False):
+
+    def __init__(self, model, holdout_set, bins=10, stat_only=False):
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
@@ -51,7 +53,7 @@ class StatisticalAnalysis:
             'ttbar_scale': 1.0,
             'diboson_scale': 1.0,
         }
-        
+
         self.alpha_ranges = {
             "tes": np.linspace(0.9, 1.1, 10),
             "bkg_scale": np.linspace(0.995, 1.005, 10),
@@ -62,10 +64,10 @@ class StatisticalAnalysis:
         }
 
         holdout_set["data"].reset_index(drop=True, inplace=True)
-        
+
         self.holdout_set = holdout_set
-        
-    def compute_mu(self,score, weight, plot=None, stat_only=None):
+
+    def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -73,7 +75,8 @@ class StatisticalAnalysis:
         Args:
             score (numpy.ndarray): Array of scores.
             weight (numpy.ndarray): Array of weights.
-            stat_only (bool, optional): If assigned, will overwrite stat_only option. Defaults to None.
+            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
@@ -91,7 +94,7 @@ class StatisticalAnalysis:
                     combined_function_s_bin[i] = self.fit_function_s[j][i](x[j])
                 combined_function_s += combined_function_s_bin
             return combined_function_s / len(self.syst_settings.keys())
-            
+
         def combined_fit_function_b(x):
             combined_function_b = np.zeros(self.bins)
             for j in range(len(x)):
@@ -99,10 +102,10 @@ class StatisticalAnalysis:
                 for i in range(self.bins):
                     combined_function_b_bin[i] = self.fit_function_b[j][i](x[j])
                 combined_function_b += combined_function_b_bin
-            return combined_function_b/len(self.syst_settings.keys())
-            
-        def sigma_asimov(mu,alpha):
-            return mu*combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
+            return combined_function_b / len(self.syst_settings.keys())
+
+        def sigma_asimov(mu, alpha):
+            return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
 
         def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
             """
@@ -129,10 +132,7 @@ class StatisticalAnalysis:
             epsilon = 1e-10
             sigma_asimov_mu = np.clip(sigma_asimov_mu, epsilon, None)
 
-            hist_llr = (
-                - N_obs
-                * np.log((sigma_asimov_mu))
-            ) + (sigma_asimov_mu)
+            hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu
 
             return hist_llr.sum()
 
@@ -145,6 +145,11 @@ class StatisticalAnalysis:
                         ttbar_scale=1.0,
                         diboson_scale=1.0,
                         )
+
+        if syst_settings is not None:
+            for key, value in syst_settings.items():
+                result.fixed[key] = value
+                print(f"[*] - Fixed {key} to {value}")
 
         if self.stat_only:
             result.fixed['tes'] = True
@@ -172,7 +177,10 @@ class StatisticalAnalysis:
 
             os.makedirs("plots", exist_ok=True)
             # alpha_test = [1.0, 1.0, 1.0, 0.0, 1.0, 1.0]
-            alpha_test = [result.values['tes'], result.values['bkg_scale'], result.values['jes'], result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']]
+            alpha_test = [
+                result.values['tes'], result.values['bkg_scale'], result.values['jes'],
+                result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
+            ]
             self.plot_stacked_histogram(
                 bins,
                 combined_fit_function_s(alpha_test),
@@ -184,11 +192,10 @@ class StatisticalAnalysis:
 
         return {
             "mu_hat": mu_hat,
-            "delta_mu_hat" : result.errors['mu'] * 2,
+            "delta_mu_hat": result.errors['mu'] * 2,
             "p16": mu_p16,
             "p84": mu_p84,
         }
-
 
     def calculate_saved_info(self):
         """
@@ -205,7 +212,6 @@ class StatisticalAnalysis:
 
         self.saved_info = {}
         for key in self.syst_settings.keys():
-            
             coef_s_list, coef_b_list = self.fit_functions(key)
             self.saved_info[key] = {
                 "coef_s": coef_s_list,
@@ -247,7 +253,8 @@ class StatisticalAnalysis:
         weights_holdout_background = weights_holdout[label_holdout == 0]
 
         holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
-                                                        bins=self.bin_edges, density=False, weights=weights_holdout_signal)
+                                                        bins=self.bin_edges, density=False,
+                                                        weights=weights_holdout_signal)
 
         holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
                                                                 bins=self.bin_edges, density=False,
@@ -269,10 +276,10 @@ class StatisticalAnalysis:
         coef_s_list = []
 
         alpha_list = self.alpha_ranges[key]
-        
+
         s_array = np.zeros((len(alpha_list), self.bins))
         b_array = np.zeros((len(alpha_list), self.bins))
-        
+
         for i in range(len(alpha_list)):
             s_array[i], b_array[i] = self.nominal_histograms(alpha_list[i], key)
 
@@ -285,29 +292,28 @@ class StatisticalAnalysis:
 
             coef_s_list.append(coef_s.tolist())
             coef_b_list.append(coef_b.tolist())
-            
+
         print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
-        
+
         return coef_s_list, coef_b_list
 
     def alpha_function(self):
-        
+
         self.fit_function_s = [[] for _ in range(len(self.syst_settings.keys()))]
         self.fit_function_b = [[] for _ in range(len(self.syst_settings.keys()))]
-        
+
         for key in self.syst_settings.keys():
-            
+
             coef_s_list = self.saved_info[key]['coef_s']
             coef_b_list = self.saved_info[key]['coef_b']
-            
+
             index = list(self.syst_settings.keys()).index(key)
-            
+
             for i in range(self.bins):
                 coef_s = coef_s_list[i]
                 coef_b = coef_b_list[i]
                 self.fit_function_s[index].append(np.poly1d(coef_s))
                 self.fit_function_b[index].append(np.poly1d(coef_b))
-                
 
     def save(self, file_path):
         """
@@ -321,7 +327,7 @@ class StatisticalAnalysis:
         """
         with open(file_path, "wb") as f:
             pickle.dump(self.saved_info, f)
-            
+
     def load(self, file_path):
         """
         Load the saved_info dictionary from a file.
@@ -354,7 +360,8 @@ class StatisticalAnalysis:
         # Plot stacked histograms for signal and background
         plt.bar(bin_centers, signal_fit, width=bin_widths, color='g', align='center', label='Signal')
         plt.bar(bin_centers, background_fit, width=bin_widths, alpha=0.5, label='Background', color='b', align='center')
-        plt.bar(bin_centers, signal_fit * mu, width=bin_widths, alpha=0.5, label=f'Signal * {mu:.1f}', color='r', align='center', bottom=background_fit)
+        plt.bar(bin_centers, signal_fit * mu, width=bin_widths, alpha=0.5, label=f'Signal * {mu:.1f}', color='r',
+                align='center', bottom=background_fit)
 
         # Plot observed data points
         plt.errorbar(bin_centers, N_obs, yerr=np.sqrt(N_obs), fmt='o', color='k', label='Observed Data')
