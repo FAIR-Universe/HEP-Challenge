@@ -44,7 +44,6 @@ class StatisticalAnalysis:
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
-        self.stat_only = stat_only
         self.syst_settings = {
             'tes': 1.0,
             'bkg_scale': 1.0,
@@ -63,11 +62,24 @@ class StatisticalAnalysis:
             "diboson_scale": np.linspace(0.5, 2.0, 10),
         }
 
+        # If stat_only is set to True, the systematic parameters will be fixed to the nominal values.
+        self.stat_only = stat_only
+        # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
+        self.syst_fixed_setting = {
+            # 'tes': 1.0,
+            'bkg_scale': 1.0,
+            'jes': 1.0,
+            'soft_met': 0.0,
+            'ttbar_scale': 1.0,
+            'diboson_scale': 1.0,
+        }
+
+
         holdout_set["data"].reset_index(drop=True, inplace=True)
 
         self.holdout_set = holdout_set
 
-    def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_settings: dict[str, bool] = None):
+    def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -76,13 +88,15 @@ class StatisticalAnalysis:
             score (numpy.ndarray): Array of scores.
             weight (numpy.ndarray): Array of weights.
             stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
+            syst_fixed_setting (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': 1.5}, fixing 'jet' to 1.5, and the all others floating. Defaults to None.
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
 
         if stat_only is not None:
             self.stat_only = stat_only
+        if syst_fixed_setting is not None:
+            self.syst_fixed_setting = syst_fixed_setting
 
         N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
 
@@ -146,18 +160,15 @@ class StatisticalAnalysis:
                         diboson_scale=1.0,
                         )
 
-        if syst_settings is not None:
-            for key, value in syst_settings.items():
-                result.fixed[key] = value
+        if self.syst_fixed_setting is not None:
+            for key, value in self.syst_fixed_setting.items():
+                result.fixto(key, value)
                 print(f"[*] - Fixed {key} to {value}")
 
         if self.stat_only:
-            result.fixed['tes'] = True
-            result.fixed['bkg_scale'] = True
-            result.fixed['jes'] = True
-            result.fixed['soft_met'] = True
-            result.fixed['ttbar_scale'] = True
-            result.fixed['diboson_scale'] = True
+            result.fixed = True
+            result.fixed['mu'] = False
+            print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()

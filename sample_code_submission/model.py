@@ -152,7 +152,8 @@ class Model:
 
             self.name = "model_torch"
             print("Model is Torch NN")
-        self.stat_analysis = StatisticalAnalysis(self.model, self.holdout_set)
+
+        self.stat_analysis = StatisticalAnalysis(self.model, self.holdout_set, stat_only=False)
 
     def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
@@ -201,7 +202,7 @@ class Model:
                 data_set["weights"],
                 plot=fig_name,
                 stat_only=stat_only,
-                syst_settings=syst_settings
+                syst_fixed_setting=syst_settings
             )
 
             print(f"{dataset_name} Results:")
@@ -241,7 +242,7 @@ class Model:
 
         return balanced_set
 
-    def predict(self, test_set, stat_only: bool = None, syst_settings: dict[str, bool] = None):
+    def predict(self, test_set, stat_only: bool = None, syst_settings: dict[str, float] = None):
         """
         Predicts the values for the test set.
 
@@ -266,7 +267,7 @@ class Model:
             predictions,
             test_weights,
             stat_only=stat_only,
-            syst_settings=syst_settings
+            syst_fixed_setting=syst_settings
         )
 
         print("Test Results: ", result)
