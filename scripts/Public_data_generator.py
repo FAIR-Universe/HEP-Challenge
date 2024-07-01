@@ -5,184 +5,227 @@ import pandas as pd
 import json
 import sys
 
-def public_data_gen():
+LHC_NUMBERS = {
+    "ztautau": 3605618,
+    "diboson": 40590,
+    "ttbar": 158761,
+    "htautau": 3639,
+}
 
-    data_location = sys.argv[1]
+def from_parquet(data, file_read_loc):
+    for file in os.listdir(file_read_loc):
+        if file.endswith(".parquet"):
+            file_path = os.path.join(file_read_loc, file)
+            print(f"[*] -- Reading {file_path}")
+            key = file.split(".")[0]
+            if key in data:
+                data[key] = pd.read_parquet(file_path, engine="pyarrow")
+                print(f"[*] --- {key} : {data[key].shape}")
+            else:
+                print(f"Invalid key: {key}")
 
-    input_dir = os.path.join(data_location, 'input_data')
-    output_dir = os.path.join(data_location, 'public_data')
-    sample_dir = os.path.join(data_location, 'sample_data')
+            
 
-    train_data_file = os.path.join(input_dir, 'train', 'data', 'data.parquet')
-    train_labels_file = os.path.join(input_dir, 'train', 'labels', 'data.labels')
-    train_settings_file = os.path.join(input_dir, 'train', 'settings', 'data.json')
-    train_weights_file = os.path.join(input_dir, 'train', 'weights', 'data.weights')
+def from_csv(data, file_read_loc):
+    for file in os.listdir(file_read_loc):
+        if file.endswith(".csv"):
+            file_path = os.path.join(file_read_loc, file)
+            key = file.split(".")[0]
+            if key in data:
+                data[key] = pd.read_csv(file_path,dtype=np.float32,index_col= False)
+            else:
+                print(f"Invalid key: {key}")
 
-    # read train labels
-    with open(train_labels_file, "r") as f:
-        train_labels = np.array(f.read().splitlines(), dtype=float)
+def sample_data_generator(full_data):
 
-    # read train settings
-    with open(train_settings_file) as f:
-        train_settings = json.load(f)
+    # Remove the "label" and "weights" columns from the data    
+    test_set = {}
+    train_set = {}
+    print("\n[*] -- full_data")
+    for key in full_data.keys():
+        print(f"[*] --- {key} : {full_data[key].shape}")
 
-    # read train weights
-    with open(train_weights_file) as f:
-        train_weights = np.array(f.read().splitlines(), dtype=float)
+        test_number  = full_data[key].shape[0] * 0.3
+        train_set[key], test_set[key] = train_test_split(
+            full_data[key], test_size=int(test_number), random_state=42
+        )
+                        
+    return train_set, test_set 
 
-    # read train data
-    train_df = pd.read_parquet(train_data_file, engine='pyarrow')
-    signal_weights = train_weights[train_labels == 1].sum()
-    background_weights = train_weights[train_labels == 0].sum()
+def train_data_generator(data):
 
-    # Split the data into training and validation sets while preserving the proportion of samples with respect to the target variable
-    train_df, valid_df, train_labels, valid_labels, train_weights, valid_weights = train_test_split(
-        train_df,
-        train_labels,
-        train_weights,
-        test_size=0.5,
-        stratify=train_labels
-    )
+    for key in data.keys():
+        weights = np.ones(data[key].shape[0]) * LHC_NUMBERS[key] / data[key].shape[0]
+        data[key]["weights"] = weights
 
-    train_df, sample_set_df, train_labels, sample_set_labels, train_weights, sample_set_weights = train_test_split(
-        train_df,
-        train_labels,
-        train_weights,
-        test_size=0.01,
-        shuffle=True,
-        stratify=train_labels
-    )
+    train_list = []
+    print("\n[*] -- train_set")
+    for key in data.keys():
+        print(f"[*] --- {key} : {type(key)}")
+        data[key]["detailed_label"] = key
+        h = "htautau"
+        if key == h:
+            data[key]["Label"] = 1
+        else:
+            data[key]["Label"] = 0
+        train_list.append(data[key])
+        print(f"[*] --- {key} : {data[key].shape}")
 
-    sample_test_df, sample_train_df, sample_test_labels, sample_train_labels, sample_test_weights, sample_train_weights = train_test_split(
-        sample_set_df,
-        sample_set_labels,
-        sample_set_weights,
-        test_size=0.5,
-        shuffle=True,
-        stratify=sample_set_labels
-    )
-    # Calculate the sum of weights for signal and background in the training and validation sets
-    train_signal_weights = train_weights[train_labels == 1].sum()
-    train_background_weights = train_weights[train_labels == 0].sum()
-    valid_signal_weights = valid_weights[valid_labels == 1].sum()
-    valid_background_weights = valid_weights[valid_labels == 0].sum()
-    sample_train_signal_weights = sample_train_weights[sample_train_labels == 1].sum()
-    sample_train_background_weights = sample_train_weights[sample_train_labels == 0].sum()
-    sample_test_signal_weights = sample_test_weights[sample_test_labels == 1].sum()
-    sample_test_background_weights = sample_test_weights[sample_test_labels == 0].sum()
 
-    # Balance the sum of weights for signal and background in the training and validation sets
-    train_weights[train_labels == 1] *= signal_weights / train_signal_weights
-    train_weights[train_labels == 0] *= background_weights / train_background_weights
-    valid_weights[valid_labels == 1] *= signal_weights / valid_signal_weights
-    valid_weights[valid_labels == 0] *= background_weights / valid_background_weights
-    sample_train_weights[sample_train_labels == 1] *= signal_weights / sample_train_signal_weights
-    sample_train_weights[sample_train_labels == 0] *= background_weights / sample_train_background_weights
-    sample_test_weights[sample_test_labels == 1] *= signal_weights / sample_test_signal_weights
-    sample_test_weights[sample_test_labels == 0] *= background_weights / sample_test_background_weights
-
+    train_df = pd.concat(train_list)
+    train_df = train_df.sample(frac=1).reset_index(drop=True)
 
     train_set = {
+        "labels": train_df.pop("Label"),
+        "weights": train_df.pop("weights"),
+        "detailed_labels": train_df.pop("detailed_label"),
         "data": train_df,
-        "labels": train_labels,
-        "weights": train_weights,
-        "settings": train_settings
     }
 
-    valid_set = {
-        "data": valid_df,
-        "labels": valid_labels,
-        "weights": valid_weights
-    }
+    return train_set
 
-    sample_train_set = {
-        "data": sample_train_df,
-        "labels": sample_train_labels,
-        "weights": sample_train_weights,
-        "settings": train_settings
-    }
+def save_train_data(data_set, file_write_loc, output_format="csv"):
+        # Create directories to store the label and weight files
+    train_label_path = os.path.join(file_write_loc,"input_data", "train", "labels")
+    if not os.path.exists(train_label_path):
+        os.makedirs(train_label_path)
 
-    sample_test_set = {
-        "data": sample_test_df,
-        "labels": sample_test_labels,
-        "weights": sample_test_weights
-    }
+    train_weights_path = os.path.join(file_write_loc,"input_data", "train", "weights")
+    if not os.path.exists(train_weights_path):
+        os.makedirs(train_weights_path)
 
-    
-    if not os.path.exists(os.path.join(output_dir, 'train', 'data')):
-        os.makedirs(os.path.join(output_dir, 'train', 'data'))
+    train_data_path = os.path.join(file_write_loc,"input_data", "train", "data")
+    if not os.path.exists(train_data_path):
+        os.makedirs(train_data_path)
 
-    if not os.path.exists(os.path.join(output_dir, 'train', 'labels')):
-        os.makedirs(os.path.join(output_dir, 'train', 'labels'))
-
-    if not os.path.exists(os.path.join(output_dir, 'train', 'weights')):
-        os.makedirs(os.path.join(output_dir, 'train', 'weights'))
-
-    if not os.path.exists(os.path.join(output_dir, 'train', 'settings')):
-        os.makedirs(os.path.join(output_dir, 'train', 'settings'))
-
-    with open(os.path.join(output_dir, 'train', 'settings', 'data.json'), 'w') as f:
-        json.dump(train_set["settings"], f)
-
-    train_set["data"].to_parquet(os.path.join(output_dir, 'train', 'data', 'data.parquet'), index=False)
-    np.savetxt(os.path.join(output_dir, 'train', 'labels', 'data.labels'), train_labels, fmt='%f')
-    np.savetxt(os.path.join(output_dir, 'train', 'weights', 'data.weights'), train_weights, fmt='%f')
-
-    if not os.path.exists(os.path.join(output_dir, 'valid', 'data')):
-        os.makedirs(os.path.join(output_dir, 'valid', 'data'))
-
-    if not os.path.exists(os.path.join(output_dir, 'valid', 'labels')):
-        os.makedirs(os.path.join(output_dir, 'valid', 'labels'))
-
-    if not os.path.exists(os.path.join(output_dir, 'valid', 'weights')):
-        os.makedirs(os.path.join(output_dir, 'valid', 'weights'))
-
-    if not os.path.exists(os.path.join(output_dir, 'valid', 'settings')):
-        os.makedirs(os.path.join(output_dir, 'valid', 'settings'))
-
-    valid_set["data"].to_parquet(os.path.join(output_dir, 'valid', 'data', 'data.parquet'), index=False)
-    np.savetxt(os.path.join(output_dir, 'valid', 'labels', 'data.labels'), valid_set["labels"], fmt='%f')
-    np.savetxt(os.path.join(output_dir, 'valid', 'weights', 'data.weights'), valid_set["weights"], fmt='%f')
-
-    print("Public data generated")
+    train_detailed_labels_path = os.path.join(file_write_loc,"input_data", "train", "detailed_labels")
+    if not os.path.exists(train_detailed_labels_path):
+        os.makedirs(train_detailed_labels_path)
 
 
-    if not os.path.exists(os.path.join(sample_dir, 'train', 'data')):
-        os.makedirs(os.path.join(sample_dir, 'train', 'data'))
+    train_settings_path = os.path.join(file_write_loc,"input_data", "train", "settings")
+    if not os.path.exists(train_settings_path):
+        os.makedirs(train_settings_path)
 
-    if not os.path.exists(os.path.join(sample_dir, 'train', 'labels')):
-        os.makedirs(os.path.join(sample_dir, 'train', 'labels'))
+    train_settings = {"tes": 1.0, "jes" : 1.0,"soft_met" :1.0, "w_scale": 1.0,"bkg_scale" : 1.0 ,"ground_truth_mu": 1.0}
+    # Specify the file path
+    Settings_file_path = os.path.join(train_settings_path, "data.json")
 
-    if not os.path.exists(os.path.join(sample_dir, 'train', 'weights')):
-        os.makedirs(os.path.join(sample_dir, 'train', 'weights'))
+    # Save the settings to a JSON file
+    with open(Settings_file_path, "w") as json_file:
+        json.dump(train_settings, json_file, indent=4)
 
-    if not os.path.exists(os.path.join(sample_dir, 'train', 'settings')):
-        os.makedirs(os.path.join(sample_dir, 'train', 'settings'))
 
-    with open(os.path.join(sample_dir, 'train', 'settings', 'data.json'), 'w') as f:
-        json.dump(sample_train_set["settings"], f)
-
-    sample_train_set["data"].to_parquet(os.path.join(sample_dir, 'train', 'data', 'data.parquet'), index=False)
-    np.savetxt(os.path.join(sample_dir, 'train', 'labels', 'data.labels'), sample_train_labels, fmt='%f')
-    np.savetxt(os.path.join(sample_dir, 'train', 'weights', 'data.weights'), sample_train_weights, fmt='%f')
-
-    if not os.path.exists(os.path.join(sample_dir, 'test', 'data')):
-        os.makedirs(os.path.join(sample_dir, 'test', 'data'))
+    if output_format == "csv" :
+        train_data_path = os.path.join(train_data_path, "data.csv")
+        data_set["data"].to_csv(train_data_path, index=False)
         
-    if not os.path.exists(os.path.join(sample_dir, 'test', 'labels')):
-        os.makedirs(os.path.join(sample_dir, 'test', 'labels'))
+    elif output_format == "parquet" :
+        train_data_path = os.path.join(train_data_path, "data.parquet")
+        data_set["data"].to_parquet(train_data_path, index=False)
 
-    if not os.path.exists(os.path.join(sample_dir, 'test', 'weights')):
-        os.makedirs(os.path.join(sample_dir, 'test', 'weights'))
+    # Save the label, detailed_labels and weight files for the training set
+    train_labels_file = os.path.join(train_label_path,"data.labels")
+    data_set["labels"].to_csv(train_labels_file, index=False, header=False)
+        
+    train_weights_file = os.path.join(train_weights_path,"data.weights")
+    data_set["weights"].to_csv(train_weights_file, index=False, header=False)
+    
+    train_detailed_labels_file = os.path.join(train_detailed_labels_path,"data.detailed_labels")
+    data_set["detailed_labels"].to_csv(train_detailed_labels_file, index=False, header=False)
 
-    if not os.path.exists(os.path.join(sample_dir, 'test', 'settings')):
-        os.makedirs(os.path.join(sample_dir, 'test', 'settings'))
+    print("\n[*] -- Train data saved")
 
-    sample_test_set["data"].to_parquet(os.path.join(sample_dir, 'test', 'data', 'data.parquet'), index=False)
-    np.savetxt(os.path.join(sample_dir, 'test', 'labels', 'data.labels'), sample_test_labels, fmt='%f')
-    np.savetxt(os.path.join(sample_dir, 'test', 'weights', 'data.weights'), sample_test_weights, fmt='%f')
+def save_test_data(data_set, file_write_loc, output_format="csv"):
+    # Create directories to store the label and weight files
+    reference_settings_path = os.path.join(file_write_loc, "reference_data", "settings")
+    if not os.path.exists(reference_settings_path):
+        os.makedirs(reference_settings_path)
 
-    print("Sample data generated")
+    test_data_loc = os.path.join(file_write_loc,"input_data", "test", "data")
+    if not os.path.exists(test_data_loc):
+        os.makedirs(test_data_loc)
 
-public_data_gen()
+    test_settings_path = os.path.join(file_write_loc,"input_data", "test", "settings")
+    if not os.path.exists(test_settings_path):
+        os.makedirs(test_settings_path)
+
+    for key in data_set.keys():
+        
+        if output_format == "csv" :
+            if not os.path.exists(test_data_loc):
+                os.makedirs(test_data_loc)
+            test_data_path = os.path.join(test_data_loc, f"{key}_data.csv")
+
+            data_set[key].to_csv(test_data_path, index=False)
+
+        if output_format == "parquet" :
+            if not os.path.exists(test_data_loc):
+                os.makedirs(test_data_loc)             
+            test_data_path = os.path.join(test_data_loc, f"{key}_data.parquet")
+           
+            data_set[key].to_parquet(test_data_path, index=False)
+
+    mu = np.random.uniform(0, 3, 10)
+    mu = np.round(mu, 3)
+    mu_list = mu.tolist()
+    print(f"[*] --- mu in test set : ", mu_list)
+
+    test_settings = {"ground_truth_mus": mu_list}
+    Settings_file_path = os.path.join(reference_settings_path, "data.json")
+    with open(Settings_file_path, "w") as json_file:
+        json.dump(test_settings, json_file, indent=4)
+
+    Settings_file_path = os.path.join(test_settings_path, "data.json")
+    with open(Settings_file_path, "w") as json_file:
+        json.dump(test_settings, json_file, indent=4)
+
+    print("\n[*] -- Test data saved")
+
+
+
+def public_data_gen(file_read_loc, file_write_loc, output_format="csv"):
+    
+    # Specify the location of the input data
+
+
+    # Load the data from the input location
+    full_data = {
+        "ztautau": pd.DataFrame(),
+        "diboson": pd.DataFrame(),
+        "ttbar": pd.DataFrame(),
+        "htautau": pd.DataFrame(),
+    }
+
+    if output_format == "parquet":
+        from_parquet(full_data, file_read_loc)
+    elif output_format == "csv":
+        from_csv(full_data, file_read_loc)
+    else:
+        print("Invalid output format")
+        raise ValueError
+
+
+    # Generate the sample data
+    sample_set = sample_data_generator(full_data)
+
+    # Generate the training data
+    train_set = train_data_generator(sample_set[0])
+
+    # Save the training data
+    save_train_data(train_set, file_write_loc, output_format="parquet")
+
+    # Save the test data
+    save_test_data(sample_set[1], file_write_loc, output_format="parquet")
+
+
+if __name__ == "__main__":
+
+    input_file_location = sys.argv[1]
+    output_file_location = sys.argv[2]   
+    output_format = sys.argv[3]
+
+    public_data_gen(input_file_location, output_file_location, output_format)
+
+    print("\n[*] -- Data generation complete")
 

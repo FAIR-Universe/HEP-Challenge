@@ -138,7 +138,7 @@ def f_DER_deltaeta_jet_jet(data):
 
     data["DER_deltaeta_jet_jet"] = abs(
         data.PRI_jet_subleading_eta - data.PRI_jet_leading_eta
-    ) * (data.PRI_n_jets >= 2) - 7 * (data.PRI_n_jets < 2)
+    ) * (data.PRI_n_jets >= 2) - 25 * (data.PRI_n_jets < 2)
     return data
 
 
@@ -160,7 +160,7 @@ def f_DER_mass_jet_jet(data):
     )
     data["DER_mass_jet_jet"] = sqrt(data.calcul_int * (data.calcul_int >= 0)) * (
         data.PRI_n_jets >= 2
-    ) - 7 * (data.PRI_n_jets <= 1)
+    ) - 25 * (data.PRI_n_jets <= 1)
 
     del data["calcul_int"]
     return data
@@ -174,7 +174,7 @@ def f_DER_prodeta_jet_jet(data):
 
     data["DER_prodeta_jet_jet"] = (
         data.PRI_jet_leading_eta * data.PRI_jet_subleading_eta * (data.PRI_n_jets >= 2)
-        - 7 * (data.PRI_n_jets <= 1)
+        - 25 * (data.PRI_n_jets <= 1)
     )
     return data
 
@@ -260,7 +260,7 @@ def f_DER_met_phi_centrality(data):
 
     data["DER_met_phi_centrality"] = data.num / (data.denum + (data.denum == 0)) * (
         data.denum != 0
-    ) - 7 * (data.denum == 0)
+    ) - 25 * (data.denum == 0)
     epsilon = 0.0001
     mask = data.denum == 0
 
@@ -274,7 +274,7 @@ def f_DER_met_phi_centrality(data):
     data.loc[mask, "denum"] = sqrt(data.A**2 + data.B**2)
     data.loc[mask, "DER_met_phi_centrality"] = data.num / (
         data.denum + (data.denum == 0)
-    ) * (data.denum != 0) - 7 * (data.denum == 0)
+    ) * (data.denum != 0) - 25 * (data.denum == 0)
 
     del data["A"]
     del data["B"]
@@ -294,7 +294,7 @@ def f_DER_lep_eta_centrality(data):
 
     data["DER_lep_eta_centrality"] = exp(
         -4 / (data.difference) * ((data.PRI_lep_eta - data.moyenne) ** 2)
-    ) * (data.PRI_n_jets >= 2) - 7 * (data.PRI_n_jets <= 1)
+    ) * (data.PRI_n_jets >= 2) - 25 * (data.PRI_n_jets <= 1)
 
     del data["difference"]
     del data["moyenne"]
