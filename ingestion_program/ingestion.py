@@ -114,23 +114,19 @@ class Ingestion:
         self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
         self.data.delete_train_set()
 
-    def fit_submission(self, **kwargs):
+    def fit_submission(self):
         """
         Fit the submitted model.
-
-        Args:
-            **kwargs: Additional keyword arguments to model.fit().
         """
         print("[*] Calling fit method of submitted model")
-        self.model.fit(**kwargs)
+        self.model.fit()
 
-    def predict_submission(self, test_settings, **kwargs):
+    def predict_submission(self, test_settings):
         """
         Make predictions using the submitted model.
 
         Args:
             test_settings (dict): The test settings.
-            **kwargs: Additional keyword arguments to model.predict().
         """
         print("[*] Calling predict method of submitted model")
 
@@ -195,7 +191,7 @@ class Ingestion:
                 seed=seed,
             )
 
-            predicted_dict = self.model.predict(test_set, **kwargs)
+            predicted_dict = self.model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
 
             print(
