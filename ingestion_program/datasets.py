@@ -233,6 +233,6 @@ def Neurips2024_public_dataset():
     # Extract public_data.zip
     print("[*] Extracting public_data.zip")
     with ZipFile(public_data_zip_path, 'r') as zip_ref:
-        zip_ref.extractall(current_path)
+        zip_ref.extractall(public_data_folder_path)
 
     return Data(public_input_data_folder_path)
