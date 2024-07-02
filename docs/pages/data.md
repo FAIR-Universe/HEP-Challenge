@@ -90,9 +90,9 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 ## How to get Public Data?
 ***
 - Go to the "Files" tab
-- Download the "Neurpis_Public_Data"
+- Download the "Neurpis_Public_data_1_07"
 
 or use the following command to download using terminal
 ```
-wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/
+wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/15350d30-589f-4e04-b197-0a9c0d186e7a/
 ```

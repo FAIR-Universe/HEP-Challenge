@@ -218,7 +218,7 @@ def Neurips2024_public_dataset():
     if not os.path.isfile(public_data_zip_path):
         print("[!] public_data.zip does not exist")
         print("[*] Downloading public data, this may take few minutes")
-        url = "https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/"
+        url = "https://www.codabench.org/datasets/download/15350d30-589f-4e04-b197-0a9c0d186e7a/"
         chunk_size = 1024 * 1024
         response = requests.get(url, stream=True)
         if response.status_code == 200:
