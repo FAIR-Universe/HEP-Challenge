@@ -199,7 +199,8 @@ def Neurips2024_public_dataset():
         FileNotFoundError: If the downloaded dataset file is not found.
         zipfile.BadZipFile: If the downloaded file is not a valid zip file.
     """
-    current_path = os.getcwd()
+    parent_path = os.path.dirname(os.path.realpath(__file__))
+    current_path = os.path.dirname(parent_path)
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
     public_data_zip_path = os.path.join(current_path, "public_data.zip")
