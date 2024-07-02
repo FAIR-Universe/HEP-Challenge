@@ -4,9 +4,6 @@
 The dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups: 
 1. Higgs boson signal ($H \rightarrow \tau \tau$)
 2. $Z$ boson background ($Z \rightarrow \tau \tau$) 
-3. Diboson background ($ VV \rightarrow \tau \tau$)
-4. ttbar background ($t \bar{t}$)
-
 
 ### Higgs Signal: 
 The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states. 
@@ -20,17 +17,13 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 > The training events have weights.
 >
 > **Event Weights:**
-> 
-> Event weights are defined as:
 >
-> $ w = \frac{\textrm{Cross-Section} ~ \times ~ \textrm{Luminosity}}{\textrm{Total number of generated events}} $
->
-> The challenge is considering a scenario of analyzing $36 ~\textrm{fb} ^{-1}$ of proton-proton collision data collected by the ATLAS experiment during the Run-II phase (2015-2018) of the LHC.
+> The challenge is considering a scenario of analyzing $139 ~\textrm{fb} ^{-1}$ of proton-proton collision data collected by the ATLAS experiment during the Run-II phase (2015-2018) of the LHC.
 >   
 > Event weights are defined as:
 >
 > $ w = \frac{\textrm{Cross-Section} ~ \times ~ \textrm{Luminosity}}{\textrm{Total number of generated events}} $
->
+
 
 
 
@@ -53,24 +46,26 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 | 11. | DER_pt_ratio_lep_tau         | The ratio of the transverse momenta of the lepton and the hadronic tau.                           |
 | 12. | DER_met_phi_centrality       | The centrality of the azimuthal angle of the missing transverse energy vector w.r.t. the hadronic tau and the lepton. |
 | 13. | DER_lep_eta_centrality       | The centrality of the pseudorapidity of the lepton w.r.t. the two jets (undefined if PRI_jet_num ≤ 1). |
-| 14. | PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the hadronic tau.                          |
-| 15. | PRI_had_eta                  | The pseudorapidity $\eta$ of the hadronic tau.                                                    |
-| 16. | PRI_had_phi                  | The azimuth angle $\phi$ of the hadronic tau.                                                     |
-| 17. | PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the lepton (electron or muon).             |
-| 18. | PRI_lep_eta                  | The pseudorapidity $\eta$ of the lepton.                                                           |
-| 19. | PRI_lep_phi                  | The azimuth angle $\phi$ of the lepton.                                                            |
-| 20. | PRI_met                      | The missing transverse energy ${E}^{miss}_{T}$.                                    |
-| 21. | PRI_met_phi                  | The azimuth angle $\phi$ of the missing transverse energy.                                        |
-| 22. | PRI_jet_num                  | The number of jets (integer with a value of 0, 1, 2 or 3; possible larger values have been capped at 3). |
-| 23. | PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
-| 24. | PRI_jet_leading_eta          | The pseudorapidity $\eta$ of the leading jet (undefined if PRI_jet_num = 0).                     |
-| 25. | PRI_jet_leading_phi          | The azimuth angle $\phi$ of the leading jet (undefined if PRI_jet_num = 0).                      |
-| 26. | PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
-| 27. | PRI_jet_subleading_eta       | The pseudorapidity $\eta$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                  |
-| 28. | PRI_jet_subleading_phi       | The azimuth angle $\phi$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                   |
-| 29. | PRI_jet_all_pt               | The scalar sum of the transverse momentum of all the jets of the events.                          |
-| 30. | Weight                       | The event weight $w_i$.                                                                                  |
-| 31. | Label                        | The event label $y_i \in \{1,0\}$ (1 for signal, 0 for background). {should **NOT** be used as a  training feature}                    |
+| 14. | Eletron Flag                 | 1 if it is an electron 0 if it not.                                                               |
+| 15. | muon Flag                    | 1 if it is a muon 0 if it not.                                                                   |
+| 16. | PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the hadronic tau.                          |
+| 17. | PRI_had_eta                  | The pseudorapidity $\eta$ of the hadronic tau.                                                    |
+| 18. | PRI_had_phi                  | The azimuth angle $\phi$ of the hadronic tau.                                                     |
+| 19. | PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the lepton (electron or muon).             |
+| 20. | PRI_lep_eta                  | The pseudorapidity $\eta$ of the lepton.                                                           |
+| 21. | PRI_lep_phi                  | The azimuth angle $\phi$ of the lepton.                                                            |
+| 22. | PRI_met                      | The missing transverse energy ${E}^{miss}_{T}$.                                    |
+| 23. | PRI_met_phi                  | The azimuth angle $\phi$ of the missing transverse energy.                                        |
+| 24. | PRI_jet_num                  | The number of jets (integer with a value of 0, 1, 2 or 3; possible larger values have been capped at 3). |
+| 25. | PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
+| 26. | PRI_jet_leading_eta          | The pseudorapidity $\eta$ of the leading jet (undefined if PRI_jet_num = 0).                     |
+| 27. | PRI_jet_leading_phi          | The azimuth angle $\phi$ of the leading jet (undefined if PRI_jet_num = 0).                      |
+| 28. | PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
+| 29. | PRI_jet_subleading_eta       | The pseudorapidity $\eta$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                  |
+| 30. | PRI_jet_subleading_phi       | The azimuth angle $\phi$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                   |
+| 31. | PRI_jet_all_pt               | The scalar sum of the transverse momentum of all the jets of the events.                          |
+| 32. | Weight                       | The event weight $w_i$.                                                                                  |
+| 33. | Label                        | The event label $y_i \in \{1,0\}$ (1 for signal, 0 for background). {should **NOT** be used as a  training feature}                    |
 
 ### Preselection Cuts
 
@@ -81,8 +76,6 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 | Number of $\tau_{lep}$           | 1                |                |
 | $p_T \tau_{had}$           | > 20GeV               |  > 26GeV               |
 | $p_T \tau_{lep}$           | > 20GeV                |  > 20GeV               |
-| $p_T leading jet$           | > 20GeV               |  > 26GeV               |
-| $p_T subleading jet$            | > 20GeV               |  > 26GeV               |
 | Charege | Opposite Charges              |  |
 
 **⚠️ Note:** The Post selection cuts are the cuts made after systematics is applied. 
@@ -90,9 +83,9 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 ## How to get Public Data?
 ***
 - Go to the "Files" tab
-- Download the "Neurpis_Public_Data"
+- Download the "Neurpis_Public_data_1_07"
 
 or use the following command to download using terminal
 ```
-wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/9c99a23c-f199-405a-b795-b42ea2dd652d/
+wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/15350d30-589f-4e04-b197-0a9c0d186e7a/
 ```
