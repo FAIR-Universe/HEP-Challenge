@@ -1,7 +1,7 @@
 # Data
 ***
 
-The dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups: 
+The tabular dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups: 
 1. Higgs boson signal ($H \rightarrow \tau \tau$)
 2. $Z$ boson background ($Z \rightarrow \tau \tau$) 
 3. Diboson background ($ VV \rightarrow \tau \tau$)
@@ -9,7 +9,7 @@ The dataset is created using the particle physics simulation tools Pythia 8.2 an
 
 
 ### Higgs Signal: 
-The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states. 
+The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states, but only final state with one lepton (electron or muon) and one hadron tau decay are kept. 
 
 ### Z boson Background: 
 Only background events coming from $Z$ bosons are included in this challenge. While simulating the process, interference effects between $Z$ bosons and photons are included. Similar to signal events, only the tau-tau decay mode of the $Z$ boson is included in the dataset.
