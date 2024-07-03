@@ -36,7 +36,7 @@ The aim of this challenge is to determine the signal strength $\mu$ and its unce
 - Go to the "My Submissions" tab
 - Submit the downloaded file
 
-For more instructions feel free to checkout these [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/HiggsML_Uncertainty_Challenge-Codabench_Tutorial.pdf) 
+For more instructions feel free to checkout these [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf) 
 
 
 ## Submissions
