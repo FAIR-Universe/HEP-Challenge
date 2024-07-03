@@ -130,10 +130,10 @@ class StatisticalAnalysis:
                 combined_function_b += combined_function_b_bin
             return combined_function_b / len(self.syst_settings.keys())
 
-        def sigma_asimov(mu, alpha):
-            return global_scale * (mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha))
+        def sigma_asimov(mu, beta, alpha):
+            return mu * combined_fit_function_s(alpha) + beta * combined_fit_function_b(alpha)
 
-        def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
+        def NLL(mu, beta, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
             """
             Calculate the negative log-likelihood (NLL) for a given set of parameters.
 
@@ -152,7 +152,7 @@ class StatisticalAnalysis:
 
             alpha = [tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale]
 
-            sigma_asimov_mu = sigma_asimov(mu, alpha)
+            sigma_asimov_mu = sigma_asimov(mu, beta, alpha)
 
             # Add a small epsilon to avoid log(0) or very small values
             epsilon = 1e-10
@@ -164,6 +164,7 @@ class StatisticalAnalysis:
 
         result = Minuit(NLL,
                         mu=1.0,
+                        beta=1.0,
                         tes=1.0,
                         bkg_scale=1.0,
                         jes=1.0,
@@ -180,6 +181,7 @@ class StatisticalAnalysis:
         if self.stat_only:
             result.fixed = True
             result.fixed['mu'] = False
+            result.fixed['beta'] = False
             print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
@@ -227,7 +229,6 @@ class StatisticalAnalysis:
                 "p16": mu_p16,
                 "p84": mu_p84,
                 "distribution": df,
-                "global_scale": global_scale,
             }
         else:
             return {
@@ -235,7 +236,6 @@ class StatisticalAnalysis:
                 "delta_mu_hat": result.errors['mu'] * 2,
                 "p16": mu_p16,
                 "p84": mu_p84,
-                "global_scale": global_scale,
             }
 
     def calculate_saved_info(self):

@@ -91,11 +91,11 @@ class Model:
         print(" \n ")
 
         # First, split the data into two parts: 1/2 and 1/2
-        train_set, temp_set = train_test_split(self.train_set, test_size=0.5, random_state=42)
+        train_set, temp_set = train_test_split(self.train_set, test_size=0.5, random_state=42, reweight=True)
 
         # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
         temp_set['data'] = temp_set['data'].reset_index(drop=True)
-        valid_set, holdout_set = train_test_split(temp_set, test_size=0.5, random_state=42)
+        valid_set, holdout_set = train_test_split(temp_set, test_size=0.5, random_state=42, reweight=True)
 
         self.training_set = train_set
         self.valid_set = valid_set
@@ -290,7 +290,7 @@ class Model:
         test_weights = test_set["weights"]
 
         # this is a hack way to get the global scale for the test set
-        scale = test_weights.sum() / self.weight_base
+        # scale = test_weights.sum() / self.weight_base
 
         predictions = self.model.predict(test_data)
 
@@ -299,7 +299,7 @@ class Model:
             test_weights,
             stat_only=stat_only,
             syst_fixed_setting=syst_settings,
-            global_scale=scale,
+            # global_scale=scale,
         )
 
         print("Test Results: ", result)
