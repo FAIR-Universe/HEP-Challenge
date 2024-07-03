@@ -1,6 +1,8 @@
 # ------------------------------
 # Dummy Sample Submission
 # ------------------------------
+import pandas as pd
+import matplotlib.pyplot as plt
 
 XGBOOST = True
 TENSORFLOW = False
@@ -202,14 +204,20 @@ class Model:
                 data_set["weights"],
                 plot=fig_name,
                 stat_only=stat_only,
-                syst_fixed_setting=syst_settings
+                syst_fixed_setting=syst_settings,
+                return_distribution=True,
             )
 
             print(f"{dataset_name} Results:")
             print(f"{'-' * len(dataset_name)} Results:")
             for key, value in results.items():
-                print(f"\t{key} : {value}")
+                if key == "distribution":
+                    print(value.to_string())
+                else:
+                    print(f"\t{key} : {value}")
             print("\n")
+
+            return results
 
         # Predict and analyze for each set
         datasets = [
@@ -218,8 +226,14 @@ class Model:
             ("Holdout", self.holdout_set, "holdout_mu")
         ]
 
+        results = {}
         for name, dataset, plot_name in datasets:
-            predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings)
+            results[name] = predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings)
+
+        plot_train_valid_holdout(
+            results['Training'], results['Validation'], results['Holdout'],
+            save_name=f"plots/train_valid_holdout.png"
+        )
 
     def balance_set(self):
         balanced_set = self.training_set.copy()
@@ -273,6 +287,78 @@ class Model:
         print("Test Results: ", result)
 
         return result
+
+
+def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: str = None):
+    # Creating DataFrames
+    df1 = pd.DataFrame(train_data['distribution'])
+    df2 = pd.DataFrame(valid_data['distribution'])
+    df3 = pd.DataFrame(holdout_data['distribution'])
+
+    # Plotting
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 15), sharex='col')
+
+    # Plot obsData, template_s, template_b for each dataframe in the same plot
+    ax1.plot(df1.index, df1['obsData'], label='Train: obsData', marker='o', color='red')
+    ax1.plot(df1.index, df1['template_s'], label='Train: template_S', marker='x', color='red')
+    ax1.plot(df1.index, df1['template_b'], label='Train: template_B', marker='^', color='red')
+
+    ax1.plot(df2.index, df2['obsData'], label='Valid: obsData', marker='o', linestyle='--', color='blue')
+    ax1.plot(df2.index, df2['template_s'], label='Valid: template_S', marker='x', linestyle='--', color='blue')
+    ax1.plot(df2.index, df2['template_b'], label='Valid: template_B', marker='^', linestyle='--', color='blue')
+
+    ax1.plot(df3.index, df3['obsData'], label='Holdout: obsData', marker='o', linestyle='-.', color='green')
+    ax1.plot(df3.index, df3['template_s'], label='Holdout: template_S', marker='x', linestyle='-.', color='green')
+    ax1.plot(df3.index, df3['template_b'], label='Holdout: template_B', marker='^', linestyle='-.', color='green')
+
+    ax1.set_ylabel('MVA score')
+    ax1.set_yscale('log')
+    ax1.legend()
+
+    # Plot ratios
+    ratio_df1 = df1['obsData'] / (df1['template_s'] + df1['template_b'])
+    ratio_df2 = df2['obsData'] / (df2['template_s'] + df2['template_b'])
+    ratio_df3 = df3['obsData'] / (df3['template_s'] + df3['template_b'])
+
+    ax2.plot(df1.index, ratio_df1, label='Train', marker='o', color='red')
+    ax2.plot(df2.index, ratio_df2, label='Valid', marker='x', linestyle='--', color='blue')
+    ax2.plot(df3.index, ratio_df3, label='Holdout', marker='^', linestyle='-.', color='green')
+
+    ax2.axhline(y=1.0, color='grey', linestyle='--', alpha = 0.25)
+    ax2.set_ylabel('obsData / (S + B)')
+    ax2.legend()
+
+    obs_ratio_df1 = df1['obsData'] / df3['obsData']
+    obs_ratio_df2 = df2['obsData'] / df3['obsData']
+    s_ratio_df1 = df1['template_s'] / df3['template_s']
+    s_ratio_df2 = df2['template_s'] / df3['template_s']
+    b_ratio_df1 = df1['template_b'] / df3['template_b']
+    b_ratio_df2 = df2['template_b'] / df3['template_b']
+
+    ax3.plot(df1.index, obs_ratio_df1, label='Train: Data', marker='o', color='red')
+    ax3.plot(df1.index, obs_ratio_df2, label='Valid: Data', marker='o', color='blue')
+    ax3.plot(df1.index, s_ratio_df1, label='Train: S', marker='x', linestyle='--', color='red')
+    ax3.plot(df1.index, s_ratio_df2, label='Valid: S', marker='x', linestyle='--', color='blue')
+    ax3.plot(df1.index, b_ratio_df1, label='Train: B', marker='^', linestyle='-.', color='red')
+    ax3.plot(df1.index, b_ratio_df2, label='Valid: B', marker='^', linestyle='-.', color='blue')
+
+    ax3.axhline(y=1.0, color='grey', linestyle='--', alpha = 0.25)
+    ax3.set_xlabel('Bins')
+    ax3.set_ylabel('Ratio')
+    ax3.legend()
+
+    # Get current y-limits
+    current_min_y1, current_max_y1 = ax1.get_ylim()
+    current_min_y2, current_max_y2 = ax2.get_ylim()
+
+    # Set new y-limits to 1.5 times the current maximum y-value
+    ax1.set_ylim(current_min_y1, current_max_y1 * 10)
+    ax2.set_ylim(current_min_y2, current_max_y2 * 1.15)
+
+    plt.tight_layout()
+    plt.show()
+    if save_name is not None:
+        plt.savefig(save_name)
 
 
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):

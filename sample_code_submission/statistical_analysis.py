@@ -2,6 +2,8 @@ import os
 
 import numpy as np
 from sys import path
+
+import pandas as pd
 from systematics import systematics
 import pickle
 from iminuit import Minuit
@@ -66,7 +68,7 @@ class StatisticalAnalysis:
         self.stat_only = stat_only
         # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
         self.syst_fixed_setting = {
-            # 'tes': 1.0,
+            'tes': 1.0,
             'bkg_scale': 1.0,
             'jes': 1.0,
             'soft_met': 0.0,
@@ -74,12 +76,17 @@ class StatisticalAnalysis:
             'diboson_scale': 1.0,
         }
 
-
         holdout_set["data"].reset_index(drop=True, inplace=True)
 
         self.holdout_set = holdout_set
 
-    def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
+    def compute_mu(
+            self, score, weight,
+            plot=None,
+            stat_only: bool = None,
+            syst_fixed_setting: dict[str, float] = None,
+            return_distribution: bool = False
+    ):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -89,6 +96,7 @@ class StatisticalAnalysis:
             weight (numpy.ndarray): Array of weights.
             stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
             syst_fixed_setting (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': 1.5}, fixing 'jet' to 1.5, and the all others floating. Defaults to None.
+            return_distribution (bool, optional): Return the distribution of scores and template distribution. Defaults to False.
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
@@ -180,6 +188,11 @@ class StatisticalAnalysis:
         mu_p16 = mu_hat - result.errors['mu']
         mu_p84 = mu_hat + result.errors['mu']
 
+        alpha_hat = [
+            result.values['tes'], result.values['bkg_scale'], result.values['jes'],
+            result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
+        ]
+
         if plot:
             print(result)
             result.draw_profile('mu')
@@ -188,25 +201,36 @@ class StatisticalAnalysis:
 
             os.makedirs("plots", exist_ok=True)
             # alpha_test = [1.0, 1.0, 1.0, 0.0, 1.0, 1.0]
-            alpha_test = [
-                result.values['tes'], result.values['bkg_scale'], result.values['jes'],
-                result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
-            ]
             self.plot_stacked_histogram(
                 bins,
-                combined_fit_function_s(alpha_test),
-                combined_fit_function_b(alpha_test),
+                combined_fit_function_s(alpha_hat),
+                combined_fit_function_b(alpha_hat),
                 mu=mu_hat,
                 N_obs=N_obs,
                 save_name=f"plots/{plot}.png"
             )
 
-        return {
-            "mu_hat": mu_hat,
-            "delta_mu_hat": result.errors['mu'] * 2,
-            "p16": mu_p16,
-            "p84": mu_p84,
-        }
+        if return_distribution:
+            df = pd.DataFrame({
+                "obsData": N_obs,
+                "template_s": combined_fit_function_s(alpha_hat),
+                "template_b": combined_fit_function_b(alpha_hat),
+            })
+
+            return {
+                "mu_hat": mu_hat,
+                "delta_mu_hat": result.errors['mu'] * 2,
+                "p16": mu_p16,
+                "p84": mu_p84,
+                "distribution": df,
+            }
+        else:
+            return {
+                "mu_hat": mu_hat,
+                "delta_mu_hat": result.errors['mu'] * 2,
+                "p16": mu_p16,
+                "p84": mu_p84,
+            }
 
     def calculate_saved_info(self):
         """
