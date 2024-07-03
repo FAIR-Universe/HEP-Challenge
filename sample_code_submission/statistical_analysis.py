@@ -336,6 +336,17 @@ class StatisticalAnalysis:
 
         print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
 
+        os.makedirs("plots/fittings", exist_ok=True)
+
+        self.visualize_fit(
+            alpha_list=alpha_list, array=s_array, coefficient_list=coef_s_list, alpha_name=f'Signal: {key}',
+            save_name=f"plots/fittings/signal_{key}.png"
+        )
+        self.visualize_fit(
+            alpha_list=alpha_list, array=b_array, coefficient_list=coef_b_list, alpha_name=f'Background: {key}',
+            log_y=True,save_name=f"plots/fittings/background_{key}.png"
+        )
+
         return coef_s_list, coef_b_list
 
     def alpha_function(self):
@@ -416,4 +427,55 @@ class StatisticalAnalysis:
         # Save the plot
         if save_name:
             plt.savefig(save_name)
+        plt.show()
+
+    def visualize_fit(self, alpha_list, array, coefficient_list, alpha_name=None, log_y=False, save_name=None):
+        # Prepare the figure
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12), sharex='col')
+
+        # Plotting for s_array
+        for i in range(self.bins):
+            coef_s = coefficient_list[i]
+            poly_s = np.poly1d(coef_s)
+
+            # Offset alpha values for each bin
+            current_alpha = np.linspace(0.1, 0.9, len(alpha_list)) + i
+
+            # Plot original data points and fitted curve
+            ax1.plot(current_alpha, array[i], 'o', alpha=0.5, label=f'Bin {i + 1} data')
+            ax1.plot(current_alpha, poly_s(alpha_list), '-', label=f'Bin {i + 1} fit')
+
+            # Calculate relative error and plot in the second subplot
+            fitted_values = poly_s(alpha_list)
+            relative_error = (array[i] - fitted_values) / fitted_values * 100
+            ax2.plot(current_alpha, relative_error, 'o', alpha=0.5, label=f'Bin {i + 1} error')
+
+        ax1.set_ylabel('MVA distribution')
+        # ax1.legend(loc='upper right')
+        if log_y:
+            ax1.set_yscale('log')
+
+        ax2.set_ylabel('Relative Error [%]')
+        # ax2.set_xlabel('Extended alpha')
+        ax2.axhline(y=0, color='grey', linestyle='--')  # Add a dashed grey line at y=0
+        # ax2.legend(loc='upper right')
+
+        for i in range(self.bins):
+            ax1.axvline(x=i, color='grey', linestyle='--', alpha=0.25)
+            ax2.axvline(x=i, color='grey', linestyle='--', alpha=0.25)
+
+        # add annotation for ax1
+        if alpha_name is not None:
+            ax1.text(
+                0.95, 0.95, alpha_name,
+                transform=ax1.transAxes,
+                fontsize=20,
+                verticalalignment='top',
+                horizontalalignment='right'
+            )
+
+        plt.tight_layout()
+
+        if save_name:
+            fig.savefig(save_name)
         plt.show()

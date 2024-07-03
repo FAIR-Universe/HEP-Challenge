@@ -127,6 +127,8 @@ class Model:
         self.weights_summary['Validation'] = print_set_info("Validation", self.valid_set)
         self.weights_summary['Holdout'] = print_set_info("Holdout (For Statistical Template)", self.holdout_set)
 
+        self.weight_base = self.weights_summary["Holdout"]["sum_of_weights"]
+
         self.re_train = True
 
         if XGBOOST:
@@ -239,7 +241,7 @@ class Model:
 
         results = {}
         for name, dataset, plot_name in datasets:
-            scale = self.weights_summary[name]["sum_of_weights"] / self.weights_summary["Holdout"]["sum_of_weights"]
+            scale = self.weights_summary[name]["sum_of_weights"] / self.weight_base
             results[name] = predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings, scale=scale)
 
         plot_train_valid_holdout(
@@ -287,13 +289,17 @@ class Model:
         test_data = test_set["data"]
         test_weights = test_set["weights"]
 
+        # this is a hack way to get the global scale for the test set
+        scale = test_weights.sum() / self.weight_base
+
         predictions = self.model.predict(test_data)
 
         result = self.stat_analysis.compute_mu(
             predictions,
             test_weights,
             stat_only=stat_only,
-            syst_fixed_setting=syst_settings
+            syst_fixed_setting=syst_settings,
+            global_scale=scale,
         )
 
         print("Test Results: ", result)
@@ -330,7 +336,7 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
     ax1.plot(df3.index, df3['template_s'], label='Holdout: template_S', marker='x', linestyle='-.', color='green')
     ax1.plot(df3.index, df3['template_b'], label='Holdout: template_B', marker='^', linestyle='-.', color='green')
 
-    ax1.set_ylabel('MVA score')
+    ax1.set_ylabel('Yields')
     ax1.set_yscale('log')
     ax1.legend()
 
