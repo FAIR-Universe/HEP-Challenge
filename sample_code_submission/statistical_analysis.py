@@ -85,7 +85,8 @@ class StatisticalAnalysis:
             plot=None,
             stat_only: bool = None,
             syst_fixed_setting: dict[str, float] = None,
-            return_distribution: bool = False
+            return_distribution: bool = False,
+            global_scale: float = 1.0,
     ):
         """
         Perform calculations to calculate mu using the profile likelihood method.
@@ -97,9 +98,12 @@ class StatisticalAnalysis:
             stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
             syst_fixed_setting (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': 1.5}, fixing 'jet' to 1.5, and the all others floating. Defaults to None.
             return_distribution (bool, optional): Return the distribution of scores and template distribution. Defaults to False.
+            global_scale (float, optional): Global scale factor for whole events. Defaults to 1.0.
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
+
+        print(f"[*] - Global scale factor = {global_scale: .2f}")
 
         if stat_only is not None:
             self.stat_only = stat_only
@@ -127,7 +131,7 @@ class StatisticalAnalysis:
             return combined_function_b / len(self.syst_settings.keys())
 
         def sigma_asimov(mu, alpha):
-            return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
+            return global_scale * (mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha))
 
         def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
             """

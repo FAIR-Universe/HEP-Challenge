@@ -100,22 +100,32 @@ class Model:
         self.training_set = train_set
         self.valid_set = valid_set
         self.holdout_set = holdout_set
+        self.weights_summary = {}
 
         del self.train_set
 
         def print_set_info(name, dataset):
+
+            summary = {
+                "sum_of_weights_s": dataset["weights"][dataset["labels"] == 1].sum(),
+                "sum_of_weights_b": dataset["weights"][dataset["labels"] == 0].sum(),
+                "sum_of_weights": dataset["weights"].sum(),
+            }
+
             print(f"{name} Set:")
             print(f"{'-' * len(name)} ")
             print(f"  Data Shape:          {dataset['data'].shape}")
             print(f"  Labels Shape:        {dataset['labels'].shape}")
             print(f"  Weights Shape:       {dataset['weights'].shape}")
-            print(f"  Sum Signal Weights:  {dataset['weights'][dataset['labels'] == 1].sum():.2f}")
-            print(f"  Sum Background Weights: {dataset['weights'][dataset['labels'] == 0].sum():.2f}")
+            print(f"  Sum Signal Weights:  {summary['sum_of_weights_s']:.2f}")
+            print(f"  Sum Background Weights: {summary['sum_of_weights_b']:.2f}")
             print("\n")
 
-        print_set_info("Training", self.training_set)
-        print_set_info("Validation", self.valid_set)
-        print_set_info("Holdout (For Statistical Template)", self.holdout_set)
+            return summary
+
+        self.weights_summary['Training'] = print_set_info("Training", self.training_set)
+        self.weights_summary['Validation'] = print_set_info("Validation", self.valid_set)
+        self.weights_summary['Holdout'] = print_set_info("Holdout (For Statistical Template)", self.holdout_set)
 
         self.re_train = True
 
@@ -197,7 +207,7 @@ class Model:
             self.stat_analysis.calculate_saved_info()
             self.stat_analysis.save(saved_info_file)
 
-        def predict_and_analyze(dataset_name, data_set, fig_name, stat_only, syst_settings):
+        def predict_and_analyze(dataset_name, data_set, fig_name, stat_only, syst_settings, scale):
             score = self.model.predict(data_set["data"])
             results = self.stat_analysis.compute_mu(
                 score,
@@ -206,6 +216,7 @@ class Model:
                 stat_only=stat_only,
                 syst_fixed_setting=syst_settings,
                 return_distribution=True,
+                global_scale=scale,
             )
 
             print(f"{dataset_name} Results:")
@@ -223,12 +234,13 @@ class Model:
         datasets = [
             ("Training", self.training_set, "train_mu"),
             ("Validation", self.valid_set, "valid_mu"),
-            ("Holdout", self.holdout_set, "holdout_mu")
+            ("Holdout", self.holdout_set, "holdout_mu"),
         ]
 
         results = {}
         for name, dataset, plot_name in datasets:
-            results[name] = predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings)
+            scale = self.weights_summary[name]["sum_of_weights"] / self.weights_summary["Holdout"]["sum_of_weights"]
+            results[name] = predict_and_analyze(name, dataset, plot_name, stat_only=stat_only, syst_settings=syst_settings, scale=scale)
 
         plot_train_valid_holdout(
             results['Training'], results['Validation'], results['Holdout'],
@@ -295,6 +307,10 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
     df2 = pd.DataFrame(valid_data['distribution'])
     df3 = pd.DataFrame(holdout_data['distribution'])
 
+    mu1 = train_data['mu_hat']
+    mu2 = valid_data['mu_hat']
+    mu3 = holdout_data['mu_hat']
+
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 15), sharex='col')
 
@@ -320,9 +336,9 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
     ratio_df2 = df2['obsData'] / (df2['template_s'] + df2['template_b'])
     ratio_df3 = df3['obsData'] / (df3['template_s'] + df3['template_b'])
 
-    ax2.plot(df1.index, ratio_df1, label='Train', marker='o', color='red')
-    ax2.plot(df2.index, ratio_df2, label='Valid', marker='x', linestyle='--', color='blue')
-    ax2.plot(df3.index, ratio_df3, label='Holdout', marker='^', linestyle='-.', color='green')
+    ax2.plot(df1.index, ratio_df1, label=f'Train: $\\mu={mu1:.2f}$', marker='o', color='red')
+    ax2.plot(df2.index, ratio_df2, label=f'Valid: $\\mu={mu2:.2f}$', marker='x', linestyle='--', color='blue')
+    ax2.plot(df3.index, ratio_df3, label=f'Holdout: $\\mu={mu3:.2f}$', marker='^', linestyle='-.', color='green')
 
     ax2.axhline(y=1.0, color='grey', linestyle='--', alpha = 0.25)
     ax2.set_ylabel('obsData / (S + B)')
@@ -344,7 +360,7 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
 
     ax3.axhline(y=1.0, color='grey', linestyle='--', alpha = 0.25)
     ax3.set_xlabel('Bins')
-    ax3.set_ylabel('Ratio')
+    ax3.set_ylabel('(Train, Valid) / Holdout')
     ax3.legend()
 
     # Get current y-limits
