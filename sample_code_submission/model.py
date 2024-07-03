@@ -307,9 +307,12 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
     df2 = pd.DataFrame(valid_data['distribution'])
     df3 = pd.DataFrame(holdout_data['distribution'])
 
-    mu1 = train_data['mu_hat']
-    mu2 = valid_data['mu_hat']
-    mu3 = holdout_data['mu_hat']
+    mu1, dmu1 = train_data['mu_hat'], train_data['delta_mu_hat'] / 2.
+    mu2, dmu2 = valid_data['mu_hat'], valid_data['delta_mu_hat'] / 2.
+    mu3, dmu3 = holdout_data['mu_hat'], holdout_data['delta_mu_hat'] / 2.
+    sf1 = train_data['global_scale']
+    sf2 = valid_data['global_scale']
+    sf3 = holdout_data['global_scale']
 
     # Plotting
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 15), sharex='col')
@@ -336,11 +339,11 @@ def plot_train_valid_holdout(train_data, valid_data, holdout_data, save_name: st
     ratio_df2 = df2['obsData'] / (df2['template_s'] + df2['template_b'])
     ratio_df3 = df3['obsData'] / (df3['template_s'] + df3['template_b'])
 
-    ax2.plot(df1.index, ratio_df1, label=f'Train: $\\mu={mu1:.2f}$', marker='o', color='red')
-    ax2.plot(df2.index, ratio_df2, label=f'Valid: $\\mu={mu2:.2f}$', marker='x', linestyle='--', color='blue')
-    ax2.plot(df3.index, ratio_df3, label=f'Holdout: $\\mu={mu3:.2f}$', marker='^', linestyle='-.', color='green')
+    ax2.plot(df1.index, ratio_df1, label=f'Train: $\\mu={mu1:.2f} \\pm {dmu1: .2f}$, $\\mu^\\mathrm{{SF}} = {sf1: .2f}$', marker='o', color='red')
+    ax2.plot(df2.index, ratio_df2, label=f'Valid: $\\mu={mu2:.2f} \\pm {dmu2: .2f}$, $\\mu^\\mathrm{{SF}} = {sf2: .2f}$', marker='x', linestyle='--', color='blue')
+    ax2.plot(df3.index, ratio_df3, label=f'Holdout: $\\mu={mu3:.2f} \\pm {dmu3: .2f}$, $\\mu^\\mathrm{{SF}} = {sf3: .2f}$', marker='^', linestyle='-.', color='green')
 
-    ax2.axhline(y=1.0, color='grey', linestyle='--', alpha = 0.25)
+    ax2.axhline(y=1.0, color='grey', linestyle='--', alpha=0.25)
     ax2.set_ylabel('obsData / (S + B)')
     ax2.legend()
 

@@ -227,6 +227,7 @@ class StatisticalAnalysis:
                 "p16": mu_p16,
                 "p84": mu_p84,
                 "distribution": df,
+                "global_scale": global_scale,
             }
         else:
             return {
@@ -234,6 +235,7 @@ class StatisticalAnalysis:
                 "delta_mu_hat": result.errors['mu'] * 2,
                 "p16": mu_p16,
                 "p84": mu_p84,
+                "global_scale": global_scale,
             }
 
     def calculate_saved_info(self):
