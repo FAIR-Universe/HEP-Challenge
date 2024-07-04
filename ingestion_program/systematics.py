@@ -553,9 +553,9 @@ def systematics(
 
 
 LHC_NUMBERS = {
-    "ztautau": 3544019,
-    "diboson": 40590,
-    "ttbar": 158761,
+    "ztautau": 3574068,
+    "diboson": 13602,
+    "ttbar": 159079,
     "htautau": 3639,
 }
 

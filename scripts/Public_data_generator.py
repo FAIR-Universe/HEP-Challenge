@@ -6,9 +6,9 @@ import json
 import sys
 
 LHC_NUMBERS = {
-    "ztautau": 3605618,
-    "diboson": 40590,
-    "ttbar": 158761,
+    "ztautau": 3574068,
+    "diboson": 13602,
+    "ttbar": 159079,
     "htautau": 3639,
 }
 
@@ -107,7 +107,7 @@ def save_train_data(data_set, file_write_loc, output_format="csv"):
     if not os.path.exists(train_settings_path):
         os.makedirs(train_settings_path)
 
-    train_settings = {"tes": 1.0, "jes" : 1.0,"soft_met" :1.0, "w_scale": 1.0,"bkg_scale" : 1.0 ,"ground_truth_mu": 1.0}
+    train_settings = {"tes": 1.0, "jes" : 1.0,"soft_met" :0.0, "ttbar_scale": 1.0, "diboson_scale": 1.0,"bkg_scale" : 1.0 ,"ground_truth_mu": 1.0}
     # Specify the file path
     Settings_file_path = os.path.join(train_settings_path, "data.json")
 
