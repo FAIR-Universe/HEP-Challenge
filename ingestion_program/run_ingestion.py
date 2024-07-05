@@ -7,6 +7,7 @@ import pathlib
 import os
 import numpy as np
 import json
+import time
 
 module_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir_name = os.path.dirname(module_dir)
@@ -96,7 +97,12 @@ parser.add_argument(
     action="store_true",
     help="Whether to run ingestion in parallel",
 )
-
+parser.add_argument(
+    "--random-seed",
+    type=int,
+    help="Random seed for reproducibility",
+    default=int(time.time()),
+)
 if __name__ == "__main__":
 
     args = parser.parse_args()
@@ -166,7 +172,7 @@ if __name__ == "__main__":
     data.load_test_set()
 
     # predict submission
-    ingestion.predict_submission(test_settings)
+    ingestion.predict_submission(test_settings, args.random_seed)
 
     # compute result
     ingestion.compute_result()

@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
+DEFAULT_INGESTION_SEED = 31415
 
 # tf.config.threading.set_inter_op_parallelism_threads(1)
 # tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -81,7 +82,7 @@ def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, tt
 
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
-def _process_combination(arrays, test_settings, combination):
+def _process_combination(arrays, test_settings, combination, initial_seed):
     print("[*] Processing combination")
     dict_systematics = test_settings["systematics"]
     num_pseudo_experiments = test_settings["num_pseudo_experiments"]
@@ -91,39 +92,40 @@ def _process_combination(arrays, test_settings, combination):
         with SharedTestSet(arrays=arrays) as test_set:
             set_index, test_set_index = combination
 
-            # random tes value (one per test set)
-            # random tes value (one per test set)
+            seed = (set_index * num_pseudo_experiments) + test_set_index + initial_seed
+
+            # get mu value of set from test settings
+            set_mu = test_settings["ground_truth_mus"][set_index]
+
+            random_state = np.random.RandomState(seed)
+
             if dict_systematics["tes"]:
-                tes = np.random.uniform(0.9, 1.1)
+                tes = random_state.uniform(0.9, 1.1)
             else:
                 tes = 1.0
             if dict_systematics["jes"]:
-                jes = np.random.uniform(0.9, 1.1)
+                jes = random_state.uniform(0.9, 1.1)
             else:
                 jes = 1.0
             if dict_systematics["soft_met"]:
-                soft_met = np.random.uniform(0.0, 5)
+                soft_met = random_state.uniform(0.0, 5)
             else:
                 soft_met = 0.0
 
             if dict_systematics["ttbar_scale"]:
-                ttbar_scale = np.random.uniform(0.5, 2)
+                ttbar_scale = random_state.uniform(0.5, 2)
             else:
                 ttbar_scale = None
 
             if dict_systematics["diboson_scale"]:
-                diboson_scale = np.random.uniform(0.5, 2)
+                diboson_scale = random_state.uniform(0.5, 2)
             else:
                 diboson_scale = None
 
             if dict_systematics["bkg_scale"]:
-                bkg_scale = np.random.uniform(0.995, 1.005)
+                bkg_scale = random_state.uniform(0.995, 1.005)
             else:
                 bkg_scale = None
-
-            seed = (set_index * num_pseudo_experiments) + test_set_index
-            # get mu value of set from test settings
-            set_mu = test_settings["ground_truth_mus"][set_index]
 
             # get bootstrapped dataset from the original test set
             test_set = _generate_psuedo_exp_data(test_set,
@@ -383,7 +385,7 @@ class Ingestion:
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
-    def predict_submission(self, test_settings):
+    def predict_submission(self, test_settings, initial_seed=DEFAULT_INGESTION_SEED):
         """
         Make predictions using the submitted model.
 
@@ -403,7 +405,8 @@ class Ingestion:
         # create a product of set and test set indices all combinations of tuples
         all_combinations = list(product(set_indices, test_set_indices))
         # randomly shuffle all combinations of indices
-        np.random.shuffle(all_combinations)
+        random_state_initial = np.random.RandomState(initial_seed)
+        random_state_initial.shuffle(all_combinations)
 
         self.results_dict = {}
         futures = []
@@ -447,6 +450,7 @@ class Ingestion:
                     _process_combination,
                     test_set_sm_arrays,
                     test_settings,
+                    initial_seed,
                 )
                 futures = executor.map(func, all_combinations, chunksize=CHUNK_SIZE)
 
