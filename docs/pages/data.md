@@ -94,5 +94,5 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 
 or use the following command to download using terminal
 ```
-wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/15350d30-589f-4e04-b197-0a9c0d186e7a/
+wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/eda75448-625a-47bf-bb3c-0fd890d9a374/
 ```
