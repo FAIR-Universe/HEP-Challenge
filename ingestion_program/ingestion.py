@@ -9,7 +9,7 @@ from itertools import product
 import warnings
 
 warnings.filterwarnings("ignore")
-
+DEFAULT_INGESTION_SEED = 31415
 
 # ------------------------------------------
 # Ingestion Class
@@ -121,7 +121,7 @@ class Ingestion:
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
-    def predict_submission(self, test_settings,initial_seed = 31415):
+    def predict_submission(self, test_settings,initial_seed = DEFAULT_INGESTION_SEED):
         """
         Make predictions using the submitted model.
 

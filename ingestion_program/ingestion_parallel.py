@@ -20,6 +20,7 @@ warnings.filterwarnings("ignore")
 
 MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 30))
 CHUNK_SIZE = 2
+DEFAULT_INGESTION_SEED = 31415
 
 # tf.config.threading.set_inter_op_parallelism_threads(1)
 # tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -384,7 +385,7 @@ class Ingestion:
         print("[*] Calling fit method of submitted model")
         self.model.fit()
 
-    def predict_submission(self, test_settings, initial_seed=31415):
+    def predict_submission(self, test_settings, initial_seed=DEFAULT_INGESTION_SEED):
         """
         Make predictions using the submitted model.
 
