@@ -134,11 +134,26 @@ if __name__ == "__main__":
     # Start timer
     ingestion.start_timer()
 
-    # initialize submission
-    ingestion.init_submission(Model)
+    try:
+        # initialize submission
+        ingestion.init_submission(Model)
+    except Exception as e:
+        print("\n----------------------------------------------")
+        print("[✘] Error in initializing submission")
+        print(f"Error: {e}")
+        print("----------------------------------------------\n\n")
+        sys.exit(1)
 
-    # fit submission
-    ingestion.fit_submission()
+    try:
+        # fit submission
+        ingestion.fit_submission()
+    except Exception as e:
+        print("\n----------------------------------------------")
+        print("[✘] Error in fitting submission")
+        print(f"Error: {e}")
+        print("----------------------------------------------\n\n")
+        sys.exit(1)
+
     test_settings = {}
     test_settings["systematics"] = {
         "tes": args.systematics_tes,
@@ -165,8 +180,15 @@ if __name__ == "__main__":
     # load test data
     data.load_test_set()
 
-    # predict submission
-    ingestion.predict_submission(test_settings)
+    try:
+        # predict submission
+        ingestion.predict_submission(test_settings)
+    except Exception as e:
+        print("\n----------------------------------------------")
+        print("[✘] Error in predicting submission")
+        print(f"Error: {e}")
+        print("----------------------------------------------\n\n")
+        sys.exit(1)
 
     # compute result
     ingestion.compute_result()
