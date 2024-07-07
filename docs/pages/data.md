@@ -90,7 +90,7 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 ## How to get Public Data?
 ***
 - Go to the "Files" tab
-- Download the "Neurpis_Public_data_1_07"
+- Download the "Neurpis_Public_data_05_07"
 
 or use the following command to download using terminal
 ```
