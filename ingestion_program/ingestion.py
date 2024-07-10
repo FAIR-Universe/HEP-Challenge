@@ -184,7 +184,7 @@ class Ingestion:
             else:
                 bkg_scale = None
 
-            test_set = self.data.generate_pseudo_exp_data(
+            test_set = self.data.generate_psuedo_exp_data(
                 set_mu=set_mu,
                 tes=tes,
                 jes=jes,

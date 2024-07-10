@@ -227,7 +227,7 @@ class Scoring:
             label="average $\mu$",
         )
         plt.xlabel("mu")
-        plt.ylabel("pseudo-experiments")
+        plt.ylabel("psuedo-experiments")
         plt.title(f"mu distribution - Set {set}")
         plt.legend()
 

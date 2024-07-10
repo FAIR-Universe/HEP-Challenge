@@ -23,7 +23,7 @@ class Data:
     Methods:
     load_train_set(): Loads the train dataset.
     load_test_set(): Loads the test dataset.
-    generate_pseudo_exp_data(): Generates pseudo experimental data.
+    generate_psuedo_exp_data(): Generates pseudo experimental data.
     get_train_set(): Returns the train dataset.
     get_test_set(): Returns the test dataset.
     delete_train_set(): Deletes the train dataset.
@@ -118,7 +118,7 @@ class Data:
 
         print("[+] Test data loaded successfully")
 
-    def generate_pseudo_exp_data(
+    def generate_psuedo_exp_data(
         self,
         set_mu=1,
         tes=1.0,

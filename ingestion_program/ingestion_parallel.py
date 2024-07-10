@@ -57,7 +57,7 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
 
 _model = None
 
-def _generate_pseudo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
+def _generate_psuedo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
 
         from systematics import get_bootstrapped_dataset, get_systematics_dataset
 
@@ -128,7 +128,7 @@ def _process_combination(arrays, test_settings, combination, initial_seed):
                 bkg_scale = None
 
             # get bootstrapped dataset from the original test set
-            test_set = _generate_pseudo_exp_data(test_set,
+            test_set = _generate_psuedo_exp_data(test_set,
                 set_mu=set_mu,
                 tes=tes,
                 jes=jes,
