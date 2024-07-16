@@ -611,7 +611,9 @@ def get_bootstrapped_dataset(
             random_state = np.random.RandomState(seed=Seed)
             new_weights = random_state.poisson(bkg_norm[key] * weights)
         
-        temp_data = test_set[key]["weights"] = new_weights
+        test_set[key]["weights"] = new_weights
+
+        temp_data = test_set[key][new_weights > 0].copy()
 
         pseudo_data.append(temp_data)
 
