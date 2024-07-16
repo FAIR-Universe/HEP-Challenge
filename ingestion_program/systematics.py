@@ -610,6 +610,8 @@ def get_bootstrapped_dataset(
         if poisson:
             random_state = np.random.RandomState(seed=Seed)
             new_weights = random_state.poisson(bkg_norm[key] * weights)
+        else:
+            new_weights = bkg_norm[key] * weights
         
         test_set[key]["weights"] = new_weights
 
