@@ -583,30 +583,35 @@ def get_bootstrapped_dataset(
     Returns:
         pandas.DataFrame: The bootstrapped dataset
     """
-    bkg_norm = LHC_NUMBERS.copy()
+    bkg_norm = {
+        "ztautau": 1.0,
+        "diboson": 1.0,
+        "ttbar": 1.0,
+        "htautau": 1.0,
+    }
+
     if ttbar_scale is not None:
-        bkg_norm["ttbar"] = (LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        bkg_norm["ttbar"] = (ttbar_scale * bkg_scale)
 
     if diboson_scale is not None:
-        bkg_norm["diboson"] = (LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
+        bkg_norm["diboson"] = (diboson_scale * bkg_scale)
 
     if bkg_scale is not None:
-        bkg_norm["ztautau"] = (LHC_NUMBERS["ztautau"] * bkg_scale)
+        bkg_norm["ztautau"] = bkg_scale
 
-    bkg_norm["htautau"] = (LHC_NUMBERS["htautau"] * mu)
+    bkg_norm["htautau"] = mu
 
 
     pseudo_data = []
     Seed = seed
     for i, key in enumerate(test_set.keys()):
         Seed = Seed + i
+        weights = test_set[key].pop("weights")
         if poisson:
             random_state = np.random.RandomState(seed=Seed)
-            number_of_events = random_state.poisson(bkg_norm[key])
-        else:
-            number_of_events = int(bkg_norm[key])
+            new_weights = random_state.poisson(bkg_norm[key] * weights)
         
-        temp_data = test_set[key].sample(n=number_of_events, replace=True, random_state=Seed)
+        temp_data = test_set[key]["weights"] = new_weights
 
         pseudo_data.append(temp_data)
 
@@ -623,7 +628,7 @@ def get_systematics_dataset(
     jes=1.0,
     soft_met=0.0,
 ):
-    weights = np.ones(data.shape[0])
+    weights = data.pop("weights")
 
     data_syst = systematics(
         data_set={"data": data, "weights": weights},
