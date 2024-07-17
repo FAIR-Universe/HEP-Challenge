@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split as sk_train_test_split
 import pandas as pd
 import json
 import sys
@@ -191,7 +191,7 @@ def public_data_gen(file_read_loc, file_write_loc, output_format="csv"):
         raise ValueError
 
     # Generate the sample data
-    _ , temp_set = train_test_split(full_data, test_size= 10000, random_state=42, reweight=True)
+    _ , temp_set = train_test_split(full_data, test_size= 1000000, random_state=42, reweight=True)
 
     del full_data
 
@@ -215,36 +215,22 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
 
     print(f"Full size of the data is {full_size}")
 
-    np.random.seed(random_state)
-    if isinstance(test_size, float):
-        test_number = int(test_size * full_size)
-        random_index = np.random.randint(0, full_size, test_number)
-    elif isinstance(test_size, int):
-        random_index = np.random.randint(0, full_size, test_size)
-    else:
-        raise ValueError("test_size should be either float or int")
+    for key in data_set.keys():
+        if (key != "data") and (key != "settings"):
+            data[key] = data_set[key]
+    
 
-    full_range = data.index
-    remaining_index = full_range[np.isin(full_range, random_index, invert=True)]
-    remaining_index = np.array(remaining_index)
-
-    print(f"Train size is {len(remaining_index)}")
-    print(f"Test size is {len(random_index)}")
-
-    print(f"Train size max is {max(remaining_index)}")
-    print(f"Test size max is {max(random_index)}")
+    train_data, test_data = sk_train_test_split(
+        data, test_size=test_size, random_state=random_state
+    )
 
     for key in data_set.keys():
         if (key != "data") and (key != "settings"):
-            array = np.array(data_set[key])
-            test_set[key] = array[random_index]
-            train_set[key] = array[remaining_index]
+            train_set[key] = train_data.pop(key)
+            test_set[key] = test_data.pop(key)
 
-    test_set["data"] = data.iloc[random_index]
-    train_set["data"] = data.iloc[remaining_index]
-
-    train_set["data"].reset_index(drop=True, inplace=True)
-    test_set["data"].reset_index(drop=True, inplace=True)
+    train_set["data"] = train_data
+    test_set["data"] = test_data
 
     if reweight is True:
         signal_weight = np.sum(data_set["weights"][data_set["labels"] == 1])
