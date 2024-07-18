@@ -624,13 +624,42 @@ def get_systematics_dataset(
     jes=1.0,
     soft_met=0.0,
 ):
-    weights = data.pop("weights")
+    
+    print("weight_distribution", np.unique(data["weights"]))
+    print("sum of weights before ", data["weights"].sum())
+    unweighted_data = repeat_rows_by_weight(data)
+
+    print("Sum of weights after", unweighted_data["weights"].sum())
+
+    unweighted_data.pop("weights")
+
+    weights = np.ones(unweighted_data.shape[0])
+
+    print("Sum of weights final ", weights.sum())
 
     data_syst = systematics(
-        data_set={"data": data, "weights": weights},
+        data_set={"data": unweighted_data, "weights": weights},
         tes=tes,
         jes=jes,
         soft_met=soft_met,
     )
 
     return data_syst
+
+
+# Assuming 'data_set' is a DataFrame with a 'weights' column
+def repeat_rows_by_weight(data_set):
+    # Ensure 'weights' column is integer, as fractional weights don't make sense for row repetition
+    data_set['weights'] = data_set['weights'].astype(int)
+    
+    # Repeat rows based on the 'weights' column
+    repeated_data_set = data_set.loc[data_set.index.repeat(data_set['weights'])]
+    
+    # Reset index to avoid duplicate indices
+    repeated_data_set.reset_index(drop=True, inplace=True)    
+
+    repeated_data_set['weights'] = 1
+    
+    return repeated_data_set
+
+    
