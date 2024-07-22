@@ -615,13 +615,7 @@ def get_bootstrapped_dataset(
 
     pseudo_data.reset_index(drop=True, inplace=True)
 
-    unweighted_data = repeat_rows_by_weight(pseudo_data.copy())
-
-    unweighted_data.pop("weights")
-
-    unweighted_data = unweighted_data.sample(frac=1, random_state=seed).reset_index(
-        drop=True
-    )
+    unweighted_data = repeat_rows_by_weight(pseudo_data.copy(), seed=seed)
 
     return unweighted_data
 
@@ -646,7 +640,8 @@ def get_systematics_dataset(
 
 
 # Assuming 'data_set' is a DataFrame with a 'weights' column
-def repeat_rows_by_weight(data_set):
+def repeat_rows_by_weight(data_set,seed=31415):
+
     # Ensure 'weights' column is integer, as fractional weights don't make sense for row repetition
     data_set["weights"] = data_set["weights"].astype(int)
 
@@ -656,6 +651,8 @@ def repeat_rows_by_weight(data_set):
     # Reset index to avoid duplicate indices
     repeated_data_set.reset_index(drop=True, inplace=True)
 
-    repeated_data_set["weights"] = 1
+    repeated_data_set = repeated_data_set.sample(frac=1, random_state=seed).reset_index(drop=True)
+
+    repeated_data_set.drop(columns="weights", inplace=True)
 
     return repeated_data_set
