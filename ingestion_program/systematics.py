@@ -16,7 +16,6 @@ import numpy as np
 from derived_quantities import DER_data
 
 
-
 # ==================================================================================
 #  V4 Class and physic computations
 # ==================================================================================
@@ -282,7 +281,7 @@ def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     Returns:
         array-like: The scaled weights
     """
-    weights[detailedlabel == "ttbar"] = weights[detailedlabel == "ttbar"]*systBkgNorm
+    weights[detailedlabel == "ttbar"] = weights[detailedlabel == "ttbar"] * systBkgNorm
     return weights
 
 
@@ -299,7 +298,9 @@ def diboson_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
         array-like: The scaled weights
 
     """
-    weights[detailedlabel == "diboson"] = weights[detailedlabel == "diboson"]*systBkgNorm
+    weights[detailedlabel == "diboson"] = (
+        weights[detailedlabel == "diboson"] * systBkgNorm
+    )
     return weights
 
 
@@ -469,7 +470,9 @@ def postprocess(data):
     """
     data = data.drop(data[data.PRI_had_pt < 26].index)
     data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
-    data = data.drop(data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index)
+    data = data.drop(
+        data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index
+    )
     data = data.drop(data[data.PRI_lep_pt < 20].index)
 
     return data
@@ -520,9 +523,7 @@ def systematics(
             )
 
         if bkg_scale is not None:
-            weights = all_bkg_weight_norm(
-                weights, data_set["labels"], bkg_scale
-            )
+            weights = all_bkg_weight_norm(weights, data_set["labels"], bkg_scale)
 
         data_set_new["weights"] = weights
 
@@ -552,14 +553,6 @@ def systematics(
     return data_syst_set
 
 
-LHC_NUMBERS = {
-    "ztautau": 3574068,
-    "diboson": 13602,
-    "ttbar": 159079,
-    "htautau": 3639,
-}
-
-
 def get_bootstrapped_dataset(
     test_set,
     mu=1.0,
@@ -567,7 +560,7 @@ def get_bootstrapped_dataset(
     ttbar_scale=None,
     diboson_scale=None,
     bkg_scale=None,
-    poisson = True
+    poisson=True,
 ):
     """
     Generate a bootstrapped dataset
@@ -583,38 +576,48 @@ def get_bootstrapped_dataset(
     Returns:
         pandas.DataFrame: The bootstrapped dataset
     """
-    bkg_norm = LHC_NUMBERS.copy()
+    bkg_norm = {
+        "ztautau": 1.0,
+        "diboson": 1.0,
+        "ttbar": 1.0,
+        "htautau": 1.0,
+    }
+
     if ttbar_scale is not None:
-        bkg_norm["ttbar"] = (LHC_NUMBERS["ttbar"] * ttbar_scale * bkg_scale)
+        bkg_norm["ttbar"] = ttbar_scale * bkg_scale
 
     if diboson_scale is not None:
-        bkg_norm["diboson"] = (LHC_NUMBERS["diboson"] * diboson_scale * bkg_scale)
+        bkg_norm["diboson"] = diboson_scale * bkg_scale
 
     if bkg_scale is not None:
-        bkg_norm["ztautau"] = (LHC_NUMBERS["ztautau"] * bkg_scale)
+        bkg_norm["ztautau"] = bkg_scale
 
-    bkg_norm["htautau"] = (LHC_NUMBERS["htautau"] * mu)
-
+    bkg_norm["htautau"] = mu
 
     pseudo_data = []
     Seed = seed
     for i, key in enumerate(test_set.keys()):
         Seed = Seed + i
+        weights = test_set[key].pop("weights")
         if poisson:
             random_state = np.random.RandomState(seed=Seed)
-            number_of_events = random_state.poisson(bkg_norm[key])
+            new_weights = random_state.poisson(bkg_norm[key] * weights)
         else:
-            number_of_events = int(bkg_norm[key])
-        
-        temp_data = test_set[key].sample(n=number_of_events, replace=True, random_state=Seed)
+            new_weights = bkg_norm[key] * weights
+
+        test_set[key]["weights"] = new_weights
+
+        temp_data = test_set[key][new_weights > 0].copy()
 
         pseudo_data.append(temp_data)
 
     pseudo_data = pd.concat(pseudo_data)
 
-    pseudo_data = pseudo_data.sample(frac=1, random_state=seed).reset_index(drop=True)
+    pseudo_data.reset_index(drop=True, inplace=True)
 
-    return pseudo_data
+    unweighted_data = repeat_rows_by_weight(pseudo_data.copy(), seed=seed)
+
+    return unweighted_data
 
 
 def get_systematics_dataset(
@@ -623,6 +626,7 @@ def get_systematics_dataset(
     jes=1.0,
     soft_met=0.0,
 ):
+
     weights = np.ones(data.shape[0])
 
     data_syst = systematics(
@@ -633,3 +637,22 @@ def get_systematics_dataset(
     )
 
     return data_syst
+
+
+# Assuming 'data_set' is a DataFrame with a 'weights' column
+def repeat_rows_by_weight(data_set,seed=31415):
+
+    # Ensure 'weights' column is integer, as fractional weights don't make sense for row repetition
+    data_set["weights"] = data_set["weights"].astype(int)
+
+    # Repeat rows based on the 'weights' column
+    repeated_data_set = data_set.loc[data_set.index.repeat(data_set["weights"])]
+
+    # Reset index to avoid duplicate indices
+    repeated_data_set.reset_index(drop=True, inplace=True)
+
+    repeated_data_set = repeated_data_set.sample(frac=1, random_state=seed).reset_index(drop=True)
+
+    repeated_data_set.drop(columns="weights", inplace=True)
+
+    return repeated_data_set
