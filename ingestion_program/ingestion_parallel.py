@@ -82,7 +82,7 @@ def _generate_pseudo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, tt
 
 # Define a function to process a set of combinations, not an instance method
 # to avoid pickling the instance and all its associated data.
-def _process_combination(arrays, test_settings, combination, initial_seed):
+def _process_combination(arrays, test_settings, initial_seed, combination):
     print("[*] Processing combination")
     dict_systematics = test_settings["systematics"]
     num_pseudo_experiments = test_settings["num_pseudo_experiments"]
