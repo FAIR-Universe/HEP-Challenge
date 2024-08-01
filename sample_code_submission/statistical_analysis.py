@@ -46,11 +46,11 @@ class StatisticalAnalysis:
         self.bin_edges = np.linspace(0, 1, bins + 1)
         self.syst_settings = {
             'tes': 1.0,
-            'bkg_scale': 1.0,
-            'jes': 1.0,
-            'soft_met': 0.0,
-            'ttbar_scale': 1.0,
-            'diboson_scale': 1.0,
+            # 'bkg_scale': 1.0,
+            # 'jes': 1.0,
+            # 'soft_met': 0.0,
+            # 'ttbar_scale': 1.0,
+            # 'diboson_scale': 1.0,
         }
 
         self.alpha_ranges = {
@@ -121,7 +121,8 @@ class StatisticalAnalysis:
         def sigma_asimov(mu, alpha):
             return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
 
-        def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
+        # def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
+        def NLL(mu):
             """
             Calculate the negative log-likelihood (NLL) for a given set of parameters.
 
@@ -138,7 +139,8 @@ class StatisticalAnalysis:
             float: The negative log-likelihood value.
             """
 
-            alpha = [tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale]
+            # alpha = [tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale]
+            alpha = [1.0]
 
             sigma_asimov_mu = sigma_asimov(mu, alpha)
 
@@ -152,23 +154,23 @@ class StatisticalAnalysis:
 
         result = Minuit(NLL,
                         mu=1.0,
-                        tes=1.0,
-                        bkg_scale=1.0,
-                        jes=1.0,
-                        soft_met=0.0,
-                        ttbar_scale=1.0,
-                        diboson_scale=1.0,
+                        # tes=1.0,
+                        # bkg_scale=1.0,
+                        # jes=1.0,
+                        # soft_met=0.0,
+                        # ttbar_scale=1.0,
+                        # diboson_scale=1.0,
                         )
 
-        if self.syst_fixed_setting is not None:
-            for key, value in self.syst_fixed_setting.items():
-                result.fixto(key, value)
-                print(f"[*] - Fixed {key} to {value}")
-
-        if self.stat_only:
-            result.fixed = True
-            result.fixed['mu'] = False
-            print("[*] - Fixed all systematics to nominal values.")
+        # if self.syst_fixed_setting is not None:
+        #     for key, value in self.syst_fixed_setting.items():
+        #         result.fixto(key, value)
+        #         print(f"[*] - Fixed {key} to {value}")
+        #
+        # if self.stat_only:
+        #     result.fixed = True
+        #     result.fixed['mu'] = False
+        #     print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()
@@ -187,11 +189,11 @@ class StatisticalAnalysis:
             plt.show()
 
             os.makedirs("plots", exist_ok=True)
-            # alpha_test = [1.0, 1.0, 1.0, 0.0, 1.0, 1.0]
-            alpha_test = [
-                result.values['tes'], result.values['bkg_scale'], result.values['jes'],
-                result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
-            ]
+            # alpha_test = [
+            #     result.values['tes'], result.values['bkg_scale'], result.values['jes'],
+            #     result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
+            # ]
+            alpha_test = [1.0]
             self.plot_stacked_histogram(
                 bins,
                 combined_fit_function_s(alpha_test),
@@ -245,15 +247,16 @@ class StatisticalAnalysis:
         """
         syst_settings = self.syst_settings.copy()
         syst_settings[key] = alpha
-        holdout_syst = systematics(
-            self.holdout_set.copy(),
-            tes=syst_settings['tes'],
-            bkg_scale=syst_settings['bkg_scale'],
-            jes=syst_settings['jes'],
-            soft_met=syst_settings['soft_met'],
-            ttbar_scale=syst_settings['ttbar_scale'],
-            diboson_scale=syst_settings['diboson_scale'],
-        )
+        holdout_syst = self.holdout_set.copy()
+        # holdout_syst = systematics(
+        #     self.holdout_set.copy(),
+        #     tes=syst_settings['tes'],
+        #     bkg_scale=syst_settings['bkg_scale'],
+        #     jes=syst_settings['jes'],
+        #     soft_met=syst_settings['soft_met'],
+        #     ttbar_scale=syst_settings['ttbar_scale'],
+        #     diboson_scale=syst_settings['diboson_scale'],
+        # )
 
         label_holdout = holdout_syst['labels']
         weights_holdout = holdout_syst['weights']
@@ -361,29 +364,93 @@ class StatisticalAnalysis:
             bins (numpy.ndarray): Bin edges.
             signal_fit (numpy.ndarray): Combined signal fit values.
             background_fit (numpy.ndarray): Combined background fit values.
+            mu (float): Multiplicative factor for the signal.
             N_obs (numpy.ndarray): Observed data points.
+            save_name (str, optional): Name of the file to save the plot.
         """
-        plt.figure(figsize=(10, 5))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 15), gridspec_kw={'height_ratios': [2, 1]})
 
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         bin_widths = np.diff(bins)
 
-        # Plot stacked histograms for signal and background
-        plt.bar(bin_centers, signal_fit, width=bin_widths, color='g', align='center', label='Signal')
-        plt.bar(bin_centers, background_fit, width=bin_widths, alpha=0.5, label='Background', color='b', align='center')
-        plt.bar(bin_centers, signal_fit * mu, width=bin_widths, alpha=0.5, label=f'Signal * {mu:.1f}', color='r',
+        # Main plot: stacked histograms for signal and background
+        ax1.bar(bin_centers, signal_fit, width=bin_widths, color='g', align='center', label='Signal')
+        ax1.bar(bin_centers, background_fit, width=bin_widths, alpha=0.5, label='Background', color='b', align='center')
+        ax1.bar(bin_centers, signal_fit * mu, width=bin_widths, alpha=0.5, label=f'Signal * {mu:.1f}', color='r',
                 align='center', bottom=background_fit)
 
         # Plot observed data points
-        plt.errorbar(bin_centers, N_obs, yerr=np.sqrt(N_obs), fmt='o', color='k', label='Observed Data')
+        ax1.errorbar(bin_centers, N_obs, yerr=np.sqrt(N_obs), fmt='o', color='k', label='Observed Data')
 
-        plt.xlabel('Score')
-        plt.ylabel('Counts')
-        plt.yscale('log')  # Set y-axis to logarithmic scale
-        plt.title('Stacked Histogram: Signal and Background Fits with Observed Data')
-        plt.legend()
+        ax1.set_xlabel('Score')
+        ax1.set_ylabel('Counts')
+        ax1.set_yscale('log')  # Set y-axis to logarithmic scale
+        ax1.set_title('Stacked Histogram: Signal and Background Fits with Observed Data')
+        ax1.legend()
+
+        # Subplot: distribution of (N_obs - background_fit) and signal_fit
+        diff = N_obs - background_fit
+        ax2.errorbar(bin_centers, diff, yerr=np.sqrt(np.abs(diff)), fmt='o', color='k', label='N_obs - Background')
+
+        # ax2.bar(bin_centers, diff, width=bin_widths, color='purple', align='center', label='N_obs - Background')
+        ax2.bar(bin_centers, signal_fit, width=bin_widths, color='g', align='center', alpha=0.5, label='Signal')
+
+        ax2.set_xlabel('Score')
+        ax2.set_ylabel('Counts')
+        ax2.legend()
 
         # Save the plot
         if save_name:
             plt.savefig(save_name)
+        plt.show()
+
+    def visualize_fit(self, alpha_list, array, coefficient_list, alpha_name=None, log_y=False, save_name=None):
+        # Prepare the figure
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12), sharex='col')
+
+        # Plotting for s_array
+        for i in range(self.bins):
+            coef_s = coefficient_list[i]
+            poly_s = np.poly1d(coef_s)
+
+            # Offset alpha values for each bin
+            current_alpha = np.linspace(0.1, 0.9, len(alpha_list)) + i
+
+            # Plot original data points and fitted curve
+            ax1.plot(current_alpha, array[i], 'o', alpha=0.5, label=f'Bin {i + 1} data')
+            ax1.plot(current_alpha, poly_s(alpha_list), '-', label=f'Bin {i + 1} fit')
+
+            # Calculate relative error and plot in the second subplot
+            fitted_values = poly_s(alpha_list)
+            relative_error = (array[i] - fitted_values) / fitted_values * 100
+            ax2.plot(current_alpha, relative_error, 'o', alpha=0.5, label=f'Bin {i + 1} error')
+
+        ax1.set_ylabel('MVA distribution')
+        # ax1.legend(loc='upper right')
+        if log_y:
+            ax1.set_yscale('log')
+
+        ax2.set_ylabel('Relative Error [%]')
+        # ax2.set_xlabel('Extended alpha')
+        ax2.axhline(y=0, color='grey', linestyle='--')  # Add a dashed grey line at y=0
+        # ax2.legend(loc='upper right')
+
+        for i in range(self.bins):
+            ax1.axvline(x=i, color='grey', linestyle='--', alpha=0.25)
+            ax2.axvline(x=i, color='grey', linestyle='--', alpha=0.25)
+
+        # add annotation for ax1
+        if alpha_name is not None:
+            ax1.text(
+                0.95, 0.95, alpha_name,
+                transform=ax1.transAxes,
+                fontsize=20,
+                verticalalignment='top',
+                horizontalalignment='right'
+            )
+
+        plt.tight_layout()
+
+        if save_name:
+            fig.savefig(save_name)
         plt.show()

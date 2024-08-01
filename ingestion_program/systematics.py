@@ -468,12 +468,25 @@ def postprocess(data):
     Returns:
         pandas.DataFrame: The postprocessed dataset
     """
-    data = data.drop(data[data.PRI_had_pt < 26].index)
-    data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
-    data = data.drop(
-        data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index
-    )
-    data = data.drop(data[data.PRI_lep_pt < 20].index)
+    cuts = [
+        ('Initial', None),
+        ('PRI_hhad_pt > 26', lambda df: df[df.PRI_had_pt >= 26]),
+        ('PRI_jet_leading_pt > 26', lambda df: df[(df.PRI_jet_leading_pt >= 26) | (df.PRI_n_jets == 0)]),
+        ('PRI_jet_subleading_pt > 26', lambda df: df[(df.PRI_jet_subleading_pt >= 26) | (df.PRI_n_jets <= 1)]),
+        ('PRI_lep_pt > 20', lambda df: df[df.PRI_lep_pt >= 20])
+    ]
+
+    initial_events = len(data)
+    cutflow = [{'cut': 'Initial', 'events': initial_events, 'efficiency': 1.0}]
+
+    for i in range(1, len(cuts)):
+        cut_name, cut_func = cuts[i]
+        if cut_func is not None:
+            data = cut_func(data)
+
+        events_after_cut = len(data)
+        efficiency = events_after_cut / cutflow[-1]['events']
+        cutflow.append({'cut': cut_name, 'events': events_after_cut, 'efficiency': efficiency})
 
     return data
 
