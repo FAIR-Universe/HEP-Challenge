@@ -599,22 +599,17 @@ def get_bootstrapped_dataset(
     for i, key in enumerate(test_set.keys()):
         Seed = Seed + i
 
-        temp_data = test_set[key].copy()
-
-        weights = temp_data["weights"].copy()
         if poisson:
             random_state = np.random.RandomState(seed=Seed)
-            new_weights = random_state.poisson(bkg_norm[key] * weights)
+            new_weights = random_state.poisson(bkg_norm[key] * test_set[key]["weights"])
         else:
-            new_weights = bkg_norm[key] * weights
+            new_weights = bkg_norm[key] * test_set[key]["weights"]
 
-        temp_data["weights"] = new_weights
+        temp_data = test_set[key][new_weights > 0]
 
-        temp_data = temp_data[new_weights > 0].copy()
+        temp_data["weights"] = new_weights[new_weights > 0]
 
         pseudo_data.append(temp_data)
-
-        del temp_data
 
     pseudo_data = pd.concat(pseudo_data)
 
