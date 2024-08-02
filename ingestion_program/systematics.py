@@ -468,25 +468,12 @@ def postprocess(data):
     Returns:
         pandas.DataFrame: The postprocessed dataset
     """
-    cuts = [
-        ('Initial', None),
-        ('PRI_hhad_pt > 26', lambda df: df[df.PRI_had_pt >= 26]),
-        ('PRI_jet_leading_pt > 26', lambda df: df[(df.PRI_jet_leading_pt >= 26) | (df.PRI_n_jets == 0)]),
-        ('PRI_jet_subleading_pt > 26', lambda df: df[(df.PRI_jet_subleading_pt >= 26) | (df.PRI_n_jets <= 1)]),
-        ('PRI_lep_pt > 20', lambda df: df[df.PRI_lep_pt >= 20])
-    ]
-
-    initial_events = len(data)
-    cutflow = [{'cut': 'Initial', 'events': initial_events, 'efficiency': 1.0}]
-
-    for i in range(1, len(cuts)):
-        cut_name, cut_func = cuts[i]
-        if cut_func is not None:
-            data = cut_func(data)
-
-        events_after_cut = len(data)
-        efficiency = events_after_cut / cutflow[-1]['events']
-        cutflow.append({'cut': cut_name, 'events': events_after_cut, 'efficiency': efficiency})
+    data = data.drop(data[data.PRI_had_pt < 26].index)
+    data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
+    data = data.drop(
+        data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index
+    )
+    data = data.drop(data[data.PRI_lep_pt < 20].index)
 
     return data
 
@@ -612,22 +599,17 @@ def get_bootstrapped_dataset(
     for i, key in enumerate(test_set.keys()):
         Seed = Seed + i
 
-        temp_data = test_set[key].copy()
-
-        weights = temp_data["weights"].copy()
         if poisson:
             random_state = np.random.RandomState(seed=Seed)
-            new_weights = random_state.poisson(bkg_norm[key] * weights)
+            new_weights = random_state.poisson(bkg_norm[key] * test_set[key]["weights"])
         else:
-            new_weights = bkg_norm[key] * weights
+            new_weights = bkg_norm[key] * test_set[key]["weights"]
 
-        temp_data["weights"] = new_weights
+        temp_data = test_set[key][new_weights > 0]
 
-        temp_data = temp_data[new_weights > 0].copy()
+        temp_data["weights"] = new_weights[new_weights > 0]
 
         pseudo_data.append(temp_data)
-
-        del temp_data
 
     pseudo_data = pd.concat(pseudo_data)
 
