@@ -75,7 +75,7 @@ class Model:
 
         del self.train_set["settings"]
 
-        self.train_set = apply_postprocess_to_dict(self.train_set)
+        self.train_set = self.apply_postprocess_to_dict(self.train_set)
 
         print("Full data: ", self.train_set["data"].shape)
         print("Full Labels: ", self.train_set["labels"].shape)
