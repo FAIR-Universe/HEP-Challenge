@@ -25,9 +25,9 @@ class BoostedDecisionTree:
 
     def __init__(self):
         self.model = XGBClassifier(
-            n_estimators=50,
-            max_depth=6,
-            learning_rate=0.25,
+            n_estimators=150,
+            max_depth=5,
+            learning_rate=0.15,
             # eval_metric=mean_squared_error,
         )
         self.scaler = StandardScaler()
@@ -42,11 +42,6 @@ class BoostedDecisionTree:
             weights (array-like, optional): The sample weights for the training data.
 
         """
-        # remove the `entry` column if exists
-        if "entry" in train_data.columns:
-            train_data = train_data.drop(columns=["entry"])
-        if "entry" in valid_set[0].columns:
-            valid_set[0] = valid_set[0].drop(columns=["entry"])
 
         self.scaler.fit_transform(train_data)
 
@@ -76,10 +71,6 @@ class BoostedDecisionTree:
             array-like: The predicted class probabilities.
 
         """
-
-        # remove the `entry` column if exists
-        if "entry" in data.columns:
-            data = data.drop(columns=["entry"])
 
         data = self.scaler.transform(data)
         return self.model.predict_proba(data)[:, 1]
