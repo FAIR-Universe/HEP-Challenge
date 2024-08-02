@@ -9,7 +9,6 @@ TORCH = False
 from statistical_analysis import StatisticalAnalysis
 import numpy as np
 import os
-from systematics import postprocess
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
@@ -279,6 +278,37 @@ class Model:
 
         return result
 
+    def apply_postprocess_to_dict(self, dataset):
+        """
+        Apply the postprocess function to the 'data' key of the dataset dictionary
+        and filter other keys based on the resulting indices of 'data'.
+
+        Args:
+            dataset (dict): The input dataset dictionary
+
+        Returns:
+            dict: The processed dataset dictionary
+            list: Cutflow information from the 'data' processing
+        """
+        # Apply the postprocess function to the 'data' DataFrame
+        processed_data = self.systematics.postprocess(dataset["data"])
+
+        # Get the indices of the processed data
+        valid_indices = processed_data.index
+
+        # Filter the rest of the dictionary based on these indices
+        processed_dataset = {}
+        for key, value in dataset.items():
+            if key == "data":
+                processed_dataset[key] = processed_data
+            else:
+                value = np.array(value)
+                processed_dataset[key] = value[valid_indices]
+
+        processed_dataset["data"].reset_index(drop=True, inplace=True)
+
+        return processed_dataset
+
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     data = data_set["data"].copy()
     train_set = {}
@@ -337,33 +367,3 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     return train_set, test_set
 
 
-def apply_postprocess_to_dict(dataset):
-    """
-    Apply the postprocess function to the 'data' key of the dataset dictionary
-    and filter other keys based on the resulting indices of 'data'.
-
-    Args:
-        dataset (dict): The input dataset dictionary
-
-    Returns:
-        dict: The processed dataset dictionary
-        list: Cutflow information from the 'data' processing
-    """
-    # Apply the postprocess function to the 'data' DataFrame
-    processed_data = postprocess(dataset["data"])
-
-    # Get the indices of the processed data
-    valid_indices = processed_data.index
-
-    # Filter the rest of the dictionary based on these indices
-    processed_dataset = {}
-    for key, value in dataset.items():
-        if key == "data":
-            processed_dataset[key] = processed_data
-        else:
-            value = np.array(value)
-            processed_dataset[key] = value[valid_indices]
-
-    processed_dataset["data"].reset_index(drop=True, inplace=True)
-
-    return processed_dataset
