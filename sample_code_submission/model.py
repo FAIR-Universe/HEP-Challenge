@@ -9,6 +9,7 @@ TORCH = False
 from statistical_analysis import StatisticalAnalysis
 import numpy as np
 import os
+from systematics import postprocess
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
@@ -291,7 +292,7 @@ class Model:
             list: Cutflow information from the 'data' processing
         """
         # Apply the postprocess function to the 'data' DataFrame
-        processed_data = self.systematics.postprocess(dataset["data"])
+        processed_data = postprocess(dataset["data"])
 
         # Get the indices of the processed data
         valid_indices = processed_data.index
