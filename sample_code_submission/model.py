@@ -10,7 +10,6 @@ from statistical_analysis import StatisticalAnalysis
 from sklearn.model_selection import train_test_split as sk_train_test_split
 import numpy as np
 import os
-from systematics import postprocess
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
