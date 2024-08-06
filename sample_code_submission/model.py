@@ -7,6 +7,7 @@ TENSORFLOW = False
 TORCH = False
 
 from statistical_analysis import StatisticalAnalysis
+from sklearn.model_selection import train_test_split as sk_train_test_split
 import numpy as np
 import os
 from systematics import postprocess
@@ -76,7 +77,16 @@ class Model:
 
         del self.train_set["settings"]
 
-        self.train_set = self.apply_postprocess_to_dict(self.train_set)
+        '''
+        The systematics code does the following
+        1. Apply systematics 
+        2. Apply post-systematics cuts to the data
+        3. Compute Dervied features
+        
+        NOTE:
+        Without this transformation, the data will not be representative of the pseudo-experiments
+        '''
+        self.train_set = self.systematics(self.train_set)
 
         print("Full data: ", self.train_set["data"].shape)
         print("Full Labels: ", self.train_set["labels"].shape)
@@ -279,36 +289,6 @@ class Model:
 
         return result
 
-    def apply_postprocess_to_dict(self, dataset):
-        """
-        Apply the postprocess function to the 'data' key of the dataset dictionary
-        and filter other keys based on the resulting indices of 'data'.
-
-        Args:
-            dataset (dict): The input dataset dictionary
-
-        Returns:
-            dict: The processed dataset dictionary
-            list: Cutflow information from the 'data' processing
-        """
-        # Apply the postprocess function to the 'data' DataFrame
-        processed_data = postprocess(dataset["data"])
-
-        # Get the indices of the processed data
-        valid_indices = processed_data.index
-
-        # Filter the rest of the dictionary based on these indices
-        processed_dataset = {}
-        for key, value in dataset.items():
-            if key == "data":
-                processed_dataset[key] = processed_data
-            else:
-                value = np.array(value)
-                processed_dataset[key] = value[valid_indices]
-
-        processed_dataset["data"].reset_index(drop=True, inplace=True)
-
-        return processed_dataset
 
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     data = data_set["data"].copy()
@@ -318,30 +298,22 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
 
     print(f"Full size of the data is {full_size}")
 
-    np.random.seed(random_state)
-    if isinstance(test_size, float):
-        test_number = int(test_size * full_size)
-        random_index = np.random.randint(0, full_size, test_number)
-    elif isinstance(test_size, int):
-        random_index = np.random.randint(0, full_size, test_size)
-    else:
-        raise ValueError("test_size should be either float or int")
+    for key in data_set.keys():
+        if (key != "data") and (key != "settings"):
+            data[key] = np.array(data_set[key])
+    
 
-    full_range = data.index
-    remaining_index = full_range[np.isin(full_range, random_index, invert=True)]
-    remaining_index = np.array(remaining_index)
-
-    print(f"Train size is {len(remaining_index)}")
-    print(f"Test size is {len(random_index)}")
+    train_data, test_data = sk_train_test_split(
+        data, test_size=test_size, random_state=random_state
+    )
 
     for key in data_set.keys():
         if (key != "data") and (key != "settings"):
-            array = np.array(data_set[key])
-            test_set[key] = array[random_index]
-            train_set[key] = array[remaining_index]
+            train_set[key] = np.array(train_data.pop(key))
+            test_set[key] = np.array(test_data.pop(key))
 
-    test_set["data"] = data.iloc[random_index]
-    train_set["data"] = data.iloc[remaining_index]
+    train_set["data"] = train_data
+    test_set["data"] = test_data
 
     if reweight is True:
         signal_weight = np.sum(data_set["weights"][data_set["labels"] == 1])
@@ -352,19 +324,17 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
         background_weight_test = np.sum(test_set["weights"][test_set["labels"] == 0])
 
         train_set["weights"][train_set["labels"] == 1] = train_set["weights"][
-                                                             train_set["labels"] == 1
-                                                             ] * (signal_weight / signal_weight_train)
+            train_set["labels"] == 1
+        ] * (signal_weight / signal_weight_train)
         test_set["weights"][test_set["labels"] == 1] = test_set["weights"][
-                                                           test_set["labels"] == 1
-                                                           ] * (signal_weight / signal_weight_test)
+            test_set["labels"] == 1
+        ] * (signal_weight / signal_weight_test)
 
         train_set["weights"][train_set["labels"] == 0] = train_set["weights"][
-                                                             train_set["labels"] == 0
-                                                             ] * (background_weight / background_weight_train)
+            train_set["labels"] == 0
+        ] * (background_weight / background_weight_train)
         test_set["weights"][test_set["labels"] == 0] = test_set["weights"][
-                                                           test_set["labels"] == 0
-                                                           ] * (background_weight / background_weight_test)
+            test_set["labels"] == 0
+        ] * (background_weight / background_weight_test)
 
     return train_set, test_set
-
-
