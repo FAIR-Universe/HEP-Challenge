@@ -28,7 +28,8 @@ class BoostedDecisionTree:
             n_estimators=150,
             max_depth=5,
             learning_rate=0.15,
-            # eval_metric=mean_squared_error,
+            eval_metric=["error", "logloss", "rmse"],
+            early_stopping_rounds=10,
         )
         self.scaler = StandardScaler()
 
@@ -51,8 +52,6 @@ class BoostedDecisionTree:
             X_train_data, labels, weights,
             eval_set=[(X_valid_data, valid_set[1])],
             sample_weight_eval_set=[valid_set[2]],
-            eval_metric=["error", "logloss", "rmse"],
-            early_stopping_rounds=10,
             verbose=True,
         )
 
