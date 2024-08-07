@@ -14,6 +14,29 @@ DEFAULT_INGESTION_SEED = 31415
 # ------------------------------------------
 # Ingestion Class
 # ------------------------------------------
+
+def _generate_pseudo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=0.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
+
+        from systematics import get_bootstrapped_dataset, get_systematics_dataset
+
+        # get bootstrapped dataset from the original test set
+        pesudo_exp_data = get_bootstrapped_dataset(
+            data,
+            mu=set_mu,
+            ttbar_scale=ttbar_scale,
+            diboson_scale=diboson_scale,
+            bkg_scale=bkg_scale,
+            seed=seed,
+        )
+        test_set = get_systematics_dataset(
+            pesudo_exp_data,
+            tes=tes,
+            jes=jes,
+            soft_met=soft_met,
+        )
+
+        return test_set
+
 class Ingestion:
     """
     Class for handling the ingestion process.
@@ -111,7 +134,7 @@ class Ingestion:
         print("[*] Initializing Submmited Model")
         from systematics import systematics
 
-        self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
+        self.model = Model(get_train_set=self.load_train_set, systematics=systematics)
         self.data.delete_train_set()
 
     def fit_submission(self):
@@ -120,6 +143,7 @@ class Ingestion:
         """
         print("[*] Calling fit method of submitted model")
         self.model.fit()
+        
 
     def predict_submission(self, test_settings,initial_seed = DEFAULT_INGESTION_SEED):
         """
@@ -144,6 +168,9 @@ class Ingestion:
         # randomly shuffle all combinations of indices
         random_state_initial = np.random.RandomState(initial_seed)
         random_state_initial.shuffle(all_combinations)
+
+        full_test_set = self.data.get_test_set()
+        del self.data
 
         self.results_dict = {}
         for set_index, test_set_index in all_combinations:
@@ -184,7 +211,7 @@ class Ingestion:
             else:
                 bkg_scale = None
 
-            test_set = self.data.generate_pseudo_exp_data(
+            test_set = _generate_pseudo_exp_data(full_test_set,
                 set_mu=set_mu,
                 tes=tes,
                 jes=jes,

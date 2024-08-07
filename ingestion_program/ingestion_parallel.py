@@ -57,7 +57,7 @@ def _init_worker(using_tensorflow, pickled_model, device_queue):
 
 _model = None
 
-def _generate_pseudo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=1.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
+def _generate_pseudo_exp_data(data, set_mu=1, tes=1.0, jes=1.0, soft_met=0.0, ttbar_scale=None, diboson_scale=None, bkg_scale=None, seed=0):
 
         from systematics import get_bootstrapped_dataset, get_systematics_dataset
 
@@ -375,7 +375,7 @@ class Ingestion:
             systematics,
         )
 
-        self.model = Model(get_train_set=self.load_train_set(), systematics=systematics)
+        self.model = Model(get_train_set=self.load_train_set, systematics=systematics)
         self.data.delete_train_set()
 
     def fit_submission(self):
@@ -414,6 +414,7 @@ class Ingestion:
         using_tensorflow = "tensorflow" in sys.modules
 
         test_set = self.data.get_test_set()
+        del self.data
 
         with SharedTestSet(test_set=test_set) as test_set:
             mp_context = mp.get_context("spawn")

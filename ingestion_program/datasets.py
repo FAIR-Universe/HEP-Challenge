@@ -25,7 +25,6 @@ class Data:
     Methods:
     load_train_set(): Loads the train dataset.
     load_test_set(): Loads the test dataset.
-    generate_pseudo_exp_data(): Generates pseudo experimental data.
     get_train_set(): Returns the train dataset.
     get_test_set(): Returns the test dataset.
     delete_train_set(): Deletes the train dataset.
@@ -88,14 +87,6 @@ class Data:
 
         print(self.__train_set["data"].info(verbose=False, memory_usage="deep"))
 
-        test_settings_file = os.path.join(
-            self.input_dir, "test", "settings", "data.json"
-        )
-        with open(test_settings_file) as f:
-            test_settings = json.load(f)
-
-        self.ground_truth_mus = test_settings["ground_truth_mus"]
-
         print("[+] Train data loaded successfully")
 
     def load_test_set(self):
@@ -118,38 +109,15 @@ class Data:
 
         self.__test_set = test_set
 
+        test_settings_file = os.path.join(
+            self.input_dir, "test", "settings", "data.json"
+        )
+        with open(test_settings_file) as f:
+            test_settings = json.load(f)
+
+        self.ground_truth_mus = test_settings["ground_truth_mus"]
+
         print("[+] Test data loaded successfully")
-
-    def generate_pseudo_exp_data(
-        self,
-        set_mu=1,
-        tes=1.0,
-        jes=1.0,
-        soft_met=0.0,
-        ttbar_scale=None,
-        diboson_scale=None,
-        bkg_scale=None,
-        seed=42,
-    ):
-        from systematics import get_bootstrapped_dataset, get_systematics_dataset
-
-        # get bootstrapped dataset from the original test set
-        pesudo_exp_data = get_bootstrapped_dataset(
-            self.__test_set,
-            mu=set_mu,
-            ttbar_scale=ttbar_scale,
-            diboson_scale=diboson_scale,          
-            bkg_scale=bkg_scale,
-            seed=seed,
-        )
-        test_set = get_systematics_dataset(
-            pesudo_exp_data,
-            tes=tes,
-            jes=jes,
-            soft_met=soft_met,
-        )
-
-        return test_set
 
     def get_train_set(self):
         """

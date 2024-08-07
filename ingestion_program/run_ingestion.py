@@ -157,6 +157,9 @@ if __name__ == "__main__":
     test_settings["num_pseudo_experiments"] = args.num_pseudo_experiments
     test_settings["num_of_sets"] = args.num_of_sets
 
+    # load test data
+    data.load_test_set()
+    
     if args.use_random_mus:
         test_settings["ground_truth_mus"] = (
             np.random.uniform(0.1, 3, test_settings["num_of_sets"])
@@ -167,9 +170,6 @@ if __name__ == "__main__":
             json.dump(test_settings, f)
     else:
         test_settings["ground_truth_mus"] = data.ground_truth_mus
-
-    # load test data
-    data.load_test_set()
 
     # predict submission
     ingestion.predict_submission(test_settings, args.random_seed)
