@@ -40,7 +40,7 @@ class StatisticalAnalysis:
         load: Load the saved_info dictionary from a file.
     """
 
-    def __init__(self, model, holdout_set, bins=10, stat_only=False):
+    def __init__(self, model, bins=10, stat_only=False):
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
@@ -74,10 +74,6 @@ class StatisticalAnalysis:
             'diboson_scale': 1.0,
         }
 
-
-        holdout_set["data"].reset_index(drop=True, inplace=True)
-
-        self.holdout_set = holdout_set
 
     def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
         """
@@ -210,7 +206,7 @@ class StatisticalAnalysis:
             "p84": mu_p84,
         }
 
-    def calculate_saved_info(self):
+    def calculate_saved_info(self, holdout_set):
         """
         Calculate the saved_info dictionary for mu calculation.
 
@@ -223,9 +219,92 @@ class StatisticalAnalysis:
             dict: Dictionary containing calculated values of beta and gamma.
         """
 
+        holdout_set["data"].reset_index(drop=True, inplace=True)
+
+        def nominal_histograms(alpha, key):
+            """
+            Calculate the nominal histograms for signal and background events.
+
+            Parameters:
+            - alpha (float): The value of the systematic parameter.
+            - key (str): The key corresponding to the systematic parameter.
+
+            Returns:
+            - holdout_signal_hist (numpy.ndarray): The histogram of signal events in the holdout set.
+            - holdout_background_hist (numpy.ndarray): The histogram of background events in the holdout set.
+            """
+            syst_settings = self.syst_settings.copy()
+            syst_settings[key] = alpha
+            holdout_syst = holdout_set.copy()
+            # holdout_syst = systematics(
+            #     self.holdout_set.copy(),
+            #     tes=syst_settings['tes'],
+            #     bkg_scale=syst_settings['bkg_scale'],
+            #     jes=syst_settings['jes'],
+            #     soft_met=syst_settings['soft_met'],
+            #     ttbar_scale=syst_settings['ttbar_scale'],
+            #     diboson_scale=syst_settings['diboson_scale'],
+            # )
+
+            label_holdout = holdout_syst['labels']
+            weights_holdout = holdout_syst['weights']
+
+            holdout_val = self.model.predict(holdout_syst['data'])
+
+            weights_holdout_signal = weights_holdout[label_holdout == 1]
+            weights_holdout_background = weights_holdout[label_holdout == 0]
+
+            holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
+                                                            bins=self.bin_edges, density=False,
+                                                            weights=weights_holdout_signal)
+
+            holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
+                                                                    bins=self.bin_edges, density=False,
+                                                                    weights=weights_holdout_background)
+
+            return holdout_signal_hist, holdout_background_hist
+
+
+        def fit_functions(key):
+            """
+            Fits polynomial functions to the given data for a specific key.
+
+            Parameters:
+                key (str): The key to identify the data.
+
+            Returns:
+                tuple: A tuple containing two lists of coefficients. The first list contains the coefficients for the polynomial fit of the 's_array' data, and the second list contains the coefficients for the polynomial fit of the 'b_array' data.
+            """
+            coef_b_list = []
+            coef_s_list = []
+
+            alpha_list = self.alpha_ranges[key]
+
+            s_array = np.zeros((len(alpha_list), self.bins))
+            b_array = np.zeros((len(alpha_list), self.bins))
+
+            for i in range(len(alpha_list)):
+                s_array[i], b_array[i] = nominal_histograms(alpha_list[i], key)
+
+            s_array = s_array.T
+            b_array = b_array.T
+
+            for i in range(self.bins):
+                coef_s = np.polyfit(alpha_list, s_array[i], 3)
+                coef_b = np.polyfit(alpha_list, b_array[i], 3)
+
+                coef_s_list.append(coef_s.tolist())
+                coef_b_list.append(coef_b.tolist())
+
+            print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
+
+            return coef_s_list, coef_b_list
+
+
+
         self.saved_info = {}
         for key in self.syst_settings.keys():
-            coef_s_list, coef_b_list = self.fit_functions(key)
+            coef_s_list, coef_b_list = fit_functions(key)
             self.saved_info[key] = {
                 "coef_s": coef_s_list,
                 "coef_b": coef_b_list,
@@ -233,83 +312,7 @@ class StatisticalAnalysis:
 
         self.alpha_function()
 
-    def nominal_histograms(self, alpha, key):
-        """
-        Calculate the nominal histograms for signal and background events.
 
-        Parameters:
-        - alpha (float): The value of the systematic parameter.
-        - key (str): The key corresponding to the systematic parameter.
-
-        Returns:
-        - holdout_signal_hist (numpy.ndarray): The histogram of signal events in the holdout set.
-        - holdout_background_hist (numpy.ndarray): The histogram of background events in the holdout set.
-        """
-        syst_settings = self.syst_settings.copy()
-        syst_settings[key] = alpha
-        holdout_syst = self.holdout_set.copy()
-        # holdout_syst = systematics(
-        #     self.holdout_set.copy(),
-        #     tes=syst_settings['tes'],
-        #     bkg_scale=syst_settings['bkg_scale'],
-        #     jes=syst_settings['jes'],
-        #     soft_met=syst_settings['soft_met'],
-        #     ttbar_scale=syst_settings['ttbar_scale'],
-        #     diboson_scale=syst_settings['diboson_scale'],
-        # )
-
-        label_holdout = holdout_syst['labels']
-        weights_holdout = holdout_syst['weights']
-
-        holdout_val = self.model.predict(holdout_syst['data'])
-
-        weights_holdout_signal = weights_holdout[label_holdout == 1]
-        weights_holdout_background = weights_holdout[label_holdout == 0]
-
-        holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
-                                                        bins=self.bin_edges, density=False,
-                                                        weights=weights_holdout_signal)
-
-        holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
-                                                                bins=self.bin_edges, density=False,
-                                                                weights=weights_holdout_background)
-
-        return holdout_signal_hist, holdout_background_hist
-
-    def fit_functions(self, key):
-        """
-        Fits polynomial functions to the given data for a specific key.
-
-        Parameters:
-            key (str): The key to identify the data.
-
-        Returns:
-            tuple: A tuple containing two lists of coefficients. The first list contains the coefficients for the polynomial fit of the 's_array' data, and the second list contains the coefficients for the polynomial fit of the 'b_array' data.
-        """
-        coef_b_list = []
-        coef_s_list = []
-
-        alpha_list = self.alpha_ranges[key]
-
-        s_array = np.zeros((len(alpha_list), self.bins))
-        b_array = np.zeros((len(alpha_list), self.bins))
-
-        for i in range(len(alpha_list)):
-            s_array[i], b_array[i] = self.nominal_histograms(alpha_list[i], key)
-
-        s_array = s_array.T
-        b_array = b_array.T
-
-        for i in range(self.bins):
-            coef_s = np.polyfit(alpha_list, s_array[i], 3)
-            coef_b = np.polyfit(alpha_list, b_array[i], 3)
-
-            coef_s_list.append(coef_s.tolist())
-            coef_b_list.append(coef_b.tolist())
-
-        print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
-
-        return coef_s_list, coef_b_list
 
     def alpha_function(self):
 
