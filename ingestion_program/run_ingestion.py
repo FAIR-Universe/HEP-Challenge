@@ -133,7 +133,6 @@ if __name__ == "__main__":
     sys.path.append(program_dir)
     sys.path.append(submission_dir)
 
-    sub_directories = []
     for subdir in os.listdir(submission_dir):
         sub_directory_path = os.path.join(submission_dir, subdir)
         if os.path.isdir(sub_directory_path):
