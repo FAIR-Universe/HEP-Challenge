@@ -118,7 +118,7 @@ if __name__ == "__main__":
         submission_dir = args.submission
         program_dir = os.path.join(root_dir_name, "ingestion_program")
     else:
-        input_dir = "/app/input_data"
+        input_dir = "/app/data"
         output_dir = "/app/output"
         submission_dir = "/app/ingested_program"
         program_dir = "/app/program"
