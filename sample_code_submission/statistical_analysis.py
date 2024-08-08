@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 from sys import path
-from systematics import systematics
 import pickle
 from iminuit import Minuit
 import matplotlib.pyplot as plt
@@ -40,17 +39,27 @@ class StatisticalAnalysis:
         load: Load the saved_info dictionary from a file.
     """
 
-    def __init__(self, model, bins=10, stat_only=False):
+    def __init__(self, model, systematics, bins=10, stat_only=False):
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
+        self.systematics = systematics
         self.syst_settings = {
             'tes': 1.0,
-            # 'bkg_scale': 1.0,
-            # 'jes': 1.0,
-            # 'soft_met': 0.0,
-            # 'ttbar_scale': 1.0,
-            # 'diboson_scale': 1.0,
+            'bkg_scale': 1.0,
+            'jes': 1.0,
+            'soft_met': 0.0,
+            'ttbar_scale': 1.0,
+            'diboson_scale': 1.0,
+        }
+
+        self.syst_settings_default = {
+            'tes': 1.0,
+            'bkg_scale': 1.0,
+            'jes': 1.0,
+            'soft_met': 0.0,
+            'ttbar_scale': 1.0,
+            'diboson_scale': 1.0,
         }
 
         self.alpha_ranges = {
@@ -67,11 +76,11 @@ class StatisticalAnalysis:
         # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
         self.syst_fixed_setting = {
             # 'tes': 1.0,
-            'bkg_scale': 1.0,
-            'jes': 1.0,
-            'soft_met': 0.0,
-            'ttbar_scale': 1.0,
-            'diboson_scale': 1.0,
+            # 'bkg_scale': 1.0,
+            # 'jes': 1.0,
+            # 'soft_met': 0.0,
+            # 'ttbar_scale': 1.0,
+            # 'diboson_scale': 1.0,
         }
 
 
@@ -117,8 +126,7 @@ class StatisticalAnalysis:
         def sigma_asimov(mu, alpha):
             return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
 
-        # def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
-        def NLL(mu):
+        def NLL(mu, tes = 1.0, bkg_scale = 1.0, jes = 1.0, soft_met = 0.0, ttbar_scale = 1.0, diboson_scale = 1.0):
             """
             Calculate the negative log-likelihood (NLL) for a given set of parameters.
 
@@ -135,8 +143,18 @@ class StatisticalAnalysis:
             float: The negative log-likelihood value.
             """
 
-            # alpha = [tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale]
-            alpha = [1.0]
+            alpha_def = {
+                'tes': tes,
+                'bkg_scale': bkg_scale,
+                'jes': jes,
+                'soft_met': soft_met,
+                'ttbar_scale': ttbar_scale,
+                'diboson_scale': diboson_scale
+            }
+
+            alpha = []
+            for key in self.syst_settings.keys():
+                alpha.append(alpha_def[key])
 
             sigma_asimov_mu = sigma_asimov(mu, alpha)
 
@@ -150,23 +168,23 @@ class StatisticalAnalysis:
 
         result = Minuit(NLL,
                         mu=1.0,
-                        # tes=1.0,
-                        # bkg_scale=1.0,
-                        # jes=1.0,
-                        # soft_met=0.0,
-                        # ttbar_scale=1.0,
-                        # diboson_scale=1.0,
+                        tes=1.0,
+                        bkg_scale=1.0,
+                        jes=1.0,
+                        soft_met=0.0,
+                        ttbar_scale=1.0,
+                        diboson_scale=1.0,
                         )
 
-        # if self.syst_fixed_setting is not None:
-        #     for key, value in self.syst_fixed_setting.items():
-        #         result.fixto(key, value)
-        #         print(f"[*] - Fixed {key} to {value}")
-        #
-        # if self.stat_only:
-        #     result.fixed = True
-        #     result.fixed['mu'] = False
-        #     print("[*] - Fixed all systematics to nominal values.")
+        if self.syst_fixed_setting is not None:
+            for key, value in self.syst_fixed_setting.items():
+                result.fixto(key, value)
+                print(f"[*] - Fixed {key} to {value}")
+        
+        if self.stat_only:
+            result.fixed = True
+            result.fixed['mu'] = False
+            print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()
@@ -185,11 +203,11 @@ class StatisticalAnalysis:
             plt.show()
 
             os.makedirs("plots", exist_ok=True)
-            # alpha_test = [
-            #     result.values['tes'], result.values['bkg_scale'], result.values['jes'],
-            #     result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
-            # ]
-            alpha_test = [1.0]
+
+            alpha_test = []
+            for key in self.syst_settings.keys():
+                alpha_test.append(result.values[key])
+
             self.plot_stacked_histogram(
                 bins,
                 combined_fit_function_s(alpha_test),
@@ -233,18 +251,17 @@ class StatisticalAnalysis:
             - holdout_signal_hist (numpy.ndarray): The histogram of signal events in the holdout set.
             - holdout_background_hist (numpy.ndarray): The histogram of background events in the holdout set.
             """
-            syst_settings = self.syst_settings.copy()
+            syst_settings = self.syst_settings_default.copy()
             syst_settings[key] = alpha
-            holdout_syst = holdout_set.copy()
-            # holdout_syst = systematics(
-            #     self.holdout_set.copy(),
-            #     tes=syst_settings['tes'],
-            #     bkg_scale=syst_settings['bkg_scale'],
-            #     jes=syst_settings['jes'],
-            #     soft_met=syst_settings['soft_met'],
-            #     ttbar_scale=syst_settings['ttbar_scale'],
-            #     diboson_scale=syst_settings['diboson_scale'],
-            # )
+            holdout_syst = self.systematics(
+                holdout_set.copy(),
+                tes=syst_settings['tes'],
+                bkg_scale=syst_settings['bkg_scale'],
+                jes=syst_settings['jes'],
+                soft_met=syst_settings['soft_met'],
+                ttbar_scale=syst_settings['ttbar_scale'],
+                diboson_scale=syst_settings['diboson_scale'],
+            )
 
             label_holdout = holdout_syst['labels']
             weights_holdout = holdout_syst['weights']
@@ -355,6 +372,8 @@ class StatisticalAnalysis:
         Returns:
             None
         """
+        print(f"[*] - Loading saved_info from {file_path}")
+
         with open(file_path, "rb") as f:
             self.saved_info = pickle.load(f)
         self.alpha_function()

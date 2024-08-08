@@ -71,20 +71,25 @@ class Model:
         self.get_train_set = get_train_set
 
         self.re_train = True
+        self.re_compute = True
 
         from boosted_decision_tree import BoostedDecisionTree
-
+        self.name = "model_XGB"
         self.model = BoostedDecisionTree()
         module_file = current_file + "/model_XGB.json"
         if os.path.exists(module_file):
             self.model.load(module_file)
             self.re_train = False  # if model is already trained, no need to retrain
 
-        self.name = "model_XGB"
+        print("Model is ", self.name)
+            
+        self.stat_analysis = StatisticalAnalysis(self.model, systematics = systematics, stat_only=False, bins=5)
 
-        print("Model is BDT")
+        saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"   
+        if os.path.exists(saved_info_file):
+            self.stat_analysis.load(saved_info_file)   
+            self.re_compute = False
 
-        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=5)
 
     def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
@@ -105,9 +110,8 @@ class Model:
         """
         
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
-
-        
-        if self.re_train:
+    
+        if (self.re_train or self.re_compute):
             train_set = self.get_train_set()
 
             """
@@ -119,7 +123,6 @@ class Model:
             NOTE:
             Without this transformation, the data will not be representative of the pseudo-experiments
             """
-            train_set = self.systematics(train_set)
 
             print("Full data: ", train_set["data"].shape)
             print("Full Labels: ", train_set["labels"].shape)
@@ -161,33 +164,32 @@ class Model:
                 )
                 print("\n")
 
+            training_set = self.systematics(training_set)
+            valid_set = self.systematics(valid_set)
+
             print_set_info("Training", training_set)
             print_set_info("Validation", valid_set)
             print_set_info("Holdout (For Statistical Template)", holdout_set)
 
-            balanced_set = balance_set(training_set)
+            if self.re_train:
+                balanced_set = balance_set(training_set)
 
-            self.model.fit(
-                balanced_set["data"],
-                balanced_set["labels"],
-                balanced_set["weights"],
-                valid_set=[
-                    valid_set["data"],
-                    valid_set["labels"],
-                    valid_set["weights"],
-                ],
-            )
+                self.model.fit(
+                    balanced_set["data"],
+                    balanced_set["labels"],
+                    balanced_set["weights"],
+                    valid_set=[
+                        valid_set["data"],
+                        valid_set["labels"],
+                        valid_set["weights"],
+                    ],
+                )
 
-            self.model.save(current_file + "/" + self.name)
-            
-            self.stat_analysis.calculate_saved_info(holdout_set)
-            self.stat_analysis.save(saved_info_file)
+                self.model.save(current_file + "/" + self.name)
+            if self.re_compute:    
+                self.stat_analysis.calculate_saved_info(holdout_set)
+                self.stat_analysis.save(saved_info_file)
 
-        else:
-            assert os.path.exists(
-                saved_info_file
-            ), f"Saved info file {saved_info_file} does not exist."
-            self.stat_analysis.load(saved_info_file)
 
         def predict_and_analyze(
             dataset_name, data_set, fig_name, stat_only, syst_settings
