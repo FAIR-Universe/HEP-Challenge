@@ -135,8 +135,7 @@ if __name__ == "__main__":
 
     for subdir in os.listdir(submission_dir):
         sub_directory_path = os.path.join(submission_dir, subdir)
-        if os.path.isdir(sub_directory_path):
-            if not subdir.startswith("__"):
+        if os.path.isdir(sub_directory_path) and not subdir.startswith("__"):
                 sys.path.append(sub_directory_path)
 
     from model import Model
