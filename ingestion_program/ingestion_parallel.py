@@ -272,23 +272,23 @@ class Ingestion:
         data (object): The data object.
 
     Attributes:
-        start_time (datetime): The start time of the ingestion process.
-        end_time (datetime): The end time of the ingestion process.
-        model (object): The model object.
-        data (object): The data object.
+        * start_time (datetime): The start time of the ingestion process.
+        * end_time (datetime): The end time of the ingestion process.
+        * model (object): The model object.
+        * data (object): The data object.
 
     Methods:
-        start_timer: Start the timer for the ingestion process.
-        stop_timer: Stop the timer for the ingestion process.
-        get_duration: Get the duration of the ingestion process.
-        show_duration: Display the duration of the ingestion process.
-        save_duration: Save the duration of the ingestion process to a file.
-        load_train_set: Load the training set.
-        init_submission: Initialize the submitted model.
-        fit_submission: Fit the submitted model.
-        predict_submission: Make predictions using the submitted model.
-        compute_result: Compute the ingestion result.
-        save_result: Save the ingestion result to a file.
+        * start_timer: Start the timer for the ingestion process.
+        * stop_timer: Stop the timer for the ingestion process.
+        * get_duration: Get the duration of the ingestion process.
+        * show_duration: Display the duration of the ingestion process.
+        * save_duration: Save the duration of the ingestion process to a file.
+        * load_train_set: Load the training set.
+        * init_submission: Initialize the submitted model.
+        * fit_submission: Fit the submitted model.
+        * predict_submission: Make predictions using the submitted model.
+        * compute_result: Compute the ingestion result.
+        * save_result: Save the ingestion result to a file.
     """
     def __init__(self, data=None):
         """

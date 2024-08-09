@@ -16,6 +16,34 @@ sys.path.append(parent_path)
 
 
 class Scoring:
+    """
+    This class is used to compute the scores for the competition.    
+    For more details, see the :doc:`evaluation page <../pages/evaluation>`.
+    
+    Atributes:
+        * start_time (datetime): The start time of the scoring process.
+        * end_time (datetime): The end time of the scoring process.
+        * ingestion_results (list): The ingestion results.
+        * ingestion_duration (float): The ingestion duration.
+        * scores_dict (dict): The scores dictionary.
+        
+    Methods:
+        * start_timer(): Start the timer.
+        * stop_timer(): Stop the timer.
+        * get_duration(): Get the duration of the scoring process.
+        * show_duration(): Show the duration of the scoring process.
+        * load_ingestion_duration(ingestion_duration_file): Load the ingestion duration.
+        * load_ingestion_results(prediction_dir="./",score_dir="./"): Load the ingestion results.
+        * compute_scores(test_settings): Compute the scores.
+        * RMSE_score(mu, mu_hat, delta_mu_hat): Compute the RMSE score.
+        * MAE_score(mu, mu_hat, delta_mu_hat): Compute the MAE score.
+        * Quantiles_Score(mu, p16, p84, eps=1e-3): Compute the Quantiles Score.
+        * write_scores(): Write the scores.
+        * write_html(content): Write the HTML content.
+        * _print(content): Print the content.
+        * save_figure(mu, p16s, p84s, set=0): Save the figure.
+    
+    """
     def __init__(self):
         # Initialize class variables
         self.start_time = None
@@ -48,6 +76,12 @@ class Scoring:
         print("---------------------------------")
 
     def load_ingestion_duration(self, ingestion_duration_file):
+        """
+        Load the ingestion duration.
+
+        Args:
+            ingestion_duration_file (str): The ingestion duration file.
+        """
         print("[*] Reading ingestion duration")
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
@@ -55,6 +89,13 @@ class Scoring:
         print("[✔]")
 
     def load_ingestion_results(self, prediction_dir="./",score_dir="./"):
+        """
+        Load the ingestion results.
+
+        Args:
+            prediction_dir (str, optional): location of the predictions. Defaults to "./".
+            score_dir (str, optional): location of the scores. Defaults to "./".
+        """
         print("[*] Reading predictions")
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
@@ -70,6 +111,13 @@ class Scoring:
         print("[✔]")
 
     def compute_scores(self, test_settings):
+        """
+        Compute the scores for the competition based on the test settings.
+
+        Args:
+            test_settings (dict): The test settings.
+        """
+        
         print("[*] Computing scores")
 
         # loop over ingestion results
@@ -143,7 +191,14 @@ class Scoring:
         print("[✔]")
 
     def RMSE_score(self, mu, mu_hat, delta_mu_hat):
-        """Compute the sum of MSE and MSE2."""
+        """
+        Compute the root mean squared error between the true value mu and the predicted value mu_hat.
+        
+        Args:
+            * mu (float): The true value.
+            * mu_hat (np.array): The predicted value.
+            * delta_mu_hat (np.array): The uncertainty on the predicted value.
+        """
 
         def MSE(mu, mu_hat):
             """Compute the mean squared error between scalar mu and vector mu_hat."""
@@ -157,7 +212,14 @@ class Scoring:
         return np.sqrt(MSE(mu, mu_hat) + MSE2(mu, mu_hat, delta_mu_hat))
 
     def MAE_score(self, mu, mu_hat, delta_mu_hat):
-        """Compute the sum of MAE and MAE2."""
+        """
+        Compute the mean absolute error between the true value mu and the predicted value mu_hat.
+        
+        Args:
+            * mu (float): The true value.
+            * mu_hat (np.array): The predicted value.
+            * delta_mu_hat (np.array): The uncertainty on the predicted value
+        """
 
         def MAE(mu, mu_hat):
             """Compute the mean absolute error between scalar mu and vector mu_hat."""
@@ -171,6 +233,15 @@ class Scoring:
         return MAE(mu, mu_hat) + MAE2(mu, mu_hat, delta_mu_hat)
 
     def Quantiles_Score(self, mu, p16, p84, eps=1e-3):
+        """
+        Compute the quantiles score based on the true value mu and the quantiles p16 and p84.
+
+        Args:
+            * mu (array): The true ${\mu} value.
+            * p16 (array): The 16th percentile.
+            * p84 (array): The 84th percentile.
+            * eps (float, optional): A small value to avoid division by zero. Defaults to 1e-3.
+        """
 
         def Interval(p16, p84):
             """Compute the average of the intervals defined by vectors p16 and p84."""
@@ -214,6 +285,15 @@ class Scoring:
         self.write_html(content + "<br>")
 
     def save_figure(self, mu, p16s, p84s, set=0):
+        """
+        Save the figure of the mu distribution.
+
+        Args:
+            * mu (array): The true ${\mu} value.
+            * p16 (array): The 16th percentile.
+            * p84 (array): The 84th percentile.
+            * set (int, optional): The set number. Defaults to 0.
+        """
         fig = plt.figure(figsize=(5, 5))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):

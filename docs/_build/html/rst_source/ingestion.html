@@ -54,7 +54,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="data_io.html">data_io module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets.html">datasets module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="derived_quantities.html">derived_quantities module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">ingestion module</a><ul>
@@ -109,10 +108,12 @@
 <dl class="simple">
 <dt>Args:</dt><dd><p>data (object): The data object.</p>
 </dd>
-<dt>Attributes:</dt><dd><p>start_time (datetime): The start time of the ingestion process.
-end_time (datetime): The end time of the ingestion process.
-model (object): The model object.
-data (object): The data object.</p>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>start_time (datetime): The start time of the ingestion process.</p></li>
+<li><p>end_time (datetime): The end time of the ingestion process.</p></li>
+<li><p>model (object): The model object.</p></li>
+<li><p>data (object): The data object.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">

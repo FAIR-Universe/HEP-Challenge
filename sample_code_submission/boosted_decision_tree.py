@@ -11,15 +11,14 @@ class BoostedDecisionTree:
     This class implements a boosted decision tree classifier.
 
     Attributes:
-        model (XGBClassifier): The underlying XGBoost classifier model.
-        scaler (StandardScaler): The scaler used to normalize the input data.
+        * model (XGBClassifier): The underlying XGBoost classifier model.
+        * scaler (StandardScaler): The scaler used to normalize the input data.
 
     Methods:
-        __init__(self, train_data): Initializes the BoostedDecisionTree object.
-        fit(self, train_data, labels, weights=None): Fits the model to the training data.
-        predict(self, test_data): Predicts the class probabilities for the test data.
-        save(self, model_name): Saves the model and scaler to disk.
-        load(self, model_path): Loads the model and scaler from disk.
+        * fit(self, train_data, labels, weights=None): Fits the model to the training data.
+        * predict(self, test_data): Predicts the class probabilities for the test data.
+        * save(self, model_name): Saves the model and scaler to disk.
+        * load(self, model_path): Loads the model and scaler from disk.
 
     """
 
@@ -38,9 +37,9 @@ class BoostedDecisionTree:
         Fits the model to the training data.
 
         Args:
-            train_data (pandas.DataFrame): The input training data.
-            labels (array-like): The labels corresponding to the training data.
-            weights (array-like, optional): The sample weights for the training data.
+            * train_data (pandas.DataFrame): The input training data.
+            * labels (array-like): The labels corresponding to the training data.
+            * weights (array-like, optional): The sample weights for the training data.
 
         """
 

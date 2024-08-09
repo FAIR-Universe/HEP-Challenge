@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="derived_quantities module" href="derived_quantities.html" />
-    <link rel="prev" title="data_io module" href="data_io.html" /> 
+    <link rel="prev" title="Ingestion Program" href="ingestion_program.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -54,7 +54,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="data_io.html">data_io module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">datasets module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#datasets.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#datasets.Neurips2024_public_dataset"><code class="docutils literal notranslate"><span class="pre">Neurips2024_public_dataset()</span></code></a></li>
@@ -107,19 +106,27 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">datasets.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#datasets.Data" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class to represent a dataset.</p>
-<p>Parameters:
-input_dir (str): The directory path of the input data.</p>
-<p>Attributes:
-__train_set (dict): A dictionary containing the train dataset.
-__test_set (dict): A dictionary containing the test dataset.
-input_dir (str): The directory path of the input data.</p>
-<p>Methods:
-load_train_set(): Loads the train dataset.
-load_test_set(): Loads the test dataset.
-get_train_set(): Returns the train dataset.
-get_test_set(): Returns the test dataset.
-delete_train_set(): Deletes the train dataset.
-get_syst_train_set(): Returns the train dataset with systematic variations.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><ul class="simple">
+<li><p>input_dir (str): The directory path of the input data.</p></li>
+</ul>
+</dd>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>__train_set (dict): A dictionary containing the train dataset.</p></li>
+<li><p>__test_set (dict): A dictionary containing the test dataset.</p></li>
+<li><p>input_dir (str): The directory path of the input data.</p></li>
+</ul>
+</dd>
+<dt>Methods:</dt><dd><ul class="simple">
+<li><p>load_train_set(): Loads the train dataset.</p></li>
+<li><p>load_test_set(): Loads the test dataset.</p></li>
+<li><p>get_train_set(): Returns the train dataset.</p></li>
+<li><p>get_test_set(): Returns the test dataset.</p></li>
+<li><p>delete_train_set(): Deletes the train dataset.</p></li>
+<li><p>get_syst_train_set(): Returns the train dataset with systematic variations.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="datasets.Data.delete_train_set">
 <span class="sig-name descname"><span class="pre">delete_train_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datasets.Data.delete_train_set" title="Link to this definition"></a></dt>
@@ -135,16 +142,20 @@ get_syst_train_set(): Returns the train dataset with systematic variations.</p>
 <dt class="sig sig-object py" id="datasets.Data.get_test_set">
 <span class="sig-name descname"><span class="pre">get_test_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datasets.Data.get_test_set" title="Link to this definition"></a></dt>
 <dd><p>Returns the test dataset.</p>
-<p>Returns:
-dict: The test dataset.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dict: The test dataset.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="datasets.Data.get_train_set">
 <span class="sig-name descname"><span class="pre">get_train_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#datasets.Data.get_train_set" title="Link to this definition"></a></dt>
 <dd><p>Returns the train dataset.</p>
-<p>Returns:
-dict: The train dataset.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>dict: The train dataset.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -173,13 +184,14 @@ zipfile.BadZipFile: If the downloaded file is not a valid zip file.</p>
 </dl>
 </dd></dl>
 
+<p>For more details on Data, see the <a class="reference internal" href="../pages/data.html"><span class="doc">data page</span></a>.</p>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="data_io.html" class="btn btn-neutral float-left" title="data_io module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ingestion_program.html" class="btn btn-neutral float-left" title="Ingestion Program" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="derived_quantities.html" class="btn btn-neutral float-right" title="derived_quantities module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

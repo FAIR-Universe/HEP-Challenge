@@ -105,14 +105,17 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This class implements a boosted decision tree classifier.</p>
 <dl class="simple">
-<dt>Attributes:</dt><dd><p>model (XGBClassifier): The underlying XGBoost classifier model.
-scaler (StandardScaler): The scaler used to normalize the input data.</p>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>model (XGBClassifier): The underlying XGBoost classifier model.</p></li>
+<li><p>scaler (StandardScaler): The scaler used to normalize the input data.</p></li>
+</ul>
 </dd>
-<dt>Methods:</dt><dd><p>__init__(self, train_data): Initializes the BoostedDecisionTree object.
-fit(self, train_data, labels, weights=None): Fits the model to the training data.
-predict(self, test_data): Predicts the class probabilities for the test data.
-save(self, model_name): Saves the model and scaler to disk.
-load(self, model_path): Loads the model and scaler from disk.</p>
+<dt>Methods:</dt><dd><ul class="simple">
+<li><p>fit(self, train_data, labels, weights=None): Fits the model to the training data.</p></li>
+<li><p>predict(self, test_data): Predicts the class probabilities for the test data.</p></li>
+<li><p>save(self, model_name): Saves the model and scaler to disk.</p></li>
+<li><p>load(self, model_path): Loads the model and scaler from disk.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -120,9 +123,11 @@ load(self, model_path): Loads the model and scaler from disk.</p>
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#boosted_decision_tree.BoostedDecisionTree.fit" title="Link to this definition"></a></dt>
 <dd><p>Fits the model to the training data.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>train_data (pandas.DataFrame): The input training data.
-labels (array-like): The labels corresponding to the training data.
-weights (array-like, optional): The sample weights for the training data.</p>
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>train_data (pandas.DataFrame): The input training data.</p></li>
+<li><p>labels (array-like): The labels corresponding to the training data.</p></li>
+<li><p>weights (array-like, optional): The sample weights for the training data.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

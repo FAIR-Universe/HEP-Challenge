@@ -5,3 +5,4 @@ systematics module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: V4
