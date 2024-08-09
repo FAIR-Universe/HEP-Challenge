@@ -1,5 +1,4 @@
 # Evaluation
-***
 
 **The specific target of this challenge is to determine a one standard deviation ( 68.3%)  confidence interval for $\mu$ on provided test dataset(s) (see main “Overview” page)**
 
