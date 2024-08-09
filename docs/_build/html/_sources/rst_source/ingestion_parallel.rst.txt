@@ -5,3 +5,4 @@ ingestion\_parallel module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: SharedTestSet

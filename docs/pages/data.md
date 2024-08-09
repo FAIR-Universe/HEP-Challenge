@@ -1,5 +1,4 @@
 # Data
-***
 
 The tabular dataset is created using the particle physics simulation tools Pythia 8.2 and Delphes 3.5.0. The proton-proton collision events are generated with a center of mass energy of 13 TeV using Pythia8. Subsequently, these events undergo the Delphes tool to produce simulated detector measurements. We used an ATLAS-like detector description to make the dataset closer to experimental data. The events are divided into two groups: 
 1. Higgs boson signal ($H \rightarrow \tau \tau$)
@@ -87,8 +86,10 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 
 **⚠️ Note:** The Post selection cuts are the cuts made after systematics is applied. 
 
-## How to get Public Data?
 ***
+
+## How to get Public Data?
+
 - Go to the "Files" tab
 - Download the "Neurpis_Public_data_26_07_2024_11X"
 

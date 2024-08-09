@@ -49,12 +49,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/evaluation.html">Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/prizes.html">Prizes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="data_io.html">data_io module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets.html">datasets module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="derived_quantities.html">derived_quantities module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">ingestion module</a><ul>
@@ -70,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="scoring_program.html">scoring_program</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 </ul>
 
         </div>
@@ -108,10 +108,12 @@
 <dl class="simple">
 <dt>Args:</dt><dd><p>data (object): The data object.</p>
 </dd>
-<dt>Attributes:</dt><dd><p>start_time (datetime): The start time of the ingestion process.
-end_time (datetime): The end time of the ingestion process.
-model (object): The model object.
-data (object): The data object.</p>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>start_time (datetime): The start time of the ingestion process.</p></li>
+<li><p>end_time (datetime): The end time of the ingestion process.</p></li>
+<li><p>model (object): The model object.</p></li>
+<li><p>data (object): The data object.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -158,7 +160,7 @@ data (object): The data object.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="ingestion.Ingestion.predict_submission">
-<span class="sig-name descname"><span class="pre">predict_submission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_settings</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ingestion.Ingestion.predict_submission" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">predict_submission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">31415</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ingestion.Ingestion.predict_submission" title="Link to this definition"></a></dt>
 <dd><p>Make predictions using the submitted model.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>test_settings (dict): The test settings.</p>

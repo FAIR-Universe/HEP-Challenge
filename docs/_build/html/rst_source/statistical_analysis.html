@@ -49,8 +49,8 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/evaluation.html">Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/prizes.html">Prizes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a></li>
@@ -68,6 +68,7 @@
 <li class="toctree-l2"><a class="reference internal" href="scoring_program.html">scoring_program</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 </ul>
 
         </div>
@@ -100,7 +101,7 @@
 <span id="statistical-analysis-module"></span><h1>statistical_analysis module<a class="headerlink" href="#module-statistical_analysis" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">statistical_analysis.</span></span><span class="sig-name descname"><span class="pre">StatisticalAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holdout_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">statistical_analysis.</span></span><span class="sig-name descname"><span class="pre">StatisticalAnalysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class that performs statistical analysis on a given model and holdout set.</p>
 <dl class="simple">
@@ -133,7 +134,7 @@ load: Load the saved_info dictionary from a file.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.calculate_saved_info">
-<span class="sig-name descname"><span class="pre">calculate_saved_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.calculate_saved_info" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">calculate_saved_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">holdout_set</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.calculate_saved_info" title="Link to this definition"></a></dt>
 <dd><p>Calculate the saved_info dictionary for mu calculation.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>model: The model used for prediction.
@@ -147,25 +148,15 @@ file_path (str, optional): File path to save the calculated saved_info dictionar
 
 <dl class="py method">
 <dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.compute_mu">
-<span class="sig-name descname"><span class="pre">compute_mu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.compute_mu" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_mu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">syst_fixed_setting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.compute_mu" title="Link to this definition"></a></dt>
 <dd><p>Perform calculations to calculate mu using the profile likelihood method.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>score (numpy.ndarray): Array of scores.
-weight (numpy.ndarray): Array of weights.</p>
+weight (numpy.ndarray): Array of weights.
+stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+syst_fixed_setting (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {‘jes’: 1.5}, fixing ‘jet’ to 1.5, and the all others floating. Defaults to None.</p>
 </dd>
 <dt>Returns:</dt><dd><p>dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.fit_functions">
-<span class="sig-name descname"><span class="pre">fit_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.fit_functions" title="Link to this definition"></a></dt>
-<dd><p>Fits polynomial functions to the given data for a specific key.</p>
-<dl class="simple">
-<dt>Parameters:</dt><dd><p>key (str): The key to identify the data.</p>
-</dd>
-<dt>Returns:</dt><dd><p>tuple: A tuple containing two lists of coefficients. The first list contains the coefficients for the polynomial fit of the ‘s_array’ data, and the second list contains the coefficients for the polynomial fit of the ‘b_array’ data.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -183,18 +174,6 @@ weight (numpy.ndarray): Array of weights.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.nominal_histograms">
-<span class="sig-name descname"><span class="pre">nominal_histograms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.nominal_histograms" title="Link to this definition"></a></dt>
-<dd><p>Calculate the nominal histograms for signal and background events.</p>
-<p>Parameters:
-- alpha (float): The value of the systematic parameter.
-- key (str): The key corresponding to the systematic parameter.</p>
-<p>Returns:
-- holdout_signal_hist (numpy.ndarray): The histogram of signal events in the holdout set.
-- holdout_background_hist (numpy.ndarray): The histogram of background events in the holdout set.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.plot_stacked_histogram">
 <span class="sig-name descname"><span class="pre">plot_stacked_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background_fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.plot_stacked_histogram" title="Link to this definition"></a></dt>
 <dd><p>Plot a stacked histogram with combined signal and background fits and observed data points.</p>
@@ -202,7 +181,9 @@ weight (numpy.ndarray): Array of weights.</p>
 <dt>Parameters:</dt><dd><p>bins (numpy.ndarray): Bin edges.
 signal_fit (numpy.ndarray): Combined signal fit values.
 background_fit (numpy.ndarray): Combined background fit values.
-N_obs (numpy.ndarray): Observed data points.</p>
+mu (float): Multiplicative factor for the signal.
+N_obs (numpy.ndarray): Observed data points.
+save_name (str, optional): Name of the file to save the plot.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -218,6 +199,11 @@ N_obs (numpy.ndarray): Observed data points.</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="statistical_analysis.StatisticalAnalysis.visualize_fit">
+<span class="sig-name descname"><span class="pre">visualize_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficient_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#statistical_analysis.StatisticalAnalysis.visualize_fit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

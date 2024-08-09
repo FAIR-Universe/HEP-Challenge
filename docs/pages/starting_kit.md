@@ -1,5 +1,4 @@
 # Starting Kit and Sample Submission
-***
 
 ## Starting Kit
 We are providing a starting kit as a Google Colab notebook to demonstrate the problem and a solution for it which can be submitted as a submission the competition. You can copy the Colab notebook and make changes as you want.  

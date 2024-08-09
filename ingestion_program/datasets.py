@@ -15,27 +15,27 @@ class Data:
     A class to represent a dataset.
 
     Parameters:
-    input_dir (str): The directory path of the input data.
+        * input_dir (str): The directory path of the input data.
 
     Attributes:
-    __train_set (dict): A dictionary containing the train dataset.
-    __test_set (dict): A dictionary containing the test dataset.
-    input_dir (str): The directory path of the input data.
+        * __train_set (dict): A dictionary containing the train dataset.
+        * __test_set (dict): A dictionary containing the test dataset.
+        * input_dir (str): The directory path of the input data.
 
     Methods:
-    load_train_set(): Loads the train dataset.
-    load_test_set(): Loads the test dataset.
-    get_train_set(): Returns the train dataset.
-    get_test_set(): Returns the test dataset.
-    delete_train_set(): Deletes the train dataset.
-    get_syst_train_set(): Returns the train dataset with systematic variations.
+        * load_train_set(): Loads the train dataset.
+        * load_test_set(): Loads the test dataset.
+        * get_train_set(): Returns the train dataset.
+        * get_test_set(): Returns the test dataset.
+        * delete_train_set(): Deletes the train dataset.
+        * get_syst_train_set(): Returns the train dataset with systematic variations.
     """
     def __init__(self, input_dir):
         """
         Constructs a Data object.
 
         Parameters:
-        input_dir (str): The directory path of the input data.
+            input_dir (str): The directory path of the input data.
         """
 
         self.__train_set = None
@@ -124,7 +124,7 @@ class Data:
         Returns the train dataset.
 
         Returns:
-        dict: The train dataset.
+            dict: The train dataset.
         """
         return self.__train_set
 
@@ -133,7 +133,7 @@ class Data:
         Returns the test dataset.
 
         Returns:
-        dict: The test dataset.
+            dict: The test dataset.
         """
         return self.__test_set
 

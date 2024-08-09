@@ -49,12 +49,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/evaluation.html">Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/prizes.html">Prizes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="data_io.html">data_io module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="datasets.html">datasets module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="derived_quantities.html">derived_quantities module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="ingestion.html">ingestion module</a></li>
@@ -62,12 +61,8 @@
 <li class="toctree-l3"><a class="reference internal" href="systematics.html">systematics module</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">visualization module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.Dataset_visualise"><code class="docutils literal notranslate"><span class="pre">Dataset_visualise</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.events_histogram"><code class="docutils literal notranslate"><span class="pre">events_histogram()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.feature_importance_plot"><code class="docutils literal notranslate"><span class="pre">feature_importance_plot()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.permutation_importance"><code class="docutils literal notranslate"><span class="pre">permutation_importance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.roc_curve_wrapper"><code class="docutils literal notranslate"><span class="pre">roc_curve_wrapper()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.score_histogram"><code class="docutils literal notranslate"><span class="pre">score_histogram()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#visualization.validationcurve"><code class="docutils literal notranslate"><span class="pre">validationcurve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#visualization.visualize_coverage"><code class="docutils literal notranslate"><span class="pre">visualize_coverage()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#visualization.visualize_scatter"><code class="docutils literal notranslate"><span class="pre">visualize_scatter()</span></code></a></li>
 </ul>
 </li>
@@ -77,6 +72,7 @@
 <li class="toctree-l2"><a class="reference internal" href="scoring_program.html">scoring_program</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 </ul>
 
         </div>
@@ -112,32 +108,40 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">Dataset_visualise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dataset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class for visualizing datasets.</p>
-<p>Parameters:
-- data_set (dict): The dataset containing the data, labels, weights, and detailed labels.
-- name (str): The name of the dataset (default: “dataset”).
-- columns (list): The list of column names to consider (default: None, which includes all columns).</p>
-<p>Attributes:
-- dfall (DataFrame): The dataset.
-- target (Series): The labels.
-- weights (Series): The weights.
-- detailed_label (ndarray): The detailed labels.
-- columns (list): The list of column names.
-- name (str): The name of the dataset.
-- keys (ndarray): The unique detailed labels.
-- weight_keys (dict): The weights for each detailed label.</p>
-<p>Methods:
-- examine_dataset(): Prints information about the dataset.
-- histogram_dataset(columns=None): Plots histograms of the dataset features.
-- correlation_plots(columns=None): Plots correlation matrices of the dataset features.
-- pair_plots(sample_size=10, columns=None): Plots pair plots of the dataset features.
-- stacked_histogram(field_name, mu_hat=1.0, bins=30): Plots a stacked histogram of a specific field in the dataset.
-- pair_plots_syst(df_syst, sample_size=10): Plots pair plots between the dataset and a system dataset.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><ul class="simple">
+<li><p>data_set (dict): The dataset containing the data, labels, weights, and detailed labels.</p></li>
+<li><p>name (str): The name of the dataset (default: “dataset”).</p></li>
+<li><p>columns (list): The list of column names to consider (default: None, which includes all columns).</p></li>
+</ul>
+</dd>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>dfall (DataFrame): The dataset.</p></li>
+<li><p>target (Series): The labels.</p></li>
+<li><p>weights (Series): The weights.</p></li>
+<li><p>detailed_label (ndarray): The detailed labels.</p></li>
+<li><p>columns (list): The list of column names.</p></li>
+<li><p>name (str): The name of the dataset.</p></li>
+<li><p>keys (ndarray): The unique detailed labels.</p></li>
+<li><p>weight_keys (dict): The weights for each detailed label.</p></li>
+</ul>
+</dd>
+<dt>Methods:</dt><dd><ul class="simple">
+<li><p>examine_dataset(): Prints information about the dataset.</p></li>
+<li><p>histogram_dataset(columns=None): Plots histograms of the dataset features.</p></li>
+<li><p>correlation_plots(columns=None): Plots correlation matrices of the dataset features.</p></li>
+<li><p>pair_plots(sample_size=10, columns=None): Plots pair plots of the dataset features.</p></li>
+<li><p>stacked_histogram(field_name, mu_hat=1.0, bins=30): Plots a stacked histogram of a specific field in the dataset.</p></li>
+<li><p>pair_plots_syst(df_syst, sample_size=10): Plots pair plots between the dataset and a system dataset.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.correlation_plots">
 <span class="sig-name descname"><span class="pre">correlation_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.correlation_plots" title="Link to this definition"></a></dt>
 <dd><p>Plots correlation matrices of the dataset features.</p>
-<p>Parameters:
-- columns (list): The list of column names to consider (default: None, which includes all columns).</p>
+<p>Args:
+* columns (list): The list of column names to consider (default: None, which includes all columns).</p>
 <img alt="../_images/correlation_plots.png" src="../_images/correlation_plots.png" />
 </dd></dl>
 
@@ -151,8 +155,12 @@
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.histogram_dataset">
 <span class="sig-name descname"><span class="pre">histogram_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.histogram_dataset" title="Link to this definition"></a></dt>
 <dd><p>Plots histograms of the dataset features.</p>
-<p>Parameters:
-- columns (list): The list of column names to consider (default: None, which includes all columns).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>columns (list): The list of column names to consider (default: None, which includes all columns).</p></li>
+</ul>
+</dd>
+</dl>
 <img alt="../_images/histogram_datasets.png" src="../_images/histogram_datasets.png" />
 </dd></dl>
 
@@ -160,9 +168,13 @@
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.pair_plots">
 <span class="sig-name descname"><span class="pre">pair_plots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.pair_plots" title="Link to this definition"></a></dt>
 <dd><p>Plots pair plots of the dataset features.</p>
-<p>Parameters:
-- sample_size (int): The number of samples to consider (default: 10).
-- columns (list): The list of column names to consider (default: None, which includes all columns).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>sample_size (int): The number of samples to consider (default: 10).</p></li>
+<li><p>columns (list): The list of column names to consider (default: None, which includes all columns).</p></li>
+</ul>
+</dd>
+</dl>
 <img alt="../_images/pair_plot.png" src="../_images/pair_plot.png" />
 </dd></dl>
 
@@ -170,58 +182,78 @@
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.pair_plots_syst">
 <span class="sig-name descname"><span class="pre">pair_plots_syst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_syst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.pair_plots_syst" title="Link to this definition"></a></dt>
 <dd><p>Plots pair plots between the dataset and a system dataset.</p>
-<p>Parameters:
-- df_syst (DataFrame): The system dataset.
-- sample_size (int): The number of samples to consider (default: 10).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>df_syst (DataFrame): The system dataset.</p></li>
+<li><p>sample_size (int): The number of samples to consider (default: 10).</p></li>
+</ul>
+</dd>
+</dl>
+<p>..images:: ../images/pair_plot_syst.png</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="visualization.Dataset_visualise.stacked_histogram">
 <span class="sig-name descname"><span class="pre">stacked_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu_hat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.Dataset_visualise.stacked_histogram" title="Link to this definition"></a></dt>
 <dd><p>Plots a stacked histogram of a specific field in the dataset.</p>
-<p>Parameters:
-- field_name (str): The name of the field to plot.
-- mu_hat (float): The value of mu (default: 1.0).
-- bins (int): The number of bins for the histogram (default: 30).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>field_name (str): The name of the field to plot.</p></li>
+<li><p>mu_hat (float): The value of mu (default: 1.0).</p></li>
+<li><p>bins (int): The number of bins for the histogram (default: 30).</p></li>
+</ul>
+</dd>
+</dl>
 <img alt="../_images/stacked_histogram.png" src="../_images/stacked_histogram.png" />
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="visualization.events_histogram">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">events_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.events_histogram" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="visualization.feature_importance_plot">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">feature_importance_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_importance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.feature_importance_plot" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="visualization.permutation_importance">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">permutation_importance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.permutation_importance" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="visualization.roc_curve_wrapper">
 <span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">roc_curve_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'b'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.roc_curve_wrapper" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Plots the ROC curve.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>score (ndarray): The score.</p></li>
+<li><p>labels (ndarray): The labels.</p></li>
+<li><p>weights (ndarray): The weights.</p></li>
+<li><p>plot_label (str, optional): The plot label. Defaults to “model”.</p></li>
+<li><p>color (str, optional): The color. Defaults to “b”.</p></li>
+<li><p>lw (int, optional): The line width. Defaults to 2.</p></li>
+</ul>
+</dd>
+</dl>
+<img alt="../_images/roc_curve.png" src="../_images/roc_curve.png" />
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="visualization.score_histogram">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">score_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'log'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.score_histogram" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="visualization.validationcurve">
-<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">validationcurve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_metric</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.validationcurve" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="visualization.visualize_coverage">
+<span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">visualize_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ingestion_result_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_mus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.visualize_coverage" title="Link to this definition"></a></dt>
+<dd><p>Plots a coverage plot of the mu values.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ingestion_result_dict (dict): A dictionary containing the ingestion results.</p></li>
+<li><p>ground_truth_mus (dict): A dictionary of ground truth mu values.</p></li>
+</ul>
+</dd>
+</dl>
+<img alt="../_images/coverage_plot.png" src="../_images/coverage_plot.png" />
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="visualization.visualize_scatter">
 <span class="sig-prename descclassname"><span class="pre">visualization.</span></span><span class="sig-name descname"><span class="pre">visualize_scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ingestion_result_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_mus</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#visualization.visualize_scatter" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Plots a scatter Plot of ground truth vs. predicted mu values.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>ingestion_result_dict (dict): A dictionary containing the ingestion results.</p></li>
+<li><p>ground_truth_mus (dict): A dictionary of ground truth mu values.</p></li>
+</ul>
+</dd>
+</dl>
+<img alt="../_images/scatter_plot_mu.png" src="../_images/scatter_plot_mu.png" />
+</dd></dl>
 
 </section>
 

@@ -14,44 +14,17 @@ class Model:
     """
     This is a model class to be submitted by the participants in their submission.
 
-    This class consists of the following functions:
-    1) __init__:
-        Initializes the Model class.
-        Args:
-            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights, detailed_labels, and settings.
-            systematics (object, optional): A function that can be used to get a dataset with systematics added.
-        Returns:
-            None
+    Atributes:
+        * get_train_set (callable): A function that returns a dictionary with data, labels, weights, detailed_labels and settings.
+        * systematics (object): A function that can be used to get a dataset with systematics added.
+        * model (object): The model object.
+        * name (str): The name of the model.
+        * stat_analysis (object): The statistical analysis object.
+        
+    Methods:
+        * fit(stat_only: bool = None, syst_settings: dict[str, bool] = None): Trains the model.
+        * predict(test_set, stat_only: bool = None, syst_settings: dict[str, float] = None): Predicts the values for the test set.
 
-    2) fit:
-        Trains the model.
-        Params:
-            None
-        Functionality:
-            This function can be used to train a model. If `re_train` is True, it balances the dataset,
-            fits the model using the balanced dataset, and saves the model. If `re_train` is False, it
-            loads the saved model and calculates the saved information. The saved information is used
-            to compute the train results.
-        Returns:
-            None
-
-    3) predict:
-        Predicts the values for the test set.
-        Parameters:
-            test_set (dict): A dictionary containing the test data and weights.
-        Returns:
-            dict: A dictionary with the following keys:
-            - 'mu_hat': The predicted value of mu.
-            - 'delta_mu_hat': The uncertainty in the predicted value of mu.
-            - 'p16': The lower bound of the 16th percentile of mu.
-            - 'p84': The upper bound of the 84th percentile of mu.
-
-    4) balance_set:
-        Balances the training set by equalizing the number of background and signal events.
-        Params:
-            None
-        Returns:
-            dict: A dictionary with the balanced training set.
     """
 
     def __init__(self, get_train_set=None, systematics=None):
@@ -59,8 +32,8 @@ class Model:
         Initializes the Model class.
 
         Args:
-            get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights,detailed_labels and settings.
-            systematics (object, optional): A function that can be used to get a dataset with systematics added.
+            * get_train_set (callable, optional): A function that returns a dictionary with data, labels, weights,detailed_labels and settings.
+            * systematics (object, optional): A function that can be used to get a dataset with systematics added.
 
         Returns:
             None
@@ -90,9 +63,9 @@ class Model:
         """
         Trains the model.
 
-        Params:
-            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
+        Args:
+            * stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+            * syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
 
         Functionality:
             This function can be used to train a model. If `re_train` is True, it balances the dataset,
@@ -231,9 +204,9 @@ class Model:
         """
         Predicts the values for the test set.
 
-        Params:
-            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
+        Args:
+            * stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
+            * syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
 
         Returns:
             dict: A dictionary with the following keys:
@@ -263,6 +236,18 @@ class Model:
 
 
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
+    """
+    Splits the data into training and testing sets.
+
+    Args:
+        * data_set (dict): A dictionary containing the data, labels, weights, detailed_labels, and settings
+        * test_size (float, optional): The size of the testing set. Defaults to 0.2.
+        * random_state (int, optional): The random state. Defaults to 42.
+        * reweight (bool, optional): Whether to reweight the data. Defaults to False.
+
+    Returns:
+        tuple: A tuple containing the training and testing
+    """
     data = data_set["data"].copy()
     train_set = {}
     test_set = {}
@@ -311,6 +296,16 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
     return train_set, test_set
 
 def balance_set(training_set):
+    """
+    Balances the training set by equalizing the number of background and signal events.
+
+    Args:
+        training_set (dict): A dictionary containing the data, labels, weights, detailed_labels, and settings.
+
+    Returns:
+        dict: A dictionary containing the balanced training set.
+    """
+    
     balanced_set = training_set.copy()
 
     weights_train = training_set["weights"].copy()

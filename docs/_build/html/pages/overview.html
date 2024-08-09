@@ -68,10 +68,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="evaluation.html">Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prizes.html">Prizes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../rst_source/modules.html">HEP-Challenge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="terms.html">Terms and Conditions</a></li>
 </ul>
 
         </div>
@@ -100,55 +101,52 @@
              
   <section class="tex2jax_ignore mathjax_ignore" id="overview">
 <h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
-<hr class="docutils" />
 <section id="codabench-walkthrough-tutorial-tutorial-slides">
 <h2>Codabench Walkthrough tutorial: <a class="reference external" href="https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf">Tutorial Slides</a><a class="headerlink" href="#codabench-walkthrough-tutorial-tutorial-slides" title="Link to this heading"></a></h2>
 </section>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>In 2012, the Nobel-prize-winning discovery of the Higgs Boson by the ATLAS and CMS experiments at the Large Hadron Collider (LHC) at CERN in Geneva, Switzerland was a major milestone in the history of physics. However, despite the validation it provided of the Standard Model of particle physics (SM), there are still numerous questions in physics that the SM does not answer. One promissing approach to uncover some of these mysteries is to study the Higgs Boson in great detail, as the rate of Higgs Boson production and its decay properties may hold the secrets to the nature of dark matter and other phenomena not explained by the SM.</p>
-<p>The LHC collides protons together at high energy and at a high rate. Each proton collision produces many outgoing particles. A small fraction of the time, a Higgs boson is produced and then decays into other particles that can be detected by experiments such as ATLAS and CMS. In this challenge we focus on the Higgs boson decay to two <span class="math notranslate nohighlight">\(\tau\)</span> particles which themselves further decay into other particles before being detected. Measuring this “signal” of interest is complicated by the presence of “background” decays which can produce the same detector signatures. The aim of this challenge is to determine methods to improve the precision of the measurement of the Higgs boson production rate, which is defined below, based on feature variables that are derived from simulated measurements made in an ATLAS-like detector. This builds on a previous <a class="reference external" href="https://www.kaggle.com/c/higgs-boson">Kaggle challenge</a> but focuses directly on the statistical inference, where the goal is not only to isolate Higgs boson events (previous challenge), but to determine the precision on <span class="math notranslate nohighlight">\(\mu\)</span> in the presence of uncertainty. Technical details on the signal and background decay channels and features of the dataset are given on the “data” tab, but participants not familiar with particle physics can consider any of these simply as input feature variables for their proposed method except the EventId, Weight and Label (which is essentially the target).</p>
+<p>The LHC collides protons together at high energy and at a high rate. Each proton collision produces many outgoing particles. A small fraction of the time, a Higgs boson is produced and then decays into other particles that can be detected by experiments such as ATLAS and CMS. In this challenge we focus on the Higgs boson decay to two <span class="math notranslate nohighlight">\(\tau\)</span> particles which themselves further decay into other particles before being detected. Measuring this “signal” of interest is complicated by the presence of “background” decays which can produce the same detector signatures. The aim of this challenge is to determine methods to improve the precision of the measurement of the Higgs boson production rate, which is defined below, based on feature variables that are derived from simulated measurements made in an ATLAS-like detector. An additional difficulty is that there are uncertain distortions (“systematics”) in the training dataset with respect to the inference dataset. This builds on a previous <a class="reference external" href="https://www.kaggle.com/c/higgs-boson">Kaggle challenge</a> but focuses directly on the statistical inference, where the goal is not only to isolate Higgs boson events (previous challenge), but to determine the precision on <span class="math notranslate nohighlight">\(\mu\)</span> in the presence of uncertainty. Technical details on the signal and background decay channels and features of the dataset are given on the “data” tab, but participants not familiar with particle physics can consider any of these simply as input feature variables for their proposed method except the EventId, Weight and Label (which is essentially the target).</p>
 </section>
+<hr class="docutils" />
 <section id="problem-setting">
 <h2>Problem Setting<a class="headerlink" href="#problem-setting" title="Link to this heading"></a></h2>
-<hr class="docutils" />
-<p>The objective of this challenge is to improve the measurement of the signal strength of the Higgs boson decay, specifically in the <span class="math notranslate nohighlight">\(H \rightarrow \tau \tau\)</span> decay mode in the presence of the background <span class="math notranslate nohighlight">\(Z \rightarrow \tau \tau\)</span> process. In both signal and background events, one of the <span class="math notranslate nohighlight">\(\tau\)</span> leptons decays leptonically (electron and muon) and the other one decays hadronically. The dataset includes systematic uncertainty corresponding to the Tau Energy Scale (TES). The main focus of the challenge is to develop an optimal algorithm that is robust in the presence of systematic uncertainty.</p>
-<p>Events at the LHC, such as Higgs boson production and <span class="math notranslate nohighlight">\(Z\)</span> boson production, can be modelled as Poisson processes.
-The Higgs boson process has an observed rate <span class="math notranslate nohighlight">\( \mu \gamma \)</span>, where <span class="math notranslate nohighlight">\( \gamma \)</span> is the rate predicted by the Standard Model and <span class="math notranslate nohighlight">\( \mu \)</span> is the ratio between the observed and predicted rates, i.e. the “signal strength.”
-The background <span class="math notranslate nohighlight">\(Z\)</span> boson process has a rate <span class="math notranslate nohighlight">\( \beta \)</span>.
-The total event rate <span class="math notranslate nohighlight">\(\nu\)</span> is related to the Higgs boson and <span class="math notranslate nohighlight">\(Z\)</span> boson rates by <span class="math notranslate nohighlight">\( \nu = \mu \gamma + \beta \)</span>.</p>
+<p>The objective of this challenge is to improve the measurement of the signal strength of the Higgs boson decay, specifically in the <span class="math notranslate nohighlight">\(H \rightarrow \tau \tau\)</span> decay mode in the presence of the background the dominant <span class="math notranslate nohighlight">\(Z \rightarrow \tau \tau\)</span> process and the smaller ttbar and diboson processes. In both signal and background events, one of the <span class="math notranslate nohighlight">\(\tau\)</span> leptons decays leptonically (electron and muon) and the other one decays hadronically. The dataset includes six systematic uncertainties parametrised by nuisance parameters corresponding to the Tau Energy Scale (TES), the Jet Energy Scale (JES), the soft missing energy component (SOFT_MET), the total background scale (BKG_SCALE), the smaller magnitude backgrounds ttbar (TTBAR_SCALE) and diboson (DIBOSON_SCALE). The first two mimick a coherent distortion of some features, the third adds a random component to some features, and the last three change the composition of the inference dataset. The main focus of the challenge is to develop an optimal algorithm that is robust in the presence of systematic uncertainties.</p>
+<p>Events at the LHC, such as Higgs boson production and other processes, can be modelled as Poisson processes.
+The Higgs boson process has an observed rate <span class="math notranslate nohighlight">\( \mu \gamma \)</span>, where <span class="math notranslate nohighlight">\( \gamma \)</span> is the rate predicted by the Standard Model and <span class="math notranslate nohighlight">\( \mu \)</span> is the ratio between the observed and predicted rates, i.e. the “signal strength, which is expected to be 1.”</p>
+<p>The background processes have a rate <span class="math notranslate nohighlight">\( \beta \)</span>, meaning the number of observed events in a given period of time is expected to follow <span class="math notranslate nohighlight">\(Poisson(\beta)\)</span>. The total event rate <span class="math notranslate nohighlight">\(\nu\)</span> is related to the Higgs boson and background process rates by <span class="math notranslate nohighlight">\( \nu = \mu \gamma + \beta \)</span>.</p>
 <p>The standard approach used in LHC analyses is to construct a 1D feature <span class="math notranslate nohighlight">\(f(x)\)</span> (where <span class="math notranslate nohighlight">\(x\)</span> is the set of available feature variables), make a histogram, and then estimate <span class="math notranslate nohighlight">\(\mu\)</span> (and its uncertainty) using maximum likelihood estimation.  The likelihood is a product of bin-by-bin Poisson probabilities where the expected counts are determined from simulations. Traditionally, <span class="math notranslate nohighlight">\(f(x)\)</span> is selected manually using expert knowledge. It can also be estimated using a machine learning classifier. In the absence of systematic uncertainties from nuisance parameters, and for a particular value of <span class="math notranslate nohighlight">\(\mu\)</span>, the optimal <span class="math notranslate nohighlight">\(f(x)\)</span> is the likelihood ratio. Systematic uncertainties however give rise to distribution shifts, and their impact is represented by nuisance parameters,  which may be constrained on the test set to improve the accuracy and precision of the measurement. In this challenge we construct a realistic setting with nuisance parameters and ask participants to determine <span class="math notranslate nohighlight">\(\mu\)</span> and its uncertainty.</p>
 </section>
+<hr class="docutils" />
 <section id="challenge-target-estimation-of-mu-and-uncertainty">
 <h2>Challenge target: Estimation of <span class="math notranslate nohighlight">\(\mu\)</span> and uncertainty<a class="headerlink" href="#challenge-target-estimation-of-mu-and-uncertainty" title="Link to this heading"></a></h2>
-<hr class="docutils" />
-<p>The aim of this challenge is to determine the signal strength <span class="math notranslate nohighlight">\(\mu\)</span> and its uncertainty. In addition participants submissions will be evaluated against test datasets which can have a range of true “<span class="math notranslate nohighlight">\(\mu\)</span>” values.  Furthermore the test datasets have systematic uncertainties applied on nuisance parameters at values that may be different to those available during training. Currently for this challenge, we will have a single parameter, representing one of the most important sources of uncertainty: the energy scale of the tau particles (<code class="docutils literal notranslate"><span class="pre">TES</span></code>).</p>
+<p>The aim of this challenge is to determine the signal strength <span class="math notranslate nohighlight">\(\mu\)</span> and its uncertainty. In addition participants submissions will be evaluated against test datasets which can have a range of true “<span class="math notranslate nohighlight">\(\mu\)</span>” values.  Furthermore the test datasets have systematic uncertainties applied on nuisance parameters at values that may be different to those available during training. There are six systematic uncertainties parametrised by nuisance parameters (NP) corresponding to the Tau Energy Scale (TES), the Jet Energy Scale (JES), the soft missing energy component (SOFT_MET), the total background scale (BKG_SCALE), the smaller magnitude backgrounds ttbar (TTBAR_SCALE) and diboson (DIBOSON_SCALE). The default (no bias) values of these  NP is 1., except for SOFT_MET for which it is 0.</p>
 <p><strong>The specific target of this challenge is to determine a 68% confidence interval for \mu on these test dataset(s).</strong> We desire the interval to be as small as possible so long as the coverage is close to 68%. <strong>Participants should consult the “Evaluation” tab for more details on what quantity should be returned and how it will be scored, and the “Starting Kit” tab for examples of how to return these values from your models within their submission. In addition the “Starting Kit” provides examples of how to apply TES systematics to the training data when training your model.</strong> Though the values of TES applied in this way may not be the one in the test set, this information can be used to constrain (“profile”) the TES value. It is not necessary for participants to provide the value of TES on the test data (we only care about <span class="math notranslate nohighlight">\(\mu\)</span>), but it may be necessary to determine TES and its uncertainty in order to win the challenge.</p>
 </section>
+<hr class="docutils" />
 <section id="how-to-join-this-challenge">
 <h2>How to join this challenge?<a class="headerlink" href="#how-to-join-this-challenge" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <ul class="simple">
 <li><p>Go to the “Starting Kit” tab</p></li>
 <li><p>Download the “Dummy sample submission” or “sample submission”</p></li>
 <li><p>Go to the “My Submissions” tab</p></li>
 <li><p>Submit the downloaded file</p></li>
 </ul>
-<p>For more instructions feel free to checkout these <a class="reference external" href="https://fair-universe.lbl.gov/tutorials/HiggsML_Uncertainty_Challenge-Codabench_Tutorial.pdf">Tutorial Slides</a></p>
+<p>For more instructions feel free to checkout these <a class="reference external" href="https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf">Tutorial Slides</a></p>
 </section>
+<hr class="docutils" />
 <section id="submissions">
 <h2>Submissions<a class="headerlink" href="#submissions" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>This competition allows code submissions. Participants can submit either of the following:</p>
 <ul class="simple">
 <li><p>code submission without any trained model</p></li>
 <li><p>code submission with pre-trained model</p></li>
 </ul>
 </section>
+<hr class="docutils" />
 <section id="credits">
 <h2>Credits<a class="headerlink" href="#credits" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <section id="lawrence-berkeley-national-laboratory">
 <h3>Lawrence Berkeley National Laboratory<a class="headerlink" href="#lawrence-berkeley-national-laboratory" title="Link to this heading"></a></h3>
 <ul class="simple">
@@ -190,9 +188,9 @@ The total event rate <span class="math notranslate nohighlight">\(\nu\)</span> i
 </ul>
 </section>
 </section>
+<hr class="docutils" />
 <section id="contact">
 <h2>Contact<a class="headerlink" href="#contact" title="Link to this heading"></a></h2>
-<hr class="docutils" />
 <p>Visit our website: https://fair-universe.lbl.gov/</p>
 <p>Email: fair-universe&#64;lbl.gov</p>
 <p>Updates will be announced through fair-universe-announcements google group. <a class="reference external" href="https://groups.google.com/u/0/a/lbl.gov/g/Fair-Universe-Announcements/">Click to join Google Group</a></p>

@@ -12,15 +12,14 @@ class NeuralNetwork:
     This class implements a neural network classifier.
 
     Attributes:
-        model (Sequential): The neural network model.
-        scaler (StandardScaler): The scaler used for feature scaling.
+        * model (Sequential): The neural network model.
+        * scaler (StandardScaler): The scaler used for feature scaling.
 
     Methods:
-        __init__(self, train_data): Initializes the NeuralNetwork object.
-        fit(self, train_data, y_train, weights_train=None): Fits the neural network model to the training data.
-        predict(self, test_data): Predicts the output labels for the test data.
-        save(self, model_name): Saves the trained model and scaler to disk.
-        load(self, model_path): Loads a trained model and scaler from disk.
+        * fit(self, train_data, y_train, weights_train=None): Fits the neural network model to the training data.
+        * predict(self, test_data): Predicts the output labels for the test data.
+        * save(self, model_name): Saves the trained model and scaler to disk.
+        * load(self, model_path): Loads a trained model and scaler from disk.
 
     """
 
@@ -44,9 +43,9 @@ class NeuralNetwork:
         Fits the neural network model to the training data.
 
         Args:
-            train_data (pandas.DataFrame): The input training data.
-            y_train (numpy.ndarray): The target training labels.
-            weights_train (numpy.ndarray, optional): The sample weights for training data.
+            * train_data (pandas.DataFrame): The input training data.
+            * y_train (numpy.ndarray): The target training labels.
+            * weights_train (numpy.ndarray, optional): The sample weights for training data.
 
         Returns:
             None

@@ -49,8 +49,8 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../pages/overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/data.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/evaluation.html">Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/prizes.html">Prizes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pages/starting_kit.html">Starting Kit and Sample Submission</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">HEP-Challenge</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="ingestion_program.html">Ingestion Program</a></li>
@@ -68,6 +68,7 @@
 <li class="toctree-l2"><a class="reference internal" href="scoring_program.html">scoring_program</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../pages/terms.html">Terms and Conditions</a></li>
 </ul>
 
         </div>
@@ -104,14 +105,17 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This class implements a neural network classifier.</p>
 <dl class="simple">
-<dt>Attributes:</dt><dd><p>model (Sequential): The neural network model.
-scaler (StandardScaler): The scaler used for feature scaling.</p>
+<dt>Attributes:</dt><dd><ul class="simple">
+<li><p>model (Sequential): The neural network model.</p></li>
+<li><p>scaler (StandardScaler): The scaler used for feature scaling.</p></li>
+</ul>
 </dd>
-<dt>Methods:</dt><dd><p>__init__(self, train_data): Initializes the NeuralNetwork object.
-fit(self, train_data, y_train, weights_train=None): Fits the neural network model to the training data.
-predict(self, test_data): Predicts the output labels for the test data.
-save(self, model_name): Saves the trained model and scaler to disk.
-load(self, model_path): Loads a trained model and scaler from disk.</p>
+<dt>Methods:</dt><dd><ul class="simple">
+<li><p>fit(self, train_data, y_train, weights_train=None): Fits the neural network model to the training data.</p></li>
+<li><p>predict(self, test_data): Predicts the output labels for the test data.</p></li>
+<li><p>save(self, model_name): Saves the trained model and scaler to disk.</p></li>
+<li><p>load(self, model_path): Loads a trained model and scaler from disk.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -119,9 +123,11 @@ load(self, model_path): Loads a trained model and scaler from disk.</p>
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#neural_network_TF.NeuralNetwork.fit" title="Link to this definition"></a></dt>
 <dd><p>Fits the neural network model to the training data.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><p>train_data (pandas.DataFrame): The input training data.
-y_train (numpy.ndarray): The target training labels.
-weights_train (numpy.ndarray, optional): The sample weights for training data.</p>
+<dt>Args:</dt><dd><ul class="simple">
+<li><p>train_data (pandas.DataFrame): The input training data.</p></li>
+<li><p>y_train (numpy.ndarray): The target training labels.</p></li>
+<li><p>weights_train (numpy.ndarray, optional): The sample weights for training data.</p></li>
+</ul>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
 </dd>
