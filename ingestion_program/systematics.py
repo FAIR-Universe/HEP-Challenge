@@ -274,9 +274,9 @@ def ttbar_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     Apply a scaling to the weight. For ttbar background
 
     Args:
-        weights (array-like): The weights to be scaled
-        detailedlabel (array-like): The detailed labels
-        systBkgNorm (float): The scaling factor
+        * weights (array-like): The weights to be scaled
+        * detailedlabel (array-like): The detailed labels
+        * systBkgNorm (float): The scaling factor
 
     Returns:
         array-like: The scaled weights
@@ -290,10 +290,11 @@ def diboson_bkg_weight_norm(weights, detailedlabel, systBkgNorm):
     Apply a scaling to the weight. For Diboson background
 
     Args:
-        weights (array-like): The weights to be scaled
-        detailedlabel (array-like): The detailed labels
-        systBkgNorm (float): The scaling factor
+        * weights (array-like): The weights to be scaled
+        * detailedlabel (array-like): The detailed labels
+        * systBkgNorm (float): The scaling factor
 
+    
     Returns:
         array-like: The scaled weights
 
@@ -329,11 +330,11 @@ def mom4_manipulate(data, systTauEnergyScale, systJetEnergyScale, soft_met, seed
     Manipulate primary inputs : the PRI_had_pt PRI_jet_leading_pt PRI_jet_subleading_pt and recompute the others values accordingly.
 
     Args:
-        data (pandas.DataFrame): The dataset to be manipulated
-        systTauEnergyScale (float): The factor applied to PRI_had_pt
-        systJetEnergyScale (float): The factor applied to all jet pt
-        soft_met (float): The additional soft MET energy
-        seed (int): The random seed
+        * data (pandas.DataFrame): The dataset to be manipulated
+        * systTauEnergyScale (float): The factor applied to PRI_had_pt
+        * systJetEnergyScale (float): The factor applied to all jet pt
+        * soft_met (float): The additional soft MET energy
+        * seed (int): The random seed
 
     Returns:
         pandas.DataFrame: The manipulated dataset
@@ -455,10 +456,10 @@ def make_unweighted_set(data_set):
 def postprocess(data):
     """
     Select the events with the following conditions:
-    PRI_had_pt > 26
-    PRI_jet_leading_pt > 26
-    PRI_jet_subleading_pt > 26
-    PRI_lep_pt > 20
+    * PRI_had_pt > 26
+    * PRI_jet_leading_pt > 26
+    * PRI_jet_subleading_pt > 26
+    * PRI_lep_pt > 20
 
     This is applied to the dataset after the systematics are applied
 
@@ -493,15 +494,15 @@ def systematics(
     Apply systematics to the dataset
 
     Args:
-        data_set (dict): The dataset to apply systematics to
-        tes (float): The factor applied to PRI_had_pt
-        jes (float): The factor applied to all jet pt
-        soft_met (float): The additional soft MET energy
-        seed (int): The random seed
-        ttbar_scale (float): The scaling factor for ttbar background
-        diboson_scale (float): The scaling factor for diboson background
-        bkg_scale (float): The scaling factor for other backgrounds
-        verbose (int): The verbosity level
+        * data_set (dict): The dataset to apply systematics to
+        * tes (float): The factor applied to PRI_had_pt
+        * jes (float): The factor applied to all jet pt
+        * soft_met (float): The additional soft MET energy
+        * seed (int): The random seed
+        * ttbar_scale (float): The scaling factor for ttbar background
+        * diboson_scale (float): The scaling factor for diboson background
+        * bkg_scale (float): The scaling factor for other backgrounds
+        * verbose (int): The verbosity level
 
     Returns:
         dict: The dataset with applied systematics
@@ -566,12 +567,12 @@ def get_bootstrapped_dataset(
     Generate a bootstrapped dataset
 
     Args:
-        test_set (dict): The original test dataset
-        mu (float): The scaling factor for htautau background
-        seed (int): The random seed
-        ttbar_scale (float): The scaling factor for ttbar background
-        diboson_scale (float): The scaling factor for diboson background
-        bkg_scale (float): The scaling factor for other backgrounds
+        * test_set (dict): The original test dataset
+        * mu (float): The scaling factor for htautau background
+        * seed (int): The random seed
+        * ttbar_scale (float): The scaling factor for ttbar background
+        * diboson_scale (float): The scaling factor for diboson background
+        * bkg_scale (float): The scaling factor for other backgrounds
 
     Returns:
         pandas.DataFrame: The bootstrapped dataset

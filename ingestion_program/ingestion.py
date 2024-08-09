@@ -45,10 +45,10 @@ class Ingestion:
         data (object): The data object.
 
     Attributes:
-        start_time (datetime): The start time of the ingestion process.
-        end_time (datetime): The end time of the ingestion process.
-        model (object): The model object.
-        data (object): The data object.
+        * start_time (datetime): The start time of the ingestion process.
+        * end_time (datetime): The end time of the ingestion process.
+        * model (object): The model object.
+        * data (object): The data object.
     """
 
     def __init__(self, data=None):

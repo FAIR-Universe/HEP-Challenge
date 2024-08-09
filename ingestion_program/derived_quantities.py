@@ -120,7 +120,8 @@ def f_DER_mass_vis(data):
 def f_DER_pt_h(data):
     """
     Calculate the transverse momentum of the hadronic system
-    Parameters: data (dataframe)
+    Parameters: 
+        data (dataframe)
     """
 
     data["DER_pt_h"] = sqrt(
