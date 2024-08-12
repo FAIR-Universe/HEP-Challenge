@@ -67,63 +67,9 @@ class Model:
         Returns:
             None
         """
-        self.train_set = (
-            get_train_set  # train_set is a dictionary with data, labels, and weights
-        )
+        self.get_train_set = get_train_set()
         self.systematics = systematics
-
-        del self.train_set["settings"]
-
-        print("Full data: ", self.train_set["data"].shape)
-        print("Full Labels: ", self.train_set["labels"].shape)
-        print("Full Weights: ", self.train_set["weights"].shape)
-        print(
-            "sum_signal_weights: ",
-            self.train_set["weights"][self.train_set["labels"] == 1].sum(),
-        )
-        print(
-            "sum_bkg_weights: ",
-            self.train_set["weights"][self.train_set["labels"] == 0].sum(),
-        )
-        print(" \n ")
-
         self.re_train = True
-
-        if XGBOOST:
-            from boosted_decision_tree import BoostedDecisionTree
-
-            self.model = BoostedDecisionTree()
-            module_file = "model_XGB.json"
-            if os.path.exists(module_file):
-                self.model.load(module_file)
-                self.re_train = False  # if model is already trained, no need to retrain
-
-            self.name = "model_XGB"
-
-            print("Model is BDT")
-        elif TENSORFLOW:
-            from neural_network_TF import NeuralNetwork
-
-            module_file = "./model_tf.keras"
-            self.model = NeuralNetwork(train_data=self.train_set["data"])
-            if os.path.exists(module_file):
-                self.model.load(module_file)
-                self.re_train = False  # if model is already trained, no need to retrain
-
-            self.name = "model_tf"
-            print("Model is TF NN")
-
-        elif TORCH:
-            from neural_network_torch import NeuralNetwork
-
-            module_file = "./model_torch.pt"
-            self.model = NeuralNetwork(train_data=self.train_set["data"])
-            if os.path.exists(module_file):
-                self.model.load(module_file)
-                self.re_train = False  # if model is already trained, no need to retrain
-
-            self.name = "model_torch"
-            print("Model is Torch NN")
 
     def fit(self):
         """
@@ -142,9 +88,62 @@ class Model:
             None
         """
 
+        if XGBOOST:
+            from boosted_decision_tree import BoostedDecisionTree
+
+            self.model = BoostedDecisionTree()
+            module_file = "model_XGB.json"
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_XGB"
+
+            print("Model is BDT")
+        elif TENSORFLOW:
+            from neural_network_TF import NeuralNetwork
+
+            module_file = "./model_tf.keras"
+            self.model = NeuralNetwork(train_data=train_set["data"])
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_tf"
+            print("Model is TF NN")
+
+        elif TORCH:
+            from neural_network_torch import NeuralNetwork
+
+            module_file = "./model_torch.pt"
+            self.model = NeuralNetwork(train_data=train_set["data"])
+            if os.path.exists(module_file):
+                self.model.load(module_file)
+                self.re_train = False  # if model is already trained, no need to retrain
+
+            self.name = "model_torch"
+            print("Model is Torch NN")
+
         if self.re_train:
 
-            balanced_set = self.balance_set()
+            train_set = self.get_train_set() # train_set is a dictionary with data, labels, and weights
+
+            del train_set["settings"]
+
+            print("Full data: ", train_set["data"].shape)
+            print("Full Labels: ", train_set["labels"].shape)
+            print("Full Weights: ", train_set["weights"].shape)
+            print(
+                "sum_signal_weights: ",
+                train_set["weights"][train_set["labels"] == 1].sum(),
+            )
+            print(
+                "sum_bkg_weights: ",
+                train_set["weights"][train_set["labels"] == 0].sum(),
+            )
+            print(" \n ")
+
+            balanced_set = self.balance_set(train_set)
             self.model.fit(
                 balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
             )
@@ -156,39 +155,19 @@ class Model:
             with open(saved_info_file, "rb") as f:
                 self.saved_info = pickle.load(f)
         else:
-            self.saved_info = calculate_saved_info(self.model, self.train_set)
+            self.saved_info = calculate_saved_info(self.model, train_set)
             with open(saved_info_file, "wb") as f:
                 pickle.dump(self.saved_info, f)
 
-        train_score = self.model.predict(self.train_set["data"])
+        train_score = self.model.predict(train_set["data"])
         train_results = compute_mu(
-            train_score, self.train_set["weights"], self.saved_info
+            train_score, train_set["weights"], self.saved_info
         )
 
         print("Train Results: ")
         for key in train_results.keys():
             print("\t", key, " : ", train_results[key])
 
-    def balance_set(self):
-        balanced_set = self.train_set.copy()
-
-        weights_train = self.train_set["weights"].copy()
-        train_labels = self.train_set["labels"].copy()
-        class_weights_train = (
-            weights_train[train_labels == 0].sum(),
-            weights_train[train_labels == 1].sum(),
-        )
-
-        for i in range(len(class_weights_train)):  # loop on B then S target
-            # training dataset: equalize number of background and signal
-            weights_train[train_labels == i] *= (
-                max(class_weights_train) / class_weights_train[i]
-            )
-            # test dataset : increase test weight to compensate for sampling
-
-        balanced_set["weights"] = weights_train
-
-        return balanced_set
 
     def predict(self, test_set):
         """
@@ -222,3 +201,24 @@ class Model:
         }
 
         return result
+
+def balance_set(train_set):
+    balanced_set = train_set.copy()
+
+    weights_train = train_set["weights"].copy()
+    train_labels = train_set["labels"].copy()
+    class_weights_train = (
+        weights_train[train_labels == 0].sum(),
+        weights_train[train_labels == 1].sum(),
+    )
+
+    for i in range(len(class_weights_train)):  # loop on B then S target
+        # training dataset: equalize number of background and signal
+        weights_train[train_labels == i] *= (
+            max(class_weights_train) / class_weights_train[i]
+        )
+        # test dataset : increase test weight to compensate for sampling
+
+    balanced_set["weights"] = weights_train
+
+    return balanced_set
