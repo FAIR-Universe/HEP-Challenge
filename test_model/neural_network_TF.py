@@ -1,11 +1,12 @@
-import numpy as np
-import pandas as pd
+
+import os
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 import pickle
 
+current_dir = os.path.dirname(__file__)
 
 class NeuralNetwork:
     """
@@ -24,11 +25,13 @@ class NeuralNetwork:
 
     """
 
-    def __init__(self, train_data):
+    def __init__(self):
+        self.name = "model_tf"
+        self.model = None
+    
+    def init_model(self, train_data = None):
         self.model = Sequential()
-
         n_dim = train_data.shape[1]
-
         self.model.add(Dense(10, input_dim=n_dim, activation="relu"))
         self.model.add(Dense(10, activation="relu"))
         self.model.add(Dense(1, activation="sigmoid"))
@@ -51,6 +54,9 @@ class NeuralNetwork:
             None
 
         """
+        if self.model is None:
+            self.init_model(train_data)
+        
         self.scaler.fit_transform(train_data)
         X_train = self.scaler.transform(train_data)
         self.model.fit(X_train, y_train, sample_weight=weights_train, epochs=2, verbose=2)
@@ -69,7 +75,7 @@ class NeuralNetwork:
         test_data = self.scaler.transform(test_data)
         return self.model.predict(test_data).flatten().ravel()
     
-    def save(self, model_name):
+    def save(self):
         """
         Saves the trained model and scaler to disk.
 
@@ -80,10 +86,11 @@ class NeuralNetwork:
             None
 
         """
-        model_path = model_name + ".keras"
+        model_path = current_dir + "/model_tf.keras"
+
         self.model.save(model_path)
         
-        scaler_path = model_name + ".pkl"
+        scaler_path = current_dir + "/scaler_tf.pkl"
         pickle.dump(self.scaler, open(scaler_path, "wb"))
         
     def load(self, model_path):
@@ -98,6 +105,7 @@ class NeuralNetwork:
 
         """
         self.model = load_model(model_path)
-        self.scaler = pickle.load(open(model_path.replace(".keras", ".pkl"), "rb"))
+        scalar_path = current_dir + "/scaler_tf.pkl"
+        self.scaler = pickle.load(open(scalar_path, "rb"))
         
         return self.model

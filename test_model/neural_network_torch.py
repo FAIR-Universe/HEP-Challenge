@@ -1,12 +1,11 @@
-import numpy as np
-import pandas as pd
+import os
 import torch
 from sklearn.preprocessing import StandardScaler
-
 import torch.nn as nn
 import torch.optim as optim
 import pickle
 
+current_dir = os.path.dirname(__file__)
 
 class NeuralNetwork(nn.Module):
     """
@@ -24,12 +23,9 @@ class NeuralNetwork(nn.Module):
         load(self, model_path): Loads a trained model and scaler from disk.
 
     """    
-    def __init__(self, train_data):        
+    def __init__(self):        
         super(NeuralNetwork, self).__init__()
-
-        n_dim = train_data.shape[1]
-
-        self.fc1 = nn.Linear(n_dim, 100)
+        self.name = "model_torch"
         self.fc2 = nn.Linear(100, 100)
         self.fc3 = nn.Linear(100, 1)
         self.activation = nn.ReLU()
@@ -58,6 +54,8 @@ class NeuralNetwork(nn.Module):
             None
 
         """
+        self.fc1 = nn.Linear(train_data.shape[1], 100)
+
         self.scaler.fit_transform(train_data)
         X_train = self.scaler.transform(train_data)
 
@@ -71,7 +69,7 @@ class NeuralNetwork(nn.Module):
         def weighted_loss(y, y_hat, w):
             return (criterion(y, y_hat) * w).mean()
 
-        epochs = 1
+        epochs = 10
         for epoch in range(epochs):
             optimizer.zero_grad()
             outputs = self.forward(X_train).ravel()
@@ -96,7 +94,7 @@ class NeuralNetwork(nn.Module):
         outputs = self.forward(test_data)
         return outputs.detach().numpy()
 
-    def save(self, model_name):
+    def save(self):
         """
         Saves the trained model and scaler to disk.
 
@@ -107,10 +105,11 @@ class NeuralNetwork(nn.Module):
             None
 
         """        
-        model_path = model_name + ".pt"
+        model_path = current_dir +  "/model_torch.pt"
+
         torch.save(self.state_dict(), model_path)
         
-        scaler_path = model_name + ".pkl"
+        scaler_path = current_dir + "/scaler_torch.pkl"
         pickle.dump(self.scaler, open(scaler_path, "wb"))
 
     def load(self, model_path):
@@ -124,7 +123,13 @@ class NeuralNetwork(nn.Module):
             NeuralNetwork: The loaded model.
 
         """
+        state_dict = torch.load(model_path)
+        
+        input_size = state_dict['fc1.weight'].shape[1]
+        self.fc1 = nn.Linear(input_size, 100)
+        
         self.load_state_dict(torch.load(model_path))
-        self.scaler = pickle.load(open(model_path.replace(".pt", ".pkl"), "rb"))
+        scaler_path = current_dir + "/scaler_torch.pkl"
+        self.scaler = pickle.load(open(scaler_path, "rb"))
 
         return self
