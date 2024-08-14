@@ -23,7 +23,7 @@ python3 run_ingestion.py \
 If you have GPU you can use the `--parallel` flag to parallelize the pseudo experiments.
 
 For more information on flags run `python3 run_ingestion.py -h`
-For more information on the workings of the ingestion program check out our [whitepaper](https://example.com/whitepaper)
+For more information on the workings of the ingestion program check out our [whitepaper](https://fair-universe.lbl.gov/whitepaper.pdf)
 
 
 

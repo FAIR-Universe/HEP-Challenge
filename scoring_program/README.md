@@ -21,6 +21,6 @@ The program will output the calculated scores, including
 
 The detailed coverage plots will be available in the [detailed_results.html](/scoring_output/detailed_results.html)
 
-For more information on the workings of the scoring program check out our [whitepaper](https://example.com/whitepaper)
+For more information on the workings of the scoring program check out our [whitepaper](https://fair-universe.lbl.gov/whitepaper.pdf)
 
 
