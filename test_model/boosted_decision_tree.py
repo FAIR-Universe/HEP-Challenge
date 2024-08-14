@@ -1,8 +1,9 @@
-import numpy as np
-import pandas as pd
+import os
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 import pickle
+
+current_dir = os.path.dirname(__file__)
 
 
 class BoostedDecisionTree:
@@ -24,6 +25,7 @@ class BoostedDecisionTree:
 
     def __init__(self):
         self.model = XGBClassifier()
+        self.name = "model_XGB"
         self.scaler = StandardScaler()
 
     def fit(self, train_data, labels, weights=None):
@@ -55,7 +57,7 @@ class BoostedDecisionTree:
         test_data = self.scaler.transform(test_data)
         return self.model.predict_proba(test_data)[:, 1]
 
-    def save(self, model_name):
+    def save(self):
         """
         Saves the model and scaler to disk.
 
@@ -63,10 +65,10 @@ class BoostedDecisionTree:
             model_name (str): The name of the model file.
 
         """
-        model_path = model_name + ".json"
+        model_path = current_dir + "/model_XGB.json"
         self.model.save_model(model_path)
 
-        scaler_path = model_name + ".pkl"
+        scaler_path = current_dir + "/scaler_XGB.pkl"
         pickle.dump(self.scaler, open(scaler_path, "wb"))
 
     def load(self, model_path):
@@ -81,6 +83,7 @@ class BoostedDecisionTree:
 
         """
         self.model.load_model(model_path)
-        self.scaler = pickle.load(open(model_path.replace(".json", ".pkl"), "rb"))
+        scaler_path = current_dir + "/scaler_XGB.pkl"
+        self.scaler = pickle.load(open(scaler_path, "rb"))
         
         return self.model
