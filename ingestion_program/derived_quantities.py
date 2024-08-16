@@ -291,9 +291,16 @@ def f_DER_lep_eta_centrality(data):
 
     data["difference"] = (data.PRI_jet_leading_eta - data.PRI_jet_subleading_eta) ** 2
     data["moyenne"] = (data.PRI_jet_leading_eta + data.PRI_jet_subleading_eta) / 2
+    
+    epsilon = 0.0001
+    mask = data["difference"] == 0.0
 
     data["DER_lep_eta_centrality"] = exp(
         -4 / (data.difference) * ((data.PRI_lep_eta - data.moyenne) ** 2)
+    ) * (data.PRI_n_jets >= 2) - 25 * (data.PRI_n_jets <= 1)
+    
+    data.loc[mask, "DER_lep_eta_centrality"] = exp(
+        -4 / (data.difference+epsilon) * ((data.PRI_lep_eta - data.moyenne) ** 2)
     ) * (data.PRI_n_jets >= 2) - 25 * (data.PRI_n_jets <= 1)
 
     del data["difference"]
