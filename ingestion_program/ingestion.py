@@ -184,11 +184,11 @@ class Ingestion:
             random_state = np.random.RandomState(seed)
 
             if dict_systematics["tes"]:
-                tes = np.clip(random_state.normal(loc=1.0, scale=0.001), a_min=0.99, a_max=1.01)
+                tes = np.clip(random_state.normal(loc=1.0, scale=0.01), a_min=0.9, a_max=1.1)
             else:
                 tes = 1.0
             if dict_systematics["jes"]:
-                jes = np.clip(random_state.normal(loc=1.0, scale=0.001), a_min=0.99, a_max=1.01)
+                jes = np.clip(random_state.normal(loc=1.0, scale=0.01), a_min=0.9, a_max=1.1)
             else:
                 jes = 1.0
             if dict_systematics["soft_met"]:
