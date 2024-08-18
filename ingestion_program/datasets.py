@@ -70,6 +70,8 @@ class Data:
         # read train weights
         with open(train_weights_file) as f:
             train_weights = np.array(f.read().splitlines(), dtype=float)
+            # reduce weight by 4 in order to get 9 fb^-1
+            train_weights = train_weights / 4
 
         # read train process flags
         with open(train_detailed_labels_file) as f:
@@ -106,6 +108,8 @@ class Data:
 
             test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
             test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+            # reduce weight by 4 in order to get 9 fb^-1
+            test_set[key]["weights"] = test_set[key]["weights"] / 4
 
         self.__test_set = test_set
 
