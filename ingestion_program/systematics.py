@@ -469,11 +469,26 @@ def postprocess(data):
     Returns:
         pandas.DataFrame: The postprocessed dataset
     """
+    # apply higher threshold on had pt (dropping events)
     data = data.drop(data[data.PRI_had_pt < 26].index)
+
+    # apply higher threshold on leading jet pt (dropping events)
     data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
-    data = data.drop(
-        data[(data.PRI_jet_subleading_pt < 26) & (data.PRI_n_jets > 1)].index
-    )
+
+    #need to reindex
+    data.reset_index(drop=True, inplace=True)
+
+
+    # if subleading jet pt below high threshold, do so it never existed
+    mask = data['PRI_jet_subleading_pt'].between(0, 26)
+    data.loc[mask, 'PRI_jet_all_pt'] -= data['PRI_jet_subleading_pt']
+    data.loc[mask, 'PRI_jet_subleading_pt'] = -25
+    data.loc[mask, 'PRI_jet_subleading_eta'] = -25
+    data.loc[mask, 'PRI_jet_subleading_phi'] = -25
+    data.loc[mask, 'PRI_n_jets'] -= 1
+
+
+    # apply low threshold on lepton pt (does nothing)
     data = data.drop(data[data.PRI_lep_pt < 20].index)
 
     return data
@@ -507,7 +522,6 @@ def systematics(
     Returns:
         dict: The dataset with applied systematics
     """
-
     data_set_new = data_set.copy()
 
     if "weights" in data_set_new.keys():
@@ -530,7 +544,9 @@ def systematics(
 
     if verbose > 0:
         print("Tau energy rescaling :", tes)
-    data = mom4_manipulate(
+
+    # modify primary features according to tes, jes softmet    
+    data_syst = mom4_manipulate(
         data=data_set["data"].copy(),
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
@@ -538,18 +554,29 @@ def systematics(
         seed=seed,
     )
 
-    df = DER_data(data)
+    
+# add back auxilliary columns label, weight, detailed label in a dataframe
+# if events are removed, they should also be removed from weights, label,detailedlabel
+
     for key in data_set_new.keys():
-        if key is not "data":
-            df[key] = data_set_new[key]
+        if key not in ["data","settings"]:
+            data_syst[key] = data_set_new[key]
 
-    data_syst = postprocess(df)
+    # deal with thresholds on had pt and jet pt
+    # possibly remove sub leading jet
+    # possibly remove events
+    data_syst = postprocess(data_syst)
 
+    # build resulting dictionary
+    #dict
     data_syst_set = {}
     for key in data_set_new.keys():
-        if key is not "data":
+        if key not in ["data","settings"]:
             data_syst_set[key] = data_syst.pop(key)
-    data_syst_set["data"] = data_syst
+    # compute DERived features        
+    data_syst_set["data"] = DER_data(data_syst)
+    if "settings" in data_set_new.keys():
+        data_syst_set["settings"] = data_set_new["settings"]
 
     return data_syst_set
 
