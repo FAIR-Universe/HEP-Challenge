@@ -540,14 +540,14 @@ def systematics(
 
     df = DER_data(data)
     for key in data_set_new.keys():
-        if key is not "data":
+        if key != "data":
             df[key] = data_set_new[key]
 
     data_syst = postprocess(df)
 
     data_syst_set = {}
     for key in data_set_new.keys():
-        if key is not "data":
+        if key != "data":
             data_syst_set[key] = data_syst.pop(key)
     data_syst_set["data"] = data_syst
 

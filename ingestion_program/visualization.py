@@ -178,10 +178,10 @@ class Dataset_visualise:
         )  # Change alpha value here
         ax.add_legend(title="Legend", labels=["Signal", "Background"], fontsize=12)
 
-        legend = ax._legend
-        for lh in legend.legendHandles:
-            lh.set_alpha(0.5)
-            lh._sizes = [10]
+        legend = ax.legend
+        for line in legend.get_lines():  # For lines
+            line.set_alpha(0.5)
+            line.set_linewidth(1.5)
 
         plt.rcParams["figure.facecolor"] = "w"  # Set the figure facecolor to white
         ax.figure.suptitle("Pair plots of features in" + self.name)
