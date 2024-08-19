@@ -94,7 +94,7 @@ class Model:
             self.model.load(module_file)
             self.re_train = False
             
-        except FileNotFoundError :
+        except:
             print("Model not found, retraining the model")
             
 
