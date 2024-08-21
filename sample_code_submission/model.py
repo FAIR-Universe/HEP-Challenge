@@ -56,7 +56,7 @@ class Model:
 
         print("Model is ", self.name)
 
-        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=5)
+        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=25)
 
         saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
         if os.path.exists(saved_info_file):
