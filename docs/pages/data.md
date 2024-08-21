@@ -7,10 +7,10 @@ The tabular dataset is created using the particle physics simulation tools Pythi
 4. ttbar background ($t \bar{t}$)
 
 
-### Higgs Signal: 
+## Higgs Signal: 
 The Higgs bosons are produced with all possible production modes and decay into two tau leptons. The tau leptons are further allowed to decay into all possible final states, but only final state with one lepton (electron or muon) and one hadron tau decay are kept. 
 
-### Z boson Background: 
+## Z boson Background: 
 Only background events coming from $Z$ bosons are included in this challenge. While simulating the process, interference effects between $Z$ bosons and photons are included. Similar to signal events, only the tau-tau decay mode of the $Z$ boson is included in the dataset.
 
  
@@ -32,44 +32,60 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 >
 
 
-
 ---
+## Features in the data
+### Prefix-less variables
+ Weight, Label,DetailedLabel, have a special role and should **NOT** be used as
+regular features for the model:
 
-**The following are the features in this data set.**
+| Variable                     | Description                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| Weight                       | The event weight $w_i$.                                                                                  |
+| Label                        | The event label $y_i \in \{1,0\}$ (1 for signal, 0 for background).                   |
+| Detailed Label                        | The event detailed label $\in\{ htautau, ztautau, diboson, ttbar \}$                  |
 
-|     | Variable                     | Description                                                                                       |
-| --- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| 1.  | EventId                      | A unique integer identifier of the event. {should **NOT** be used for training} |
-| 2.  | DER_mass_transverse_met_lep  | The transverse mass between the missing transverse energy and the lepton.                         |
-| 3.  | DER_mass_vis                 | The invariant mass of the hadronic tau and the lepton.                                           |
-| 4.  | DER_pt_h                     | The modulus of the vector sum of the transverse momentum of the hadronic tau, the lepton and the missing transverse energy vector. |
-| 5.  | DER_deltaeta_jet_jet         | The absolute value of the pseudorapidity separation between the two jets (undefined if PRI_jet_num ≤ 1). |
-| 6.  | DER_mass_jet_jet             | The invariant mass of the two jets (undefined if PRI_jet_num ≤ 1).                                |
-| 7.  | DER_prodeta_jet_jet          | The product of the pseudorapidities of the two jets (undefined if PRI_jet_num ≤ 1).              |
-| 8.  | DER_deltar_had_lep           | The R separation between the hadronic tau and the lepton.                                        |
-| 9. | DER_pt_tot                   | The modulus of the vector sum of the missing transverse momenta and the transverse momenta of the hadronic tau, the lepton, the leading jet (if PRI_jet_num ≥ 1) and the subleading jet (if PRI_jet_num = 2) (but not of any additional jets). |
-| 10. | DER_sum_pt                   | The sum of the moduli of the transverse momenta of the hadronic tau, the lepton, the leading jet (if PRI_jet_num ≥ 1) and the subleading jet (if PRI_jet_num = 2) and the other jets (if PRI_jet_num = 3). |
-| 11. | DER_pt_ratio_lep_tau         | The ratio of the transverse momenta of the lepton and the hadronic tau.                           |
-| 12. | DER_met_phi_centrality       | The centrality of the azimuthal angle of the missing transverse energy vector w.r.t. the hadronic tau and the lepton. |
-| 13. | DER_lep_eta_centrality       | The centrality of the pseudorapidity of the lepton w.r.t. the two jets (undefined if PRI_jet_num ≤ 1). |
-| 14. | PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the hadronic tau.                          |
-| 15. | PRI_had_eta                  | The pseudorapidity $\eta$ of the hadronic tau.                                                    |
-| 16. | PRI_had_phi                  | The azimuth angle $\phi$ of the hadronic tau.                                                     |
-| 17. | PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the lepton (electron or muon).             |
-| 18. | PRI_lep_eta                  | The pseudorapidity $\eta$ of the lepton.                                                           |
-| 19. | PRI_lep_phi                  | The azimuth angle $\phi$ of the lepton.                                                            |
-| 20. | PRI_met                      | The missing transverse energy ${E}^{miss}_{T}$.                                    |
-| 21. | PRI_met_phi                  | The azimuth angle $\phi$ of the missing transverse energy.                                        |
-| 22. | PRI_jet_num                  | The number of jets (integer with a value of 0, 1, 2 or 3; possible larger values have been capped at 3). |
-| 23. | PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
-| 24. | PRI_jet_leading_eta          | The pseudorapidity $\eta$ of the leading jet (undefined if PRI_jet_num = 0).                     |
-| 25. | PRI_jet_leading_phi          | The azimuth angle $\phi$ of the leading jet (undefined if PRI_jet_num = 0).                      |
-| 26. | PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
-| 27. | PRI_jet_subleading_eta       | The pseudorapidity $\eta$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                  |
-| 28. | PRI_jet_subleading_phi       | The azimuth angle $\phi$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                   |
-| 29. | PRI_jet_all_pt               | The scalar sum of the transverse momentum of all the jets of the events.                          |
-| 30. | Weight                       | The event weight $w_i$.                                                                                  |
-| 31. | Label                        | The event label $y_i \in \{1,0\}$ (1 for signal, 0 for background). {should **NOT** be used as a  training feature}                    |
+### Primary Features 
+The variables prefixed with PRI (for PRImitives) are “raw” quantities about the bunch collision as
+measured by the detector, essentially parameters of the momenta of particles.
+
+| Variable                     | Description                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| PRI_had_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the hadronic tau.                          |
+| PRI_had_eta                  | The pseudorapidity $\eta$ of the hadronic tau.                                                    |
+| PRI_had_phi                  | The azimuth angle $\phi$ of the hadronic tau.                                                     |
+| PRI_lep_pt                   | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the lepton (electron or muon).             |
+| PRI_lep_eta                  | The pseudorapidity $\eta$ of the lepton.                                                           |
+| PRI_lep_phi                  | The azimuth angle $\phi$ of the lepton.                                                            |
+| PRI_met                      | The missing transverse energy ${E}^{miss}_{T}$.                                    |
+| PRI_met_phi                  | The azimuth angle $\phi$ of the missing transverse energy.                                        |
+| PRI_jet_num                  | The number of jets (integer with a value of 0, 1, 2 or 3; possible larger values have been capped at 3). |
+| PRI_jet_leading_pt           | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is the jet with the largest transverse momentum (undefined if PRI_jet_num = 0). |
+| PRI_jet_leading_eta          | The pseudorapidity $\eta$ of the leading jet (undefined if PRI_jet_num = 0).                     |
+| PRI_jet_leading_phi          | The azimuth angle $\phi$ of the leading jet (undefined if PRI_jet_num = 0).                      |
+| PRI_jet_subleading_pt        | The transverse momentum $\sqrt{{p_x}^2 + {p_y}^2}$ of the leading jet, that is, the jet with the second largest transverse momentum (undefined if PRI_jet_num ≤ 1). |
+| PRI_jet_subleading_eta       | The pseudorapidity $\eta$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                  |
+| PRI_jet_subleading_phi       | The azimuth angle $\phi$ of the subleading jet (undefined if PRI_jet_num ≤ 1).                   |
+| PRI_jet_all_pt               | The scalar sum of the transverse momentum of all the jets of the events.                          |
+
+### Derived Features
+These variables are derived from the primary varibales with the help of `derived_quantities.py`. When the test sets are made they inherently have derived quantities. (train set doesnt have derived quantities as they change after systematics is applied. Hence partipants are adviced to use systematics function for this.)
+
+| Variable                     |      Description                                               |
+| ---------------------------- | -------------------------------------------------------------- |
+| DER_mass_transverse_met_lep  | The transverse mass between the missing transverse energy and the lepton.                         |
+| DER_mass_vis                 | The invariant mass of the hadronic tau and the lepton.                                           |
+| DER_pt_h                     | The modulus of the vector sum of the transverse momentum of the hadronic tau, the lepton and the missing transverse energy vector. |
+| DER_deltaeta_jet_jet         | The absolute value of the pseudorapidity separation between the two jets (undefined if PRI_jet_num ≤ 1). |
+| DER_mass_jet_jet             | The invariant mass of the two jets (undefined if PRI_jet_num ≤ 1).                                |
+| DER_prodeta_jet_jet          | The product of the pseudorapidities of the two jets (undefined if PRI_jet_num ≤ 1).              |
+| DER_deltar_had_lep           | The R separation between the hadronic tau and the lepton.                                        |
+| DER_pt_tot                   | The modulus of the vector sum of the missing transverse momenta and the transverse momenta of the hadronic tau, the lepton, the leading jet (if PRI_jet_num ≥ 1) and the subleading jet (if PRI_jet_num = 2) (but not of any additional jets). |
+| DER_sum_pt                   | The sum of the moduli of the transverse momenta of the hadronic tau, the lepton, the leading jet (if PRI_jet_num ≥ 1) and the subleading jet (if PRI_jet_num = 2) and the other jets (if PRI_jet_num = 3). |
+| DER_pt_ratio_lep_tau         | The ratio of the transverse momenta of the lepton and the hadronic tau.                           |
+| DER_met_phi_centrality       | The centrality of the azimuthal angle of the missing transverse energy vector w.r.t. the hadronic tau and the lepton. |
+| DER_lep_eta_centrality       | The centrality of the pseudorapidity of the lepton w.r.t. the two jets (undefined if PRI_jet_num ≤ 1). |
+
+
 
 ### Preselection Cuts
 
@@ -91,9 +107,9 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 ## How to get Public Data?
 
 - Go to the "Files" tab
-- Download the "Neurpis_Public_data_26_07_2024_11X"
+- Download the "Neurpis_Public_data_07_08_2024"
 
 or use the following command to download using terminal
 ```
-wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/d81b6937-3ad5-45a2-b8d9-b78b2e7879d1/
+wget -O Fair-Universe-Public-Data.zip https://www.codabench.org/datasets/download/12182844-b732-48f8-b965-3deea88fdff9
 ```
