@@ -611,14 +611,19 @@ def get_bootstrapped_dataset(
         "htautau": 1.0,
     }
 
+    if bkg_scale is not None:
+        bkg_scale_ = bkg_scale
+    else:
+        bkg_scale_ = 1.0
+
     if ttbar_scale is not None:
-        bkg_norm["ttbar"] = ttbar_scale * bkg_scale
+        bkg_norm["ttbar"] = ttbar_scale * bkg_scale_
 
     if diboson_scale is not None:
-        bkg_norm["diboson"] = diboson_scale * bkg_scale
+        bkg_norm["diboson"] = diboson_scale * bkg_scale_
 
     if bkg_scale is not None:
-        bkg_norm["ztautau"] = bkg_scale
+        bkg_norm["ztautau"] = bkg_scale_
 
     bkg_norm["htautau"] = mu
 
