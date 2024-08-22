@@ -24,11 +24,8 @@ Only background events coming from $Z$ bosons are included in this challenge. Wh
 >
 > $ w = \frac{\textrm{Cross-Section} ~ \times ~ \textrm{Luminosity}}{\textrm{Total number of generated events}} $
 >
-> The challenge is considering a scenario of analyzing $36 ~\textrm{fb} ^{-1}$ of proton-proton collision data collected by the ATLAS experiment during the Run-II phase (2015-2018) of the LHC.
+> The challenge is considering a scenario of analyzing proton-proton collision data of $10 ~\textrm{fb} ^{-1}$ luminosity collected by the ATLAS experiment.
 >   
-> Event weights are defined as:
->
-> $ w = \frac{\textrm{Cross-Section} ~ \times ~ \textrm{Luminosity}}{\textrm{Total number of generated events}} $
 >
 
 
