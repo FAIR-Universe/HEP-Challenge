@@ -471,13 +471,13 @@ def postprocess(data):
     """
     # apply higher threshold on had pt (dropping events)
     data = data.drop(data[data.PRI_had_pt < 26].index)
-
-    # apply higher threshold on leading jet pt (dropping events)
-    data = data.drop(data[(data.PRI_jet_leading_pt < 26) & (data.PRI_n_jets > 0)].index)
-
+    
     #need to reindex
     data.reset_index(drop=True, inplace=True)
 
+    # apply threshold on leading and subleading jets if they exist
+    # note that it is assumed that the systematics transformation is monotonous in pt
+    # so that leading and subleading jet should never be swapped
 
     # if subleading jet pt below high threshold, do so it never existed
     mask = data['PRI_jet_subleading_pt'].between(0, 26)
@@ -486,6 +486,15 @@ def postprocess(data):
     data.loc[mask, 'PRI_jet_subleading_eta'] = -25
     data.loc[mask, 'PRI_jet_subleading_phi'] = -25
     data.loc[mask, 'PRI_n_jets'] -= 1
+
+    # if leading jet pt below high threshold, do so it never existed
+    mask = data['PRI_jet_leading_pt'].between(0, 26)
+    data.loc[mask, 'PRI_jet_all_pt'] -= data['PRI_jet_leading_pt']
+    data.loc[mask, 'PRI_jet_leading_pt'] = -25
+    data.loc[mask, 'PRI_jet_leading_eta'] = -25
+    data.loc[mask, 'PRI_jet_leading_phi'] = -25
+    data.loc[mask, 'PRI_n_jets'] -= 1
+
 
 
     # apply low threshold on lepton pt (does nothing)
