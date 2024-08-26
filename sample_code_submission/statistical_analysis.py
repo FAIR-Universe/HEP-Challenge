@@ -26,8 +26,8 @@ class StatisticalAnalysis:
         syst_settings (dict): Dictionary containing the systematic settings.
         alpha_ranges (dict): Dictionary containing the alpha ranges for each systematic parameter.
         holdout_set (dict): Dictionary containing holdout set data and labels.
-        fit_function_s (list): List of lists containing the fit functions for signal events.
-        fit_function_b (list): List of lists containing the fit functions for background events.
+        fit_function_s (dict): Dictionary of lists containing the fit functions for signal events.
+        fit_function_b (dict): Dictionary of lists containing the fit functions for background events.
         saved_info (dict): Dictionary containing the saved information for mu calculation.
 
     Methods:
@@ -45,11 +45,11 @@ class StatisticalAnalysis:
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
         self.syst_settings = {
-            # 'tes': 1.0,
-            # 'bkg_scale': 1.0,
-            # 'jes': 1.0,
-            # 'soft_met': 0.0,
-            # 'ttbar_scale': 1.0,
+            'tes': 1.0,
+            'bkg_scale': 1.0,
+            'jes': 1.0,
+            'soft_met': 0.0,
+            'ttbar_scale': 1.0,
             'diboson_scale': 1.0,
         }
 
@@ -95,8 +95,12 @@ class StatisticalAnalysis:
             'jes': 1.0,
             'soft_met': 0.0,
             'ttbar_scale': 1.0,
-            # 'diboson_scale': 1.0,
+            'diboson_scale': 1.0,
         }
+
+        self.run_syst = None
+        self.fit_function_s = {k: [] for k in self.syst_settings.keys()}
+        self.fit_function_b = {k: [] for k in self.syst_settings.keys()}
 
     def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
         """
@@ -121,25 +125,35 @@ class StatisticalAnalysis:
 
         def combined_fit_function_s(alpha):
             combined_function_s = np.zeros(self.bins)
-            for j in range(len(alpha)):
+
+            if self.run_syst is not None:
+                alpha_ = {self.run_syst: alpha[self.run_syst]}
+            else:
+                alpha_ = alpha
+
+            for syst, value in alpha_.items():
                 combined_function_s_bin = np.zeros(self.bins)
                 for i in range(self.bins):
-                    combined_function_s_bin[i] = self.fit_function_s[j][i](alpha[j])
+                    combined_function_s_bin[i] = self.fit_function_s[syst][i](value)
                 combined_function_s += combined_function_s_bin
 
-                # print(f"[*][signal] - combined_function_s: {combined_function_s}")
-            return combined_function_s / len(self.syst_settings.keys())
+            return combined_function_s / len(alpha_.keys())
 
         def combined_fit_function_b(alpha):
             combined_function_b = np.zeros(self.bins)
-            for j in range(len(alpha)):
+
+            if self.run_syst is not None:
+                alpha_ = {self.run_syst: alpha[self.run_syst]}
+            else:
+                alpha_ = alpha
+
+            for syst, value in alpha_.items():
                 combined_function_b_bin = np.zeros(self.bins)
                 for i in range(self.bins):
-                    combined_function_b_bin[i] = self.fit_function_b[j][i](alpha[j])
+                    combined_function_b_bin[i] = self.fit_function_b[syst][i](value)
                 combined_function_b += combined_function_b_bin
 
-                # print(f"[*][background] - combined_function_b: {combined_function_b}")
-            return combined_function_b / len(self.syst_settings.keys())
+            return combined_function_b / len(alpha_.keys())
 
         def sigma_asimov(mu, alpha):
             return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
@@ -172,7 +186,6 @@ class StatisticalAnalysis:
                 'ttbar_scale': ttbar_scale,
                 'diboson_scale': diboson_scale,
             }
-            alpha = [alpha[syst] for syst in self.syst_settings.keys()]
 
             sigma_asimov_mu = sigma_asimov(mu, alpha)
 
@@ -181,9 +194,11 @@ class StatisticalAnalysis:
             sigma_asimov_mu = np.clip(sigma_asimov_mu, epsilon, None)
 
             gaus_term = 0
-            for i, syst in enumerate(self.syst_settings.keys()):
-                gaus_term += gaussian_constraint(alpha[i], self.alpha_ranges[syst]['mean'],
-                                                 self.alpha_ranges[syst]['std'])
+            for syst in self.syst_settings.keys():
+                gaus_term += gaussian_constraint(
+                    alpha[syst], self.alpha_ranges[syst]['mean'],
+                    self.alpha_ranges[syst]['std']
+                )
 
             # adding Gaussian constraint
             hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu + gaus_term
@@ -227,11 +242,7 @@ class StatisticalAnalysis:
             plt.show()
 
             os.makedirs("plots", exist_ok=True)
-            # alpha_test = [
-            #     result.values['tes'], result.values['bkg_scale'], result.values['jes'],
-            #     result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
-            # ]
-            alpha_test = [result.values[syst] for syst in self.syst_settings.keys()]
+            alpha_test = {syst: result.values[syst] for syst in self.syst_settings.keys()}
             self.plot_stacked_histogram(
                 bins,
                 combined_fit_function_s(alpha_test),
@@ -377,6 +388,7 @@ class StatisticalAnalysis:
 
         self.saved_info = {}
         for key in self.syst_settings.keys():
+            print(f"[***] - Calculating template for {key}")
             coef_s_list, coef_b_list = fit_functions(key)
             self.saved_info[key] = {
                 "coef_s": coef_s_list,
@@ -387,21 +399,15 @@ class StatisticalAnalysis:
 
     def alpha_function(self):
 
-        self.fit_function_s = [[] for _ in range(len(self.syst_settings.keys()))]
-        self.fit_function_b = [[] for _ in range(len(self.syst_settings.keys()))]
-
         for key in self.syst_settings.keys():
-
             coef_s_list = self.saved_info[key]['coef_s']
             coef_b_list = self.saved_info[key]['coef_b']
-
-            index = list(self.syst_settings.keys()).index(key)
 
             for i in range(self.bins):
                 coef_s = coef_s_list[i]
                 coef_b = coef_b_list[i]
-                self.fit_function_s[index].append(np.poly1d(coef_s))
-                self.fit_function_b[index].append(np.poly1d(coef_b))
+                self.fit_function_s[key].append(np.poly1d(coef_s))
+                self.fit_function_b[key].append(np.poly1d(coef_b))
 
     def save(self, file_path):
         """
