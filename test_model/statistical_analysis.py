@@ -72,9 +72,9 @@ def calculate_saved_info(model, train_set, file_path="saved_info.pkl"):
 
     print("score shape after threshold", score.shape)
 
-    gamma = np.sum(train_set["weights"] * score * label)
+    gamma = np.sum(train_set["weights"] * score * label) + 0.1
 
-    beta = np.sum(train_set["weights"] * score * (1 - label))
+    beta = np.sum(train_set["weights"] * score * (1 - label)) - 0.1
 
     saved_info = {"beta": beta, "gamma": gamma}
 

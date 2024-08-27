@@ -2,8 +2,8 @@
 # Dummy Sample Submission
 # ------------------------------
 
-XGBOOST = True
-TENSORFLOW = False
+XGBOOST = False
+TENSORFLOW = True
 TORCH = False
 
 from statistical_analysis import calculate_saved_info, compute_mu
