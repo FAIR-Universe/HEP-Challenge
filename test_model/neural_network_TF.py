@@ -28,6 +28,7 @@ class NeuralNetwork:
     def __init__(self):
         self.name = "model_tf"
         self.model = None
+        self.scaler = StandardScaler()
     
     def init_model(self, train_data = None):
         self.model = Sequential()
@@ -39,7 +40,7 @@ class NeuralNetwork:
         self.model.compile(
             loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"]
         )
-        self.scaler = StandardScaler()
+        
 
     def fit(self, train_data, y_train, weights_train=None):
         """
