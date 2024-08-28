@@ -7,7 +7,7 @@ from zipfile import ZipFile
 
 test_set_settings = None
 
-PUBLIC_DATA_URL = "https://www.codabench.org/datasets/download/d81b6937-3ad5-45a2-b8d9-b78b2e7879d1/"
+PUBLIC_DATA_URL = "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
 
 
 class Data:
