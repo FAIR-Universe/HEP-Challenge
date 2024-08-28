@@ -110,16 +110,26 @@ class Model:
             )
             print(" \n ")
 
-            # First, split the data into two parts: 1/2 and 1/2
-            training_set, temp_set = train_test_split(
-                train_set, test_size=0.5, random_state=42, reweight=True
+            # # First, split the data into two parts: 1/2 and 1/2
+            # training_set, temp_set = train_test_split(
+            #     train_set, test_size=0.5, random_state=42, reweight=True
+            # )
+            #
+            # # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
+            # temp_set["data"] = temp_set["data"].reset_index(drop=True)
+            # valid_set, holdout_set = train_test_split(
+            #     temp_set, test_size=0.5, random_state=42, reweight=True
+            # )
+
+            # train : validation : template = 3 : 1 : 6
+            temp_set, holdout_set = train_test_split(
+                train_set, test_size=0.6, random_state=42, reweight=True
+            )
+            temp_set["data"] = temp_set["data"].reset_index(drop=True)
+            training_set, valid_set = train_test_split(
+                temp_set, test_size=0.2, random_state=42, reweight=True
             )
 
-            # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
-            temp_set["data"] = temp_set["data"].reset_index(drop=True)
-            valid_set, holdout_set = train_test_split(
-                temp_set, test_size=0.5, random_state=42, reweight=True
-            )
 
             del train_set
 
