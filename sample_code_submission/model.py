@@ -58,10 +58,11 @@ class Model:
 
         self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=20)
 
-        saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
-        if os.path.exists(saved_info_file):
-            self.stat_analysis.load(saved_info_file)
-            self.re_compute = False
+        saved_info_file_dir = current_file + "/saved_info_" + self.name
+        if os.path.exists(saved_info_file_dir):
+            self.re_compute = not self.stat_analysis.load(saved_info_file_dir)
+        else:
+            os.makedirs(saved_info_file_dir, exist_ok=True)
 
     def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
@@ -81,7 +82,7 @@ class Model:
             None
         """
         
-        saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
+        saved_info_file_dir = current_file + "/saved_info_" + self.name
 
         if self.re_train or self.re_compute:
             train_set = self.get_train_set()
@@ -166,9 +167,10 @@ class Model:
                 )
 
                 self.model.save(current_file + "/" + self.name)
-            if self.re_compute:
-                self.stat_analysis.calculate_saved_info(holdout_set)
-                self.stat_analysis.save(saved_info_file)
+
+            self.stat_analysis.calculate_saved_info(holdout_set, saved_info_file_dir)
+
+        self.stat_analysis.alpha_function()
 
 
         def predict_and_analyze(

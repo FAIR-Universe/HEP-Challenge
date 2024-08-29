@@ -101,6 +101,8 @@ class StatisticalAnalysis:
         self.run_syst = None
         self.fit_function_s = {k: [] for k in self.syst_settings.keys()}
         self.fit_function_b = {k: [] for k in self.syst_settings.keys()}
+        self.saved_info = {}
+        self.syst_load = {syst: False for syst in self.syst_settings.keys()}
 
     def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
         """
@@ -259,7 +261,7 @@ class StatisticalAnalysis:
             "p84": mu_p84,
         }
 
-    def calculate_saved_info(self, holdout_set):
+    def calculate_saved_info(self, holdout_set, file_path):
         """
         Calculate the saved_info dictionary for mu calculation.
 
@@ -386,8 +388,12 @@ class StatisticalAnalysis:
 
             return coef_s_list, coef_b_list
 
-        self.saved_info = {}
         for key in self.syst_settings.keys():
+
+            if self.syst_load[key]:
+                print(f"[***] - Loading template for {key}")
+                continue
+
             print(f"[***] - Calculating template for {key}")
             coef_s_list, coef_b_list = fit_functions(key)
             self.saved_info[key] = {
@@ -395,7 +401,8 @@ class StatisticalAnalysis:
                 "coef_b": coef_b_list,
             }
 
-        self.alpha_function()
+            with open(os.path.join(file_path, f'{key}.pkl'), "wb") as f:
+                pickle.dump(self.saved_info[key], f)
 
     def alpha_function(self):
 
@@ -432,9 +439,15 @@ class StatisticalAnalysis:
         Returns:
             None
         """
-        with open(file_path, "rb") as f:
-            self.saved_info = pickle.load(f)
-        self.alpha_function()
+
+        for key in self.syst_settings.keys():
+            if os.path.exists(os.path.join(file_path, f"{key}.pkl")):
+                self.syst_load[key] = True
+                with open(os.path.join(file_path, f"{key}.pkl"), "rb") as f:
+                    self.saved_info[key] = pickle.load(f)
+
+        # return if all the systematics are loaded
+        return all(self.syst_load.values())
 
     def plot_stacked_histogram(self, bins, signal_fit, background_fit, mu, N_obs, save_name=None):
         """
