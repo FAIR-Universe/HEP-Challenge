@@ -24,7 +24,7 @@ class BoostedDecisionTree:
     """
 
     def __init__(self):
-        self.model = XGBClassifier()
+        self.model = XGBClassifier(eval_metric=["error", "logloss", "rmse"],)
         self.name = "model_XGB"
         self.scaler = StandardScaler()
 
@@ -41,7 +41,7 @@ class BoostedDecisionTree:
         self.scaler.fit_transform(train_data)
 
         X_train_data = self.scaler.transform(train_data)
-        self.model.fit(X_train_data, labels, weights, eval_metric="logloss")
+        self.model.fit(X_train_data, labels, weights)
 
     def predict(self, test_data):
         """
