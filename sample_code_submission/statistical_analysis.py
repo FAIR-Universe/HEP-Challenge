@@ -55,32 +55,32 @@ class StatisticalAnalysis:
 
         self.alpha_ranges = {
             "tes": {
-                "range": np.linspace(0.9, 1.1, 21),
+                "range": np.linspace(0.9, 1.1, 15),
                 "mean": 1.0,
                 "std": 0.01,
             },
             "bkg_scale": {
-                "range": np.linspace(0.99, 1.01, 21),
+                "range": np.linspace(0.99, 1.01, 15),
                 "mean": 1.0,
                 "std": 0.001,
             },
             "jes": {
-                "range": np.linspace(0.9, 1.1, 21),
+                "range": np.linspace(0.9, 1.1, 15),
                 "mean": 1.0,
                 "std": 0.01,
             },
             "soft_met": {
-                "range": np.linspace(0.0, 5.0, 21),
+                "range": np.linspace(0.0, 5.0, 15),
                 "mean": 0.0,
                 "std": 1.0,
             },
             "ttbar_scale": {
-                "range": np.linspace(0.8, 1.2, 21),
+                "range": np.linspace(0.8, 1.2, 15),
                 "mean": 1.0,
                 "std": 0.25,
             },
             "diboson_scale": {
-                "range": np.linspace(0.0, 2.0, 21),
+                "range": np.linspace(0.0, 2.0, 15),
                 "mean": 1.0,
                 "std": 0.25,
             },
