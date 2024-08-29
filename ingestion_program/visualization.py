@@ -74,50 +74,57 @@ class Dataset_visualise:
         print("[*] --- Description of all features")
         display(self.dfall.describe())
 
-    def histogram_dataset(self, columns=None):
+    def histogram_dataset(self, columns=None,nbin = 25):
         """
         Plots histograms of the dataset features.
 
         Args:
             * columns (list): The list of column names to consider (default: None, which includes all columns).
-
+            * nbin (int): The number of bins for the histogram (default: 25).
+            
         .. Image:: ../images/histogram_datasets.png
         """
+        
         if columns is None:
             columns = self.columns
-        sns.set_theme(rc={"figure.figsize": (40, 40)}, style="whitegrid")
+        sns.set_theme(style="whitegrid")
 
-        dfplot = pd.DataFrame(self.dfall, columns=columns)
+        df = pd.DataFrame(self.dfall, columns=columns)
+        
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 2  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
 
-        nbins = 25
-        ax = dfplot[self.target == 0].hist(
-            weights=self.weights[self.target == 0],
-            figsize=(15, 12),
-            color="b",
-            alpha=0.5,
-            density=True,
-            bins=nbins,
-            label="B",
-        )
-        ax = ax.flatten()[
-            : dfplot.shape[1]
-        ]  # to avoid error if holes in the grid of plots (like if 7 or 8 features)
-        dfplot[self.target == 1].hist(
-            weights=self.weights[self.target == 1],
-            figsize=(15, 12),
-            color="r",
-            alpha=0.5,
-            density=True,
-            ax=ax,
-            bins=nbins,
-            label="S",
-        )
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
 
-        for i in range(len(ax)):
-            ax[i].set_title(columns[i])
-            ax[i].legend(["Background", "Signal"])
-        plt.title("Histograms of features in" + self.name)
-        plt.show()
+        for i, column in enumerate(columns):
+            # Determine the combined range for the current column
+            min_value = df[column].min()
+            max_value = df[column].max()
+
+            # Define the bin edges
+            bin_edges = np.linspace(min_value, max_value, nbin + 1)
+            
+            # Plot the histogram for label == 1 (Signal)
+            axes[i].hist(df[self.target == 1][column],weights=self.weights[self.target == 1], bins=bin_edges, alpha=0.4, color='blue', label='Signal (label=1)', density=True)
+            
+            # Plot the histogram for label == 0 (Background)
+            axes[i].hist(df[self.target == 0][column],weights=self.weights[self.target == 0], bins=bin_edges, alpha=0.4, color='red', label='Background (label=0)', density=True)
+            
+            # Set titles and labels
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel(column)
+            axes[i].set_ylabel('Density')
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
 
     def correlation_plots(self, columns=None):
         """
@@ -173,8 +180,8 @@ class Dataset_visualise:
         )  # Change alpha value here
         ax.map_diag(
             sns.histplot,
-            alpha=0.3,
-            bins=25,
+            alpha=0.5,
+            bins=20,
         )  # Change alpha value here
         ax.add_legend(title="Legend", labels=["Signal", "Background"], fontsize=12)
 
@@ -289,8 +296,8 @@ class Dataset_visualise:
         )  # Change alpha value here
         ax.map_diag(
             sns.histplot,
-            alpha=0.3,
-            bins=25,
+            alpha=0.5,
+            bins=20,
         )  # Change alpha value here
         ax.add_legend(title="Legend", labels=["syst", "no_syst"], fontsize=12)
 
