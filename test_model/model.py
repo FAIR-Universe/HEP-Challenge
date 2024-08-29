@@ -2,8 +2,8 @@
 # Dummy Sample Submission
 # ------------------------------
 
-XGBOOST = False
-TENSORFLOW = True
+XGBOOST = True
+TENSORFLOW = False
 TORCH = False
 
 from statistical_analysis import calculate_saved_info, compute_mu
@@ -126,6 +126,7 @@ class Model:
             )
 
             balanced_set = balance_set(training_set)
+            del training_set, train_set
             
             self.model.fit(balanced_set["data"], balanced_set["labels"], balanced_set["weights"])
             self.model.save()
@@ -142,19 +143,10 @@ class Model:
 
         if self.re_train:
 
-            train_score = self.model.predict(train_set["data"])
-            train_results = compute_mu(
-                train_score, train_set["weights"], self.saved_info
-            )
-            
             holdout_score = self.model.predict(holdout_set["data"])
             holdout_results = compute_mu(
                 holdout_score, holdout_set["weights"], self.saved_info
             )
-
-            print("Train Results: ")
-            for key in train_results.keys():
-                print("\t", key, " : ", train_results[key])
                 
             print("Holdout Results: ")
             for key in holdout_results.keys():
