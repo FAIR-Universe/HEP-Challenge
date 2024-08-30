@@ -57,32 +57,32 @@ class StatisticalAnalysis:
             "tes": {
                 "range": np.linspace(0.9, 1.1, 15),
                 "mean": 1.0,
-                "std": 0.01,
+                "std": 0.03,
             },
             "bkg_scale": {
                 "range": np.linspace(0.99, 1.01, 15),
                 "mean": 1.0,
-                "std": 0.001,
+                "std": 0.003,
             },
             "jes": {
                 "range": np.linspace(0.9, 1.1, 15),
                 "mean": 1.0,
-                "std": 0.01,
+                "std": 0.03,
             },
             "soft_met": {
                 "range": np.linspace(0.0, 5.0, 15),
                 "mean": 0.0,
-                "std": 1.0,
+                "std": 3.0,
             },
             "ttbar_scale": {
                 "range": np.linspace(0.8, 1.2, 15),
                 "mean": 1.0,
-                "std": 0.25,
+                "std": 0.06,
             },
             "diboson_scale": {
                 "range": np.linspace(0.0, 2.0, 15),
                 "mean": 1.0,
-                "std": 0.25,
+                "std": 0.75,
             },
         }
 
