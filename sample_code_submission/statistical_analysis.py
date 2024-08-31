@@ -232,6 +232,12 @@ class StatisticalAnalysis:
 
         if not result.fmin.is_valid:
             print("Warning: migrad did not converge. Hessian errors might be unreliable.")
+            return {
+                "mu_hat": -999,
+                "delta_mu_hat": -999,
+                "p16": -999,
+                "p84": -999,
+            }
 
         mu_hat = result.values['mu']
         mu_p16 = mu_hat - result.errors['mu']
