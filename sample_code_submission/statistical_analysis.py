@@ -219,6 +219,7 @@ class StatisticalAnalysis:
 
         for key, value in self.alpha_ranges.items():
             result.limits[key] = (value['range'][0], value['range'][-1])
+        result.limits['mu'] = (0, 10)
 
         if self.syst_fixed_setting is not None:
             for key, value in self.syst_fixed_setting.items():
