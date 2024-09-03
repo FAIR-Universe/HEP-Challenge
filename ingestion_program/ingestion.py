@@ -6,9 +6,20 @@ import os
 from datetime import datetime as dt
 import json
 from itertools import product
-import warnings
+import logging
 
-warnings.filterwarnings("ignore")
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+logging.basicConfig(
+    level=getattr(
+        logging, log_level, logging.INFO
+    ),  # Fallback to INFO if the level is invalid
+    format="%(asctime)s - %(name)-15s - %(levelname) -8s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
 DEFAULT_INGESTION_SEED = 31415
 
 # ------------------------------------------
@@ -83,22 +94,14 @@ class Ingestion:
             timedelta: The duration of the ingestion process.
         """
         if self.start_time is None:
-            print("[-] Timer was never started. Returning None")
+            logger.warning("Timer was never started. Returning None")
             return None
 
         if self.end_time is None:
-            print("[-] Timer was never stopped. Returning None")
+            logger.warning("Timer was never stopped. Returning None")
             return None
 
         return self.end_time - self.start_time
-
-    def show_duration(self):
-        """
-        Show the duration of the ingestion process.
-        """
-        print("\n---------------------------------")
-        print(f"[✔] Total duration: {self.get_duration()}")
-        print("---------------------------------")
 
     def save_duration(self, output_dir=None):
         """
@@ -131,7 +134,7 @@ class Ingestion:
         Args:
             Model (object): The model class.
         """
-        print("[*] Initializing Submmited Model")
+        logger.info("Initializing Submmited Model")
         from systematics import systematics
 
         self.model = Model(get_train_set=self.load_train_set, systematics=systematics)
@@ -141,7 +144,7 @@ class Ingestion:
         """
         Fit the submitted model.
         """
-        print("[*] Calling fit method of submitted model")
+        logger.info("Fitting Submmited Model")
         self.model.fit()
         
 
@@ -152,7 +155,7 @@ class Ingestion:
         Args:
             test_settings (dict): The test settings.
         """
-        print("[*] Calling predict method of submitted model")
+        logger.info("Calling predict method of submitted model")
 
         dict_systematics = test_settings["systematics"]
         num_pseudo_experiments = test_settings["num_pseudo_experiments"]
@@ -222,10 +225,14 @@ class Ingestion:
                 seed=seed,
             )
 
+            logger.debug(
+                f"set_index: {set_index} - test_set_index: {test_set_index} - seed: {seed}"
+            )
+
             predicted_dict = self.model.predict(test_set)
             predicted_dict["test_set_index"] = test_set_index
 
-            print(
+            logger.debug(
                 f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}"
             )
 
@@ -237,7 +244,7 @@ class Ingestion:
         """
         Compute the ingestion result.
         """
-        print("[*] Saving ingestion result")
+        logger.info("Computing Ingestion Result")
 
         # loop over sets
         for key in self.results_dict.keys():
