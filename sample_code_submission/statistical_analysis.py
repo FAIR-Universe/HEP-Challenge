@@ -217,6 +217,9 @@ class StatisticalAnalysis:
                         diboson_scale=1.0,
                         )
 
+        for key, value in self.alpha_ranges.items():
+            result.limits[key] = (value['range'][0], value['range'][-1])
+
         if self.syst_fixed_setting is not None:
             for key, value in self.syst_fixed_setting.items():
                 result.fixto(key, value)

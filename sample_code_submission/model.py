@@ -87,17 +87,6 @@ class Model:
         if self.re_train or self.re_compute:
             train_set = self.get_train_set()
 
-            """
-            The systematics code does the following
-            1. Apply systematics 
-            2. Apply post-systematics cuts to the data
-            3. Compute Dervied features
-            
-            NOTE:
-            Without this transformation, the data will not be representative of the pseudo-experiments
-            """
-            train_set = self.systematics(train_set)
-
             print("Full data: ", train_set["data"].shape)
             print("Full Labels: ", train_set["labels"].shape)
             print("Full Weights: ", train_set["weights"].shape)
@@ -131,7 +120,6 @@ class Model:
                 temp_set, test_size=0.2, random_state=42, reweight=True
             )
 
-
             del train_set
 
             def print_set_info(name, dataset):
@@ -147,6 +135,18 @@ class Model:
                     f"  Sum Background Weights: {dataset['weights'][dataset['labels'] == 0].sum():.2f}"
                 )
                 print("\n")
+
+            """
+            The systematics code does the following
+            1. Apply systematics 
+            2. Apply post-systematics cuts to the data
+            3. Compute Dervied features
+
+            NOTE:
+            Without this transformation, the data will not be representative of the pseudo-experiments
+            """
+            training_set = self.systematics(training_set)  # to get derived and post cuts
+            valid_set = self.systematics(valid_set)  # to get derived and post cuts
 
             print_set_info("Training", training_set)
             print_set_info("Validation", valid_set)
