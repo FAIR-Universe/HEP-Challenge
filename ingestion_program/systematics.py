@@ -512,7 +512,6 @@ def systematics(
     ttbar_scale=None,
     diboson_scale=None,
     bkg_scale=None,
-    verbose=0,
 ):
     """
     Apply systematics to the dataset
@@ -526,7 +525,6 @@ def systematics(
         * ttbar_scale (float): The scaling factor for ttbar background
         * diboson_scale (float): The scaling factor for diboson background
         * bkg_scale (float): The scaling factor for other backgrounds
-        * verbose (int): The verbosity level
 
     Returns:
         dict: The dataset with applied systematics
@@ -550,9 +548,6 @@ def systematics(
             weights = all_bkg_weight_norm(weights, data_set["labels"], bkg_scale)
 
         data_set_new["weights"] = weights
-
-    if verbose > 0:
-        print("Tau energy rescaling :", tes)
 
     # modify primary features according to tes, jes softmet    
     data_syst = mom4_manipulate(

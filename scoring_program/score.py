@@ -6,9 +6,23 @@ import numpy as np
 import json
 from datetime import datetime as dt
 import matplotlib.pyplot as plt
+
 import sys
 import io
 import base64
+import logging
+
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+logging.basicConfig(
+    level=getattr(
+        logging, log_level, logging.INFO
+    ),  # Fallback to INFO if the level is invalid
+    format="%(asctime)s - %(name)-15s - %(levelname) -8s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 parent_path = os.path.dirname(current_path)
@@ -17,16 +31,16 @@ sys.path.append(parent_path)
 
 class Scoring:
     """
-    This class is used to compute the scores for the competition.    
+    This class is used to compute the scores for the competition.
     For more details, see the :doc:`evaluation page <../pages/evaluation>`.
-    
+
     Atributes:
         * start_time (datetime): The start time of the scoring process.
         * end_time (datetime): The end time of the scoring process.
         * ingestion_results (list): The ingestion results.
         * ingestion_duration (float): The ingestion duration.
         * scores_dict (dict): The scores dictionary.
-        
+
     Methods:
         * start_timer(): Start the timer.
         * stop_timer(): Stop the timer.
@@ -42,8 +56,9 @@ class Scoring:
         * write_html(content): Write the HTML content.
         * _print(content): Print the content.
         * save_figure(mu, p16s, p84s, set=0): Save the figure.
-    
+
     """
+
     def __init__(self):
         # Initialize class variables
         self.start_time = None
@@ -61,19 +76,14 @@ class Scoring:
 
     def get_duration(self):
         if self.start_time is None:
-            print("[-] Timer was never started. Returning None")
+            logger.warning("Timer was never started. Returning None")
             return None
 
         if self.end_time is None:
-            print("[-] Timer was never stoped. Returning None")
+            logger.warning("Timer was never stoped. Returning None")
             return None
 
         return self.end_time - self.start_time
-
-    def show_duration(self):
-        print("\n---------------------------------")
-        print(f"[✔] Total duration: {self.get_duration()}")
-        print("---------------------------------")
 
     def load_ingestion_duration(self, ingestion_duration_file):
         """
@@ -82,13 +92,12 @@ class Scoring:
         Args:
             ingestion_duration_file (str): The ingestion duration file.
         """
-        print("[*] Reading ingestion duration")
+        logger.info(f"Reading ingestion duration from {ingestion_duration_file}")
+        
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
 
-        print("[✔]")
-
-    def load_ingestion_results(self, prediction_dir="./",score_dir="./"):
+    def load_ingestion_results(self, prediction_dir="./", score_dir="./"):
         """
         Load the ingestion results.
 
@@ -96,7 +105,6 @@ class Scoring:
             prediction_dir (str, optional): location of the predictions. Defaults to "./".
             score_dir (str, optional): location of the scores. Defaults to "./".
         """
-        print("[*] Reading predictions")
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
         for file in os.listdir(prediction_dir):
@@ -104,11 +112,11 @@ class Scoring:
                 results_file = os.path.join(prediction_dir, file)
                 with open(results_file) as f:
                     self.ingestion_results.append(json.load(f))
-        
+
         self.score_file = os.path.join(score_dir, "scores.json")
         self.html_file = os.path.join(score_dir, "detailed_results.html")
 
-        print("[✔]")
+        logger.info(f"Read ingestion results from {prediction_dir}")
 
     def compute_scores(self, test_settings):
         """
@@ -117,8 +125,8 @@ class Scoring:
         Args:
             test_settings (dict): The test settings.
         """
-        
-        print("[*] Computing scores")
+
+        logger.info("Computing scores")
 
         # loop over ingestion results
         rmses, maes = [], []
@@ -193,7 +201,7 @@ class Scoring:
     def RMSE_score(self, mu, mu_hat, delta_mu_hat):
         """
         Compute the root mean squared error between the true value mu and the predicted value mu_hat.
-        
+
         Args:
             * mu (float): The true value.
             * mu_hat (np.array): The predicted value.
@@ -214,7 +222,7 @@ class Scoring:
     def MAE_score(self, mu, mu_hat, delta_mu_hat):
         """
         Compute the mean absolute error between the true value mu and the predicted value mu_hat.
-        
+
         Args:
             * mu (float): The true value.
             * mu_hat (np.array): The predicted value.
@@ -269,12 +277,12 @@ class Scoring:
         return interval, coverage, score
 
     def write_scores(self):
-        print("[*] Writing scores")
+        
+        logger.info(f"Writing scores to {self.score_file}")
 
         with open(self.score_file, "w") as f_score:
             f_score.write(json.dumps(self.scores_dict, indent=4))
 
-        print("[✔]")
 
     def write_html(self, content):
         with open(self.html_file, "a", encoding="utf-8") as f:

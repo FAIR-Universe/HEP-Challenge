@@ -4,6 +4,21 @@ import json
 import os
 import requests
 from zipfile import ZipFile
+import logging
+import io
+
+# Get the logging level from an environment variable, default to INFO
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+logging.basicConfig(
+    level=getattr(
+        logging, log_level, logging.INFO
+    ),  # Fallback to INFO if the level is invalid
+    format="%(asctime)s - %(name)-15s - %(levelname) -8s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 test_set_settings = None
 
@@ -43,7 +58,6 @@ class Data:
         self.input_dir = input_dir
 
     def load_train_set(self):
-        print("[*] Loading Train data")
 
         train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
         train_labels_file = os.path.join(
@@ -85,12 +99,13 @@ class Data:
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
-        print(self.__train_set["data"].info(verbose=False, memory_usage="deep"))
-
-        print("[+] Train data loaded successfully")
+        buffer = io.StringIO()
+        self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
+        info_str = "Training Data :\n" + buffer.getvalue()
+        logger.debug(info_str)
+        logger.info("Train data loaded successfully")
 
     def load_test_set(self):
-        print("[*] Loading Test data")
 
         test_data_dir = os.path.join(self.input_dir, "test", "data")
 
@@ -116,8 +131,15 @@ class Data:
             test_settings = json.load(f)
 
         self.ground_truth_mus = test_settings["ground_truth_mus"]
-
-        print("[+] Test data loaded successfully")
+        
+        for key in self.__test_set.keys():
+            buffer = io.StringIO()
+            self.__test_set[key].info(buf=buffer, memory_usage="deep", verbose=False)
+            info_str = str(key) + ":\n" + buffer.getvalue()
+            
+            logger.debug(info_str)    
+        
+        logger.info("Test data loaded successfully")
 
     def get_train_set(self):
         """
@@ -181,14 +203,16 @@ def Neurips2024_public_dataset():
         if os.path.isdir(public_input_data_folder_path):
             return Data(public_input_data_folder_path)
         else:
-            print("[!] public_data/input_dir directory not found")
+            logger.warning("public_data/input_dir directory not found")
+            
     else:
-        print("[!] public_data directory not found")
+        logger.warning("public_data directory not found")
 
     # Check if public_data.zip exists
     if not os.path.isfile(public_data_zip_path):
-        print("[!] public_data.zip does not exist")
-        print("[*] Downloading public data, this may take few minutes")
+        logger.warning("public_data.zip does not exist")
+        logger.info("Downloading public data, this may take few minutes")
+        
         chunk_size = 1024 * 1024
         response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
@@ -200,7 +224,7 @@ def Neurips2024_public_dataset():
                         file.write(chunk)
 
     # Extract public_data.zip
-    print("[*] Extracting public_data.zip")
+    logger.info("Extracting public_data.zip")
     with ZipFile(public_data_zip_path, 'r') as zip_ref:
         zip_ref.extractall(public_data_folder_path)
 
