@@ -189,9 +189,10 @@ if __name__ == "__main__":
     ingestion.stop_timer()
 
     # Show duration
-    ingestion.show_duration()
-
-    # Save duration
+    print("\n------------------------------------")
+    print(f"[✔] Total duration: {ingestion.get_duration()}")
+    print("------------------------------------")
+    
     ingestion.save_duration(output_dir)
 
     print("\n----------------------------------------------")

@@ -9,3 +9,4 @@ Submission_24*
 sample_result_submission/
 XGB_saved/
 docs/_build/doctrees
+*.log

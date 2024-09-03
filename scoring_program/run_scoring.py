@@ -82,7 +82,9 @@ scoring.write_scores()
 scoring.stop_timer()
 
 # Show duration
-scoring.show_duration()
+print("\n---------------------------------")
+print(f"[✔] Total duration: {scoring.get_duration()}")
+print("---------------------------------")
 
 print("\n----------------------------------------------")
 print("[✔] Scoring Program executed successfully!")
