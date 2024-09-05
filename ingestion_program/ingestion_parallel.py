@@ -110,30 +110,30 @@ def _process_combination(arrays, test_settings, initial_seed, combination):
             random_state = np.random.RandomState(seed)
 
             if dict_systematics["tes"]:
-                tes = np.clip(random_state.normal(loc=1.0, scale=0.01), a_min=0.9, a_max=1.1)
+                tes = np.clip(random_state.normal(loc=1.0, scale=0.03), a_min=0.9, a_max=1.1)
             else:
                 tes = 1.0
             if dict_systematics["jes"]:
-                jes = np.clip(random_state.normal(loc=1.0, scale=0.01), a_min=0.9, a_max=1.1)
+                jes = np.clip(random_state.normal(loc=1.0, scale=0.03), a_min=0.9, a_max=1.1)
             else:
                 jes = 1.0
             if dict_systematics["soft_met"]:
-                soft_met = np.clip(random_state.lognormal(mean=0.0, sigma=1.0), a_min=0.0, a_max=5.0)
+                soft_met = np.clip(random_state.lognormal(mean=0.0, sigma=3.0), a_min=0.0, a_max=5.0)
             else:
                 soft_met = 0.0
 
             if dict_systematics["ttbar_scale"]:
-                ttbar_scale = np.clip(random_state.normal(loc=1.0, scale=0.02), a_min=0.8, a_max=1.2)
+                ttbar_scale = np.clip(random_state.normal(loc=1.0, scale=0.06), a_min=0.8, a_max=1.2)
             else:
                 ttbar_scale = None
 
             if dict_systematics["diboson_scale"]:
-                diboson_scale = np.clip(random_state.normal(loc=1.0, scale=0.25), a_min=0.0, a_max=2.0)
+                diboson_scale = np.clip(random_state.normal(loc=1.0, scale=0.75), a_min=0.0, a_max=2.0)
             else:
                 diboson_scale = None
 
             if dict_systematics["bkg_scale"]:
-                bkg_scale = np.clip(random_state.normal(loc=1.0, scale=0.001), a_min=0.99, a_max=1.01)
+                bkg_scale = np.clip(random_state.normal(loc=1.0, scale=0.003), a_min=0.99, a_max=1.01)
             else:
                 bkg_scale = None
 
