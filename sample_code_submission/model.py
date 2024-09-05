@@ -196,7 +196,7 @@ class Model:
             datasets = [
                 ("Training", training_set, "train_mu"),
                 ("Validation", valid_set, "valid_mu"),
-                ("Holdout", holdout_set, "holdout_mu"),
+                # ("Holdout", holdout_set, "holdout_mu"),
             ]
 
             for name, dataset, plot_name in datasets:
