@@ -26,8 +26,8 @@ class StatisticalAnalysis:
         syst_settings (dict): Dictionary containing the systematic settings.
         alpha_ranges (dict): Dictionary containing the alpha ranges for each systematic parameter.
         holdout_set (dict): Dictionary containing holdout set data and labels.
-        fit_function_s (list): List of lists containing the fit functions for signal events.
-        fit_function_b (list): List of lists containing the fit functions for background events.
+        fit_function_s (dict): Dictionary of lists containing the fit functions for signal events.
+        fit_function_b (dict): Dictionary of lists containing the fit functions for background events.
         saved_info (dict): Dictionary containing the saved information for mu calculation.
 
     Methods:
@@ -46,27 +46,6 @@ class StatisticalAnalysis:
         self.bin_edges = np.linspace(0, 1, bins + 1)
         self.syst_settings = {
             'tes': 1.0,
-            # 'bkg_scale': 1.0,
-            # 'jes': 1.0,
-            # 'soft_met': 0.0,
-            # 'ttbar_scale': 1.0,
-            # 'diboson_scale': 1.0,
-        }
-
-        self.alpha_ranges = {
-            "tes": np.linspace(0.9, 1.1, 10),
-            "bkg_scale": np.linspace(0.995, 1.005, 10),
-            "jes": np.linspace(0.9, 1.1, 10),
-            "soft_met": np.linspace(0.0, 5.0, 10),
-            "ttbar_scale": np.linspace(0.5, 2.0, 10),
-            "diboson_scale": np.linspace(0.5, 2.0, 10),
-        }
-
-        # If stat_only is set to True, the systematic parameters will be fixed to the nominal values.
-        self.stat_only = stat_only
-        # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
-        self.syst_fixed_setting = {
-            # 'tes': 1.0,
             'bkg_scale': 1.0,
             'jes': 1.0,
             'soft_met': 0.0,
@@ -74,6 +53,56 @@ class StatisticalAnalysis:
             'diboson_scale': 1.0,
         }
 
+        self.alpha_ranges = {
+            "tes": {
+                "range": np.linspace(0.9, 1.1, 15),
+                "mean": 1.0,
+                "std": 0.03,
+            },
+            "bkg_scale": {
+                "range": np.linspace(0.99, 1.01, 15),
+                "mean": 1.0,
+                "std": 0.003,
+            },
+            "jes": {
+                "range": np.linspace(0.9, 1.1, 15),
+                "mean": 1.0,
+                "std": 0.03,
+            },
+            "soft_met": {
+                "range": np.linspace(0.0, 5.0, 15),
+                "mean": 0.0,
+                "std": 3.0,
+            },
+            "ttbar_scale": {
+                "range": np.linspace(0.8, 1.2, 15),
+                "mean": 1.0,
+                "std": 0.06,
+            },
+            "diboson_scale": {
+                "range": np.linspace(0.0, 2.0, 15),
+                "mean": 1.0,
+                "std": 0.75,
+            },
+        }
+
+        # If stat_only is set to True, the systematic parameters will be fixed to the nominal values.
+        self.stat_only = stat_only
+        # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
+        self.syst_fixed_setting = {
+            'tes': 1.0,
+            'bkg_scale': 1.0,
+            'jes': 1.0,
+            'soft_met': 0.0,
+            'ttbar_scale': 1.0,
+            'diboson_scale': 1.0,
+        }
+
+        self.run_syst = None
+        self.fit_function_s = {k: [] for k in self.syst_settings.keys()}
+        self.fit_function_b = {k: [] for k in self.syst_settings.keys()}
+        self.saved_info = {}
+        self.syst_load = {syst: False for syst in self.syst_settings.keys()}
 
     def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
         """
@@ -96,29 +125,45 @@ class StatisticalAnalysis:
 
         N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
 
-        def combined_fit_function_s(x):
+        def combined_fit_function_s(alpha):
             combined_function_s = np.zeros(self.bins)
-            for j in range(len(x)):
+
+            if self.run_syst is not None:
+                alpha_ = {self.run_syst: alpha[self.run_syst]}
+            else:
+                alpha_ = alpha
+
+            for syst, value in alpha_.items():
                 combined_function_s_bin = np.zeros(self.bins)
                 for i in range(self.bins):
-                    combined_function_s_bin[i] = self.fit_function_s[j][i](x[j])
+                    combined_function_s_bin[i] = self.fit_function_s[syst][i](value)
                 combined_function_s += combined_function_s_bin
-            return combined_function_s / len(self.syst_settings.keys())
 
-        def combined_fit_function_b(x):
+            return combined_function_s / len(alpha_.keys())
+
+        def combined_fit_function_b(alpha):
             combined_function_b = np.zeros(self.bins)
-            for j in range(len(x)):
+
+            if self.run_syst is not None:
+                alpha_ = {self.run_syst: alpha[self.run_syst]}
+            else:
+                alpha_ = alpha
+
+            for syst, value in alpha_.items():
                 combined_function_b_bin = np.zeros(self.bins)
                 for i in range(self.bins):
-                    combined_function_b_bin[i] = self.fit_function_b[j][i](x[j])
+                    combined_function_b_bin[i] = self.fit_function_b[syst][i](value)
                 combined_function_b += combined_function_b_bin
-            return combined_function_b / len(self.syst_settings.keys())
+
+            return combined_function_b / len(alpha_.keys())
 
         def sigma_asimov(mu, alpha):
             return mu * combined_fit_function_s(alpha) + combined_fit_function_b(alpha)
 
-        # def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
-        def NLL(mu):
+        def gaussian_constraint(theta, theta_hat, sigma):
+            return np.power(theta - theta_hat, 2) / (2 * sigma ** 2)
+
+        def NLL(mu, tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale):
             """
             Calculate the negative log-likelihood (NLL) for a given set of parameters.
 
@@ -135,8 +180,14 @@ class StatisticalAnalysis:
             float: The negative log-likelihood value.
             """
 
-            # alpha = [tes, bkg_scale, jes, soft_met, ttbar_scale, diboson_scale]
-            alpha = [1.0]
+            alpha = {
+                'tes': tes,
+                'bkg_scale': bkg_scale,
+                'jes': jes,
+                'soft_met': soft_met,
+                'ttbar_scale': ttbar_scale,
+                'diboson_scale': diboson_scale,
+            }
 
             sigma_asimov_mu = sigma_asimov(mu, alpha)
 
@@ -144,35 +195,53 @@ class StatisticalAnalysis:
             epsilon = 1e-10
             sigma_asimov_mu = np.clip(sigma_asimov_mu, epsilon, None)
 
-            hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu
+            gaus_term = 0
+            for syst in self.syst_settings.keys():
+                gaus_term += gaussian_constraint(
+                    alpha[syst], self.alpha_ranges[syst]['mean'],
+                    self.alpha_ranges[syst]['std']
+                )
+
+            # adding Gaussian constraint
+            hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu + gaus_term
 
             return hist_llr.sum()
 
         result = Minuit(NLL,
                         mu=1.0,
-                        # tes=1.0,
-                        # bkg_scale=1.0,
-                        # jes=1.0,
-                        # soft_met=0.0,
-                        # ttbar_scale=1.0,
-                        # diboson_scale=1.0,
+                        tes=1.0,
+                        bkg_scale=1.0,
+                        jes=1.0,
+                        soft_met=0.0,
+                        ttbar_scale=1.0,
+                        diboson_scale=1.0,
                         )
 
-        # if self.syst_fixed_setting is not None:
-        #     for key, value in self.syst_fixed_setting.items():
-        #         result.fixto(key, value)
-        #         print(f"[*] - Fixed {key} to {value}")
-        #
-        # if self.stat_only:
-        #     result.fixed = True
-        #     result.fixed['mu'] = False
-        #     print("[*] - Fixed all systematics to nominal values.")
+        for key, value in self.alpha_ranges.items():
+            result.limits[key] = (value['range'][0], value['range'][-1])
+        result.limits['mu'] = (0, 10)
+
+        if self.syst_fixed_setting is not None:
+            for key, value in self.syst_fixed_setting.items():
+                result.fixto(key, value)
+                # print(f"[*] - Fixed {key} to {value}")
+
+        if self.stat_only:
+            result.fixed = True
+            result.fixed['mu'] = False
+            # print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
         result.migrad()
 
         if not result.fmin.is_valid:
             print("Warning: migrad did not converge. Hessian errors might be unreliable.")
+            return {
+                "mu_hat": -999,
+                "delta_mu_hat": -999,
+                "p16": -999,
+                "p84": -999,
+            }
 
         mu_hat = result.values['mu']
         mu_p16 = mu_hat - result.errors['mu']
@@ -185,11 +254,7 @@ class StatisticalAnalysis:
             plt.show()
 
             os.makedirs("plots", exist_ok=True)
-            # alpha_test = [
-            #     result.values['tes'], result.values['bkg_scale'], result.values['jes'],
-            #     result.values['soft_met'], result.values['ttbar_scale'], result.values['diboson_scale']
-            # ]
-            alpha_test = [1.0]
+            alpha_test = {syst: result.values[syst] for syst in self.syst_settings.keys()}
             self.plot_stacked_histogram(
                 bins,
                 combined_fit_function_s(alpha_test),
@@ -206,7 +271,7 @@ class StatisticalAnalysis:
             "p84": mu_p84,
         }
 
-    def calculate_saved_info(self, holdout_set):
+    def calculate_saved_info(self, holdout_set, file_path):
         """
         Calculate the saved_info dictionary for mu calculation.
 
@@ -235,16 +300,10 @@ class StatisticalAnalysis:
             """
             syst_settings = self.syst_settings.copy()
             syst_settings[key] = alpha
-            holdout_syst = holdout_set.copy()
-            # holdout_syst = systematics(
-            #     self.holdout_set.copy(),
-            #     tes=syst_settings['tes'],
-            #     bkg_scale=syst_settings['bkg_scale'],
-            #     jes=syst_settings['jes'],
-            #     soft_met=syst_settings['soft_met'],
-            #     ttbar_scale=syst_settings['ttbar_scale'],
-            #     diboson_scale=syst_settings['diboson_scale'],
-            # )
+            holdout_syst = systematics(
+                holdout_set.copy(),
+                **syst_settings
+            )
 
             label_holdout = holdout_syst['labels']
             weights_holdout = holdout_syst['weights']
@@ -264,7 +323,6 @@ class StatisticalAnalysis:
 
             return holdout_signal_hist, holdout_background_hist
 
-
         def fit_functions(key):
             """
             Fits polynomial functions to the given data for a specific key.
@@ -278,7 +336,7 @@ class StatisticalAnalysis:
             coef_b_list = []
             coef_s_list = []
 
-            alpha_list = self.alpha_ranges[key]
+            alpha_list = self.alpha_ranges[key]["range"]
 
             s_array = np.zeros((len(alpha_list), self.bins))
             b_array = np.zeros((len(alpha_list), self.bins))
@@ -289,48 +347,83 @@ class StatisticalAnalysis:
             s_array = s_array.T
             b_array = b_array.T
 
+            def calculate_r_squared(y_true, y_pred):
+                residuals = y_true - y_pred
+                ss_total = np.sum((y_true - np.mean(y_true)) ** 2)
+                ss_residual = np.sum(residuals ** 2)
+                r_squared = 1 - (ss_residual / ss_total)
+                return r_squared
+
+            def calculate_rmse(y_true, y_pred):
+                residuals = y_true - y_pred
+                mse = np.mean(residuals ** 2)
+                rmse = np.sqrt(mse)
+                return rmse
+
             for i in range(self.bins):
-                coef_s = np.polyfit(alpha_list, s_array[i], 3)
-                coef_b = np.polyfit(alpha_list, b_array[i], 3)
+                coef_s = np.polyfit(alpha_list, s_array[i], 5)
+                coef_b = np.polyfit(alpha_list, b_array[i], 5)
 
                 coef_s_list.append(coef_s.tolist())
                 coef_b_list.append(coef_b.tolist())
 
+                # Calculate R^2 and RMSE for coef_s
+                poly_vals_s = np.polyval(coef_s, alpha_list)
+                r_squared_s = calculate_r_squared(s_array[i], poly_vals_s)
+                rmse_s = calculate_rmse(s_array[i], poly_vals_s)
+
+                # Calculate R^2 and RMSE for coef_b
+                poly_vals_b = np.polyval(coef_b, alpha_list)
+                r_squared_b = calculate_r_squared(b_array[i], poly_vals_b)
+                rmse_b = calculate_rmse(b_array[i], poly_vals_b)
+
+                # Print the results
+                print(f"[*] Bin {i + 1}:")
+                print(f"    Sig: R^2: {r_squared_s:.4f}, RMSE: {rmse_s:.4f}")
+                print(f"    Bkg: R^2: {r_squared_b:.4f}, RMSE: {rmse_b:.4f}")
+
             print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
+
+            os.makedirs("plots/fittings", exist_ok=True)
+
+            self.visualize_fit(
+                alpha_list=alpha_list, array=s_array, coefficient_list=coef_s_list, alpha_name=f'Signal: {key}',
+                save_name=f"plots/fittings/signal_{key}.png"
+            )
+            self.visualize_fit(
+                alpha_list=alpha_list, array=b_array, coefficient_list=coef_b_list, alpha_name=f'Background: {key}',
+                log_y=True, save_name=f"plots/fittings/background_{key}.png"
+            )
 
             return coef_s_list, coef_b_list
 
-
-
-        self.saved_info = {}
         for key in self.syst_settings.keys():
+
+            if self.syst_load[key]:
+                print(f"[***] - Loading template for {key}")
+                continue
+
+            print(f"[***] - Calculating template for {key}")
             coef_s_list, coef_b_list = fit_functions(key)
             self.saved_info[key] = {
                 "coef_s": coef_s_list,
                 "coef_b": coef_b_list,
             }
 
-        self.alpha_function()
-
-
+            with open(os.path.join(file_path, f'{key}.pkl'), "wb") as f:
+                pickle.dump(self.saved_info[key], f)
 
     def alpha_function(self):
 
-        self.fit_function_s = [[] for _ in range(len(self.syst_settings.keys()))]
-        self.fit_function_b = [[] for _ in range(len(self.syst_settings.keys()))]
-
         for key in self.syst_settings.keys():
-
             coef_s_list = self.saved_info[key]['coef_s']
             coef_b_list = self.saved_info[key]['coef_b']
-
-            index = list(self.syst_settings.keys()).index(key)
 
             for i in range(self.bins):
                 coef_s = coef_s_list[i]
                 coef_b = coef_b_list[i]
-                self.fit_function_s[index].append(np.poly1d(coef_s))
-                self.fit_function_b[index].append(np.poly1d(coef_b))
+                self.fit_function_s[key].append(np.poly1d(coef_s))
+                self.fit_function_b[key].append(np.poly1d(coef_b))
 
     def save(self, file_path):
         """
@@ -355,9 +448,15 @@ class StatisticalAnalysis:
         Returns:
             None
         """
-        with open(file_path, "rb") as f:
-            self.saved_info = pickle.load(f)
-        self.alpha_function()
+
+        for key in self.syst_settings.keys():
+            if os.path.exists(os.path.join(file_path, f"{key}.pkl")):
+                self.syst_load[key] = True
+                with open(os.path.join(file_path, f"{key}.pkl"), "rb") as f:
+                    self.saved_info[key] = pickle.load(f)
+
+        # return if all the systematics are loaded
+        return all(self.syst_load.values())
 
     def plot_stacked_histogram(self, bins, signal_fit, background_fit, mu, N_obs, save_name=None):
         """
@@ -409,7 +508,7 @@ class StatisticalAnalysis:
 
     def visualize_fit(self, alpha_list, array, coefficient_list, alpha_name=None, log_y=False, save_name=None):
         # Prepare the figure
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12), sharex='col')
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex='col')
 
         # Plotting for s_array
         for i in range(self.bins):
@@ -425,8 +524,12 @@ class StatisticalAnalysis:
 
             # Calculate relative error and plot in the second subplot
             fitted_values = poly_s(alpha_list)
-            relative_error = (array[i] - fitted_values) / fitted_values * 100
+            relative_error = (array[i] - fitted_values) / array[i] * 100
             ax2.plot(current_alpha, relative_error, 'o', alpha=0.5, label=f'Bin {i + 1} error')
+
+            # print the value for array[i] and fitted_values for alpha_list == 1
+            print(
+                f'[*] - Bin {i + 1} - raw: {array[i][5]:.2f}, fitted: {fitted_values[5]:.2f}, relative error: {relative_error[5]:.2f}%')
 
         ax1.set_ylabel('MVA distribution')
         # ax1.legend(loc='upper right')

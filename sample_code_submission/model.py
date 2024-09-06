@@ -44,20 +44,25 @@ class Model:
         self.get_train_set = get_train_set
 
         self.re_train = True
+        self.re_compute = True
 
         from boosted_decision_tree import BoostedDecisionTree
-
+        self.name = "model_XGB"
         self.model = BoostedDecisionTree()
-        module_file = current_file + "/model_XGB.json"
+        module_file = current_file + f"/{self.name}.json"
         if os.path.exists(module_file):
             self.model.load(module_file)
             self.re_train = False  # if model is already trained, no need to retrain
 
-        self.name = "model_XGB"
+        print("Model is ", self.name)
 
-        print("Model is BDT")
+        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=20)
 
-        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=5)
+        saved_info_file_dir = current_file + "/saved_info_" + self.name
+        if os.path.exists(saved_info_file_dir):
+            self.re_compute = not self.stat_analysis.load(saved_info_file_dir)
+        else:
+            os.makedirs(saved_info_file_dir, exist_ok=True)
 
     def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
         """
@@ -77,22 +82,10 @@ class Model:
             None
         """
         
-        saved_info_file = current_file + "/saved_info_" + self.name + ".pkl"
+        saved_info_file_dir = current_file + "/saved_info_" + self.name
 
-        
-        if self.re_train:
+        if self.re_train or self.re_compute:
             train_set = self.get_train_set()
-
-            """
-            The systematics code does the following
-            1. Apply systematics 
-            2. Apply post-systematics cuts to the data
-            3. Compute Dervied features
-            
-            NOTE:
-            Without this transformation, the data will not be representative of the pseudo-experiments
-            """
-            train_set = self.systematics(train_set)
 
             print("Full data: ", train_set["data"].shape)
             print("Full Labels: ", train_set["labels"].shape)
@@ -107,15 +100,24 @@ class Model:
             )
             print(" \n ")
 
-            # First, split the data into two parts: 1/2 and 1/2
-            training_set, temp_set = train_test_split(
-                train_set, test_size=0.5, random_state=42, reweight=True
-            )
+            # # First, split the data into two parts: 1/2 and 1/2
+            # training_set, temp_set = train_test_split(
+            #     train_set, test_size=0.5, random_state=42, reweight=True
+            # )
+            #
+            # # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
+            # temp_set["data"] = temp_set["data"].reset_index(drop=True)
+            # valid_set, holdout_set = train_test_split(
+            #     temp_set, test_size=0.5, random_state=42, reweight=True
+            # )
 
-            # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
+            # train : validation : template = 3 : 1 : 6
+            temp_set, holdout_set = train_test_split(
+                train_set, test_size=0.6, random_state=42, reweight=True
+            )
             temp_set["data"] = temp_set["data"].reset_index(drop=True)
-            valid_set, holdout_set = train_test_split(
-                temp_set, test_size=0.5, random_state=42, reweight=True
+            training_set, valid_set = train_test_split(
+                temp_set, test_size=0.2, random_state=42, reweight=True
             )
 
             del train_set
@@ -134,33 +136,42 @@ class Model:
                 )
                 print("\n")
 
+            """
+            The systematics code does the following
+            1. Apply systematics 
+            2. Apply post-systematics cuts to the data
+            3. Compute Dervied features
+
+            NOTE:
+            Without this transformation, the data will not be representative of the pseudo-experiments
+            """
+            training_set = self.systematics(training_set)  # to get derived and post cuts
+            valid_set = self.systematics(valid_set)  # to get derived and post cuts
+
             print_set_info("Training", training_set)
             print_set_info("Validation", valid_set)
             print_set_info("Holdout (For Statistical Template)", holdout_set)
 
-            balanced_set = balance_set(training_set)
+            if self.re_train:
+                balanced_set = balance_set(training_set)
 
-            self.model.fit(
-                balanced_set["data"],
-                balanced_set["labels"],
-                balanced_set["weights"],
-                valid_set=[
-                    valid_set["data"],
-                    valid_set["labels"],
-                    valid_set["weights"],
-                ],
-            )
+                self.model.fit(
+                    balanced_set["data"],
+                    balanced_set["labels"],
+                    balanced_set["weights"],
+                    valid_set=[
+                        valid_set["data"],
+                        valid_set["labels"],
+                        valid_set["weights"],
+                    ],
+                )
 
-            self.model.save(current_file + "/" + self.name)
-            
-            self.stat_analysis.calculate_saved_info(holdout_set)
-            self.stat_analysis.save(saved_info_file)
+                self.model.save(current_file + "/" + self.name)
 
-        else:
-            assert os.path.exists(
-                saved_info_file
-            ), f"Saved info file {saved_info_file} does not exist."
-            self.stat_analysis.load(saved_info_file)
+            self.stat_analysis.calculate_saved_info(holdout_set, saved_info_file_dir)
+
+        self.stat_analysis.alpha_function()
+
 
         def predict_and_analyze(
             dataset_name, data_set, fig_name, stat_only, syst_settings
@@ -180,12 +191,12 @@ class Model:
                 print(f"\t{key} : {value}")
             print("\n")
 
-        if self.re_train:
+        if self.re_train or self.re_compute:
             # Predict and analyze for each set
             datasets = [
                 ("Training", training_set, "train_mu"),
                 ("Validation", valid_set, "valid_mu"),
-                ("Holdout", holdout_set, "holdout_mu"),
+                # ("Holdout", holdout_set, "holdout_mu"),
             ]
 
             for name, dataset, plot_name in datasets:
