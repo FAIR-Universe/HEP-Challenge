@@ -3,7 +3,22 @@
 from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
+import logging
+import io
+import os
 
+# Get the logging level from an environment variable, default to INFO
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+logging.basicConfig(
+    level=getattr(
+        logging, log_level, logging.INFO
+    ),  # Fallback to INFO if the level is invalid
+    format="%(asctime)s - %(name)-20s - %(levelname) -8s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 __doc__ = """
 This module contains the functions to calculate the derived quantities of the HEP dataset.
@@ -356,4 +371,21 @@ def DER_data(data):
     data = f_DER_met_phi_centrality(data)
     data = f_DER_lep_eta_centrality(data)
     data = f_del_DER(data)
+    
+    logger.debug("Derived Quantities calculated successfully")
+    
+    buffer = io.StringIO()
+    data.info(buf=buffer, memory_usage="deep", verbose=False)
+    info_str = "Data with Derived Quantities :\n" + buffer.getvalue()
+    logger.debug(info_str)
+
+    double_precision_cols = data.select_dtypes(include=['float64']).columns
+
+    logger.debug(f"Converting columns {double_precision_cols} to float32")
+
+    data = data.astype(np.float32)
+    buffer = io.StringIO()
+    data.info(buf=buffer, memory_usage="deep", verbose=False)
+    info_str = "Data with Derived Quantities float32 :\n" + buffer.getvalue()
+    logger.debug(info_str)
     return data
