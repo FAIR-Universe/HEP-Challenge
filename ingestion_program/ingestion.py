@@ -15,7 +15,7 @@ logging.basicConfig(
     level=getattr(
         logging, log_level, logging.INFO
     ),  # Fallback to INFO if the level is invalid
-    format="%(asctime)s - %(name)-15s - %(levelname) -8s - %(message)s",
+    format="%(asctime)s - %(name)-20s - %(levelname) -8s - %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -233,7 +233,7 @@ class Ingestion:
             predicted_dict["test_set_index"] = test_set_index
 
             logger.debug(
-                f"[*] - mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}"
+                f"mu_hat: {predicted_dict['mu_hat']} - delta_mu_hat: {predicted_dict['delta_mu_hat']} - p16: {predicted_dict['p16']} - p84: {predicted_dict['p84']}"
             )
 
             if set_index not in self.results_dict:
