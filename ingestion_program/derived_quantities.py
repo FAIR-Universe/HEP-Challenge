@@ -372,7 +372,7 @@ def DER_data(data):
     data = f_DER_lep_eta_centrality(data)
     data = f_del_DER(data)
     
-    logger.info("Derived Quantities calculated successfully")
+    logger.debug("Derived Quantities calculated successfully")
     
     buffer = io.StringIO()
     data.info(buf=buffer, memory_usage="deep", verbose=False)
