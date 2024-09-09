@@ -9,6 +9,24 @@ import os
 
 current_file = os.path.dirname(os.path.abspath(__file__))
 
+SYST_NAME = os.getenv("MODEL_SYST_NAME", "stat_only")
+
+syst_fixed_setting = {
+        'tes': 1.0,
+        'bkg_scale': 1.0,
+        'jes': 1.0,
+        'soft_met': 0.0,
+        'ttbar_scale': 1.0,
+        'diboson_scale': 1.0,
+}
+
+
+if SYST_NAME == "stat_only":
+    STAT_ONLY = True
+else:
+    STAT_ONLY = False
+    
+SYST_FIXED = {k: v for k, v in syst_fixed_setting.items() if k != SYST_NAME}
 
 class Model:
     """
@@ -22,8 +40,8 @@ class Model:
         * stat_analysis (object): The statistical analysis object.
         
     Methods:
-        * fit(stat_only: bool = None, syst_settings: dict[str, bool] = None): Trains the model.
-        * predict(test_set, stat_only: bool = None, syst_settings: dict[str, float] = None): Predicts the values for the test set.
+        * fit(): Trains the model.
+        * predict(test_set): Predicts the values for the test set.
 
     """
 
@@ -56,7 +74,7 @@ class Model:
 
         print("Model is ", self.name)
 
-        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=False, bins=20)
+        self.stat_analysis = StatisticalAnalysis(self.model, stat_only=STAT_ONLY, bins=20, systematics=self.systematics, fixed_syst=SYST_FIXED)
 
         saved_info_file_dir = current_file + "/saved_info_" + self.name
         if os.path.exists(saved_info_file_dir):
@@ -64,13 +82,16 @@ class Model:
         else:
             os.makedirs(saved_info_file_dir, exist_ok=True)
 
-    def fit(self, stat_only: bool = None, syst_settings: dict[str, bool] = None):
+        
+
+
+        print("STAT_ONLY: ", STAT_ONLY)
+        print("SYST_FIXED: ", SYST_FIXED)
+        print("SYST_NAME: ", SYST_NAME)
+
+    def fit(self):
         """
         Trains the model.
-
-        Args:
-            * stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            * syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
 
         Functionality:
             This function can be used to train a model. If `re_train` is True, it balances the dataset,
@@ -99,17 +120,6 @@ class Model:
                 train_set["weights"][train_set["labels"] == 0].sum(),
             )
             print(" \n ")
-
-            # # First, split the data into two parts: 1/2 and 1/2
-            # training_set, temp_set = train_test_split(
-            #     train_set, test_size=0.5, random_state=42, reweight=True
-            # )
-            #
-            # # Now split the temp_set into validation and holdout sets (statistical template set) with equal size
-            # temp_set["data"] = temp_set["data"].reset_index(drop=True)
-            # valid_set, holdout_set = train_test_split(
-            #     temp_set, test_size=0.5, random_state=42, reweight=True
-            # )
 
             # train : validation : template = 3 : 1 : 6
             temp_set, holdout_set = train_test_split(
@@ -174,15 +184,13 @@ class Model:
 
 
         def predict_and_analyze(
-            dataset_name, data_set, fig_name, stat_only, syst_settings
+            dataset_name, data_set, fig_name
         ):
             score = self.model.predict(data_set["data"])
             results = self.stat_analysis.compute_mu(
                 score,
                 data_set["weights"],
                 plot=fig_name,
-                stat_only=stat_only,
-                syst_fixed_setting=syst_settings,
             )
 
             print(f"{dataset_name} Results:")
@@ -204,20 +212,15 @@ class Model:
                     name,
                     dataset,
                     plot_name,
-                    stat_only=stat_only,
-                    syst_settings=syst_settings,
                 )
 
 
-    def predict(
-        self, test_set, stat_only: bool = None, syst_settings: dict[str, float] = None
-    ):
+    def predict(self, test_set):
         """
         Predicts the values for the test set.
 
         Args:
-            * stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            * syst_settings (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': True}. Defaults to None.
+            * test_set (dict): A dictionary containing the data and weights
 
         Returns:
             dict: A dictionary with the following keys:
@@ -233,12 +236,11 @@ class Model:
         print("[*] -> test weights sum = ", test_weights.sum())
 
         predictions = self.model.predict(test_data)
+        
 
         result = self.stat_analysis.compute_mu(
             predictions,
             test_weights,
-            stat_only=stat_only,
-            syst_fixed_setting=syst_settings,
         )
 
         print("Test Results: ", result)

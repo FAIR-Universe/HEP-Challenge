@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 from sys import path
-from systematics import systematics
 import pickle
 from iminuit import Minuit
 import matplotlib.pyplot as plt
@@ -40,7 +39,8 @@ class StatisticalAnalysis:
         load: Load the saved_info dictionary from a file.
     """
 
-    def __init__(self, model, bins=10, stat_only=False):
+    def __init__(self, model, bins=10, stat_only=False, systematics=None, fixed_syst=None):
+        
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
@@ -52,7 +52,8 @@ class StatisticalAnalysis:
             'ttbar_scale': 1.0,
             'diboson_scale': 1.0,
         }
-
+        self.systematics = systematics  # Function to apply systematics
+        
         self.alpha_ranges = {
             "tes": {
                 "range": np.linspace(0.9, 1.1, 15),
@@ -89,14 +90,7 @@ class StatisticalAnalysis:
         # If stat_only is set to True, the systematic parameters will be fixed to the nominal values.
         self.stat_only = stat_only
         # If syst_fixed_setting is set, the systematic parameters will be fixed to the given values.
-        self.syst_fixed_setting = {
-            'tes': 1.0,
-            'bkg_scale': 1.0,
-            'jes': 1.0,
-            'soft_met': 0.0,
-            'ttbar_scale': 1.0,
-            'diboson_scale': 1.0,
-        }
+        self.syst_fixed_setting = fixed_syst
 
         self.run_syst = None
         self.fit_function_s = {k: [] for k in self.syst_settings.keys()}
@@ -104,7 +98,7 @@ class StatisticalAnalysis:
         self.saved_info = {}
         self.syst_load = {syst: False for syst in self.syst_settings.keys()}
 
-    def compute_mu(self, score, weight, plot=None, stat_only: bool = None, syst_fixed_setting: dict[str, float] = None):
+    def compute_mu(self, score, weight, plot=None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -112,16 +106,11 @@ class StatisticalAnalysis:
         Args:
             score (numpy.ndarray): Array of scores.
             weight (numpy.ndarray): Array of weights.
-            stat_only (bool, optional): Force to compute stats only results [the highest priority]. Defaults to None.
-            syst_fixed_setting (dict, optional): Dictionary containing the systematic settings of whether to fix systematics in fitting. For example, {'jes': 1.5}, fixing 'jet' to 1.5, and the all others floating. Defaults to None.
+
         Returns:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
 
-        if stat_only is not None:
-            self.stat_only = stat_only
-        if syst_fixed_setting is not None:
-            self.syst_fixed_setting = syst_fixed_setting
 
         N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
 
@@ -300,7 +289,7 @@ class StatisticalAnalysis:
             """
             syst_settings = self.syst_settings.copy()
             syst_settings[key] = alpha
-            holdout_syst = systematics(
+            holdout_syst = self.systematics(
                 holdout_set.copy(),
                 **syst_settings
             )
