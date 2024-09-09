@@ -135,7 +135,6 @@ class Model:
 
 
         train_set = self.get_train_set() # train_set is a dictionary with data, labels, and weights
-        train_set = self.systematics(train_set)
         
         training_set, holdout_set = train_test_split(
             train_set, test_size=0.5, random_state=42, reweight=True
@@ -143,6 +142,8 @@ class Model:
         
         del train_set
         
+        training_set = self.systematics(training_set)
+
         weights_train = training_set["weights"].copy()
         train_labels = training_set["labels"].copy()
         class_weights_train = (
@@ -164,6 +165,8 @@ class Model:
         X_train_data = self.scaler.transform(training_set["data"])
         self.model.fit(X_train_data,training_set["labels"], training_set["weights"])
         
+        holdout_set = self.systematics(holdout_set)
+    
         self.saved_info = calculate_saved_info(self.model, holdout_set)
 
         holdout_score = self.model.predict(holdout_set["data"])
