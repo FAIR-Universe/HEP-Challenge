@@ -15,6 +15,7 @@ Welcome to FAIR Universe HEP Challenge's documentation!
    pages/evaluation.md
    pages/prizes.md
    pages/starting_kit.md
+   pages/advanced_example.md
    rst_source/modules
    pages/terms.md
 
