@@ -644,7 +644,7 @@ def get_bootstrapped_dataset(
 
         temp_data = test_set[key][new_weights > 0]
 
-        temp_data["weights"] = new_weights[new_weights > 0]
+        temp_data.loc[:, "weights"] = new_weights[new_weights > 0]
 
         pseudo_data.append(temp_data)
 
