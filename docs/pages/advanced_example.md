@@ -27,7 +27,7 @@ The process is split into two main sections:
 
 ### 1. **Machine Learning**:
    - **Files**: 
-     - [`model.py`](https://github.com/FAIR-Universe/HEP-Challenge/blob/master/sample_code_submission/model.py)
+     - [`model.py`](/simple_one_syst_model/model.py)
      - [`boosted_decision_tree.py`](https://github.com/FAIR-Universe/HEP-Challenge/blob/master/sample_code_submission/statistical_analysis.py)
    - Objective: Train a classifier to distinguish between [signal events](https://fair-universe.lbl.gov/docs/pages/data.html#higgs-signal) and [background events](https://fair-universe.lbl.gov/docs/pages/data.html#z-boson-background).
 
