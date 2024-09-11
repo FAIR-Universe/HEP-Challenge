@@ -1,7 +1,7 @@
 Boosted\_Becision\_Tree module
 ==============================
 
-.. automodule:: boosted_decision_tree
+.. automodule:: simple_one_syst_model.boosted_decision_tree
    :members:
    :undoc-members:
    :show-inheritance:
