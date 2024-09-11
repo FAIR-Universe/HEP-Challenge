@@ -36,7 +36,7 @@ The process is split into two main sections:
    - Objective: Use the classifier output to extract the signal strength through statistical analysis.
 
 > ⚠️ **Note**: 
-> **You can find all related files in the [`sample_code_submission`](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/sample_code_submission)**.
+> **You can find all related files in the [`sample_code_submission`](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/simple_one_syst_model)**.
 
 ---
 
