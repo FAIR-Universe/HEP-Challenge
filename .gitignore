@@ -12,3 +12,5 @@ docs/_build/doctrees
 *.log
 plots
 *.ipynb_checkpoints
+test/temp/
+
