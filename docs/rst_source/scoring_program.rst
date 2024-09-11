@@ -1,4 +1,4 @@
-scoring_program
+Scoring Program
 ===============
 
 .. toctree::

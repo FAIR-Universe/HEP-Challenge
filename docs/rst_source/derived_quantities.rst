@@ -1,4 +1,4 @@
-derived\_quantities module
+Derived\_quantities module
 ==========================
 
 .. automodule:: derived_quantities

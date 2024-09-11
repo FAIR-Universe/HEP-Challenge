@@ -1,4 +1,4 @@
-statistical\_analysis module
+Statistical\_Analysis module
 ============================
 
 .. automodule:: statistical_analysis

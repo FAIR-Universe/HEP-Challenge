@@ -1,4 +1,4 @@
-boosted\_decision\_tree module
+Boosted\_Becision\_Tree module
 ==============================
 
 .. automodule:: boosted_decision_tree

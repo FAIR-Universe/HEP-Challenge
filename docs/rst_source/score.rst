@@ -1,4 +1,4 @@
-score module
+Score module
 ============
 
 .. automodule:: score

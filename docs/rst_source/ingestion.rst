@@ -1,4 +1,4 @@
-ingestion module
+Ingestion module
 ================
 
 .. automodule:: ingestion

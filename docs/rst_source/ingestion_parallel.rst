@@ -1,4 +1,4 @@
-ingestion\_parallel module
+Ingestion\_parallel module
 ==========================
 
 .. automodule:: ingestion_parallel

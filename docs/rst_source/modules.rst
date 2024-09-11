@@ -1,8 +1,8 @@
-HEP-Challenge
+Core modules
 ================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    ingestion_program
    sample_code_submission

@@ -1,4 +1,4 @@
-systematics module
+Systematics module
 ==================
 
 .. automodule:: systematics
