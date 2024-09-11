@@ -32,11 +32,11 @@ The process is split into two main sections:
    - Objective: Train a classifier to distinguish between [signal events](https://fair-universe.lbl.gov/docs/pages/data.html#higgs-signal) and [background events](https://fair-universe.lbl.gov/docs/pages/data.html#z-boson-background).
 
 ### 2. **Statistical Analysis**:
-   - **File**: [`statistical_analysis.py`](https://github.com/FAIR-Universe/HEP-Challenge/blob/master/sample_code_submission/statistical_analysis.py)
+   - **File**: [`statistical_analysis.py`](https://github.com/FAIR-Universe/HEP-Challenge/blob/master/simple_one_syst_model/statistical_analysis.py)
    - Objective: Use the classifier output to extract the signal strength through statistical analysis.
 
 > ⚠️ **Note**: 
-> **You can find all related files in the [`sample_code_submission`](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/simple_one_syst_model)**.
+> **You can find all related files in the [`simple_one_syst_model`](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/simple_one_syst_model)**.
 
 ---
 
