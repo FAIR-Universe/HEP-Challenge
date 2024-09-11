@@ -5,7 +5,7 @@ import seaborn as sns  # seaborn for nice plot quicker
 from sklearn.metrics import roc_curve
 from IPython.display import display
 from sklearn.metrics import roc_auc_score
-
+from tabulate import tabulate
 
 class Dataset_visualise:
     """
@@ -36,6 +36,9 @@ class Dataset_visualise:
     """
 
     def __init__(self, data_set, name="dataset", columns=None):
+        print("\nGeneral Structure of the data object is a dictionary")
+        custom_pretty_print(data_set)
+        
         self.dfall = data_set["data"]
         self.target = data_set["labels"]
         self.weights = data_set["weights"]
@@ -54,24 +57,36 @@ class Dataset_visualise:
         """
         Prints information about the dataset.
         """
-        print(f"[*] --- Dataset name : {self.name}")
-        print(f"[*] --- Number of events : {self.dfall.shape[0]}")
-        print(f"[*] --- Number of features : {self.dfall.shape[1]}")
 
+        print()
+        
+        info_dict = {
+            "Dataset name": self.name,
+            "Number of events": self.dfall.shape[0],
+            "Number of features": self.dfall.shape[1],
+        }
+        
+        print(tabulate(info_dict.items(), headers=["Key", "Value"], tablefmt='grid'),"\n")
+
+        weight_dict = {}
         for key in self.keys:
-            print("  ", key, " ", self.weight_keys[key].sum())
+            weight_dict[key] = (np.sum(self.weight_keys[key]),len(self.weight_keys[key]))
+            
+        table_data = []
+        for key in self.keys:
+            table_data.append([key, weight_dict[key][0], weight_dict[key][1]])
+        
+        table_data.append(["Total Signal", np.sum(self.weights[self.target == 1]), len(self.weights[self.target == 1])])
+        table_data.append(["Total Background", np.sum(self.weights[self.target == 0]), len(self.weights[self.target == 0])])
+            
+        print("[*] --- Detailed Label Summary")
 
-        print(
-            f"[*] --- Number of signal events : {self.dfall[self.target==1].shape[0]}"
-        )
-        print(
-            f"[*] --- Number of background events : {self.dfall[self.target==0].shape[0]}"
-        )
+        print(tabulate(table_data, headers=["Detailed Label", "Total Weight", "Number of events"], tablefmt='grid'))
 
-        print("[*] --- Examples of all features")
+        print("\n[*] --- Examples of all features\n")
         display(self.dfall.head())
 
-        print("[*] --- Description of all features")
+        print("\n[*] --- Description of all features\n")
         display(self.dfall.describe())
 
     def histogram_dataset(self, columns=None,nbin = 25):
@@ -195,7 +210,7 @@ class Dataset_visualise:
         plt.show()
         plt.close()
 
-    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30):
+    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30,y_scale='linear'):
         """
         Plots a stacked histogram of a specific field in the dataset.
 
@@ -262,6 +277,7 @@ class Dataset_visualise:
         plt.title(f"Stacked histogram of {field_name} in {self.name}")
         plt.xlabel(f"{field_name}")
         plt.ylabel("Weighted count")
+        plt.yscale(y_scale)
         plt.show()
 
     def pair_plots_syst(self, df_syst, sample_size=10):
@@ -397,3 +413,33 @@ def visualize_coverage(ingestion_result_dict, ground_truth_mus):
         plt.legend()
         
     plt.show()
+
+def custom_pretty_print(d):
+    table_data = []  # To collect data for tabular printing
+
+    for key, value in d.items():
+        if isinstance(value, pd.DataFrame):
+            
+            table_data.append([key, f"DataFrame of shape {value.shape}", "DataFrame"])
+        elif isinstance(value, dict):
+            # Convert dictionary to list of tuples for tabulate
+            str_dict = f"Dictionary with {len(value.keys())} keys"
+            table_data.append([key, str_dict, f"{type(value)}"])
+        elif isinstance(value, np.ndarray):
+            str_np = (f"Array of shape {value.shape}")
+            table_data.append([key, str_np, f"{type(value)}"])
+        else:
+            try: 
+                array = np.array(value)
+                str_np = (f"Array of shape {array.shape}")
+                table_data.append([key, str_np, f"{type(value)}"])
+            except:
+                try:
+                    table_data.append([key, value, type(value)])
+                except:
+                    table_data.append([key, "Not Available", "Not Available"])
+                    
+    # Print collected table data if any
+    if table_data:
+
+        print(tabulate(table_data, headers=["Key", "Value","Type"], tablefmt='grid'))
