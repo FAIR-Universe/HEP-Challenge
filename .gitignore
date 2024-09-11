@@ -11,4 +11,4 @@ XGB_saved/
 docs/_build/doctrees
 *.log
 plots
-test/temp/
+*.ipynb_checkpoints
