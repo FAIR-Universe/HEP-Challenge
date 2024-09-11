@@ -8,7 +8,7 @@ The main part of the sample code submission is in the `model.py` which contains 
 Workings of the Statistical Analysis part can be found in our [whitepaper](https://fair-universe.lbl.gov/whitepaper.pdf)
 
 ## How to run it
-The model fits one systematics at a time hence we need to decide which one it would be before hand with `MODEL_SYST_NAME`.
+The model fits one systematics at a time hence we need to decide which one it would be beforehand with `MODEL_SYST_NAME`.
 ```bash
 export MODEL_SYST_NAME="jes" # if you want to fit the Jet Energy Scale systematics
 
@@ -25,4 +25,4 @@ python3 HEP-Challenge/run_ingestion.py \
 --submission HEP-Challenge/simple_one_syst_model
 ```
 
-Additionally a full chain test is available at [Launch_tests.sh](/test/Launch_tests.sh) which is designed to test the a model for all 6 systematics in NERSC
+Additionally, a full chain test is available at [Launch_tests.sh](/test/Launch_tests.sh) which is designed to test the model for all 6 systematics in NERSC
