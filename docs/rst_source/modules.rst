@@ -5,5 +5,6 @@ Core modules
    :maxdepth: 2
 
    ingestion_program
-   sample_code_submission
    scoring_program
+   simple_one_syst_model
+   simple_stat_only_model
