@@ -262,7 +262,7 @@ class Dataset_visualise:
             bins,
             fill=False,
             color="orange",
-            label=f"$H \\rightarrow \\tau \\tau (\mu = {mu_hat:.3f})$",
+            label = f"$H \\rightarrow \\tau \\tau (\\mu = {mu_hat:.3f})$"
         )
 
         plt.stairs(
@@ -270,7 +270,7 @@ class Dataset_visualise:
             bins,
             fill=False,
             color="red",
-            label=f"$H \\rightarrow \\tau \\tau (\mu = {1.0:.3f})$",
+            label=f"$H \\rightarrow \\tau \\tau (\\mu = {1.0:.3f})$",
         )
 
         plt.legend()
@@ -340,9 +340,9 @@ def visualize_scatter(ingestion_result_dict, ground_truth_mus):
         mu = ground_truth_mus[key]
         plt.scatter(mu, mu_hat, c='b', marker='o')
     
-    plt.xlabel('Ground Truth $\mu$')
-    plt.ylabel('Predicted $\mu$ (averaged for 100 test sets)')
-    plt.title('Ground Truth vs. Predicted $\mu$ Values')
+    plt.xlabel('Ground Truth $\\mu$')
+    plt.ylabel('Predicted $\\mu$ (averaged for 100 test sets)')
+    plt.title('Ground Truth vs. Predicted $\\mu$ Values')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.show()
 
@@ -405,8 +405,8 @@ def visualize_coverage(ingestion_result_dict, ground_truth_mus):
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
             plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='p16-p84')
 
-        plt.vlines(x=mu_hats, ymin=0, ymax=len(p16s), colors='r', linestyles='dashed', label='Predicted $\mu$')
-        plt.vlines(x=mu, ymin=0, ymax=len(p16s), colors='g', linestyles='dashed', label='Ground Truth $\mu$')
+        plt.vlines(x=mu_hats, ymin=0, ymax=len(p16s), colors='r', linestyles='dashed', label='Predicted $\\mu$')
+        plt.vlines(x=mu, ymin=0, ymax=len(p16s), colors='g', linestyles='dashed', label='Ground Truth $\\mu$')
         plt.xlabel('mu')
         plt.ylabel('pseudo-experiments')
         plt.title(f'mu distribution - Set_{key}')
