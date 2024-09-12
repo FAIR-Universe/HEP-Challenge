@@ -245,7 +245,7 @@ class Scoring:
         Compute the quantiles score based on the true value mu and the quantiles p16 and p84.
 
         Args:
-            * mu (array): The true ${\mu} value.
+            * mu (array): The true ${\\mu} value.
             * p16 (array): The 16th percentile.
             * p84 (array): The 84th percentile.
             * eps (float, optional): A small value to avoid division by zero. Defaults to 1e-3.
@@ -297,7 +297,7 @@ class Scoring:
         Save the figure of the mu distribution.
 
         Args:
-            * mu (array): The true ${\mu} value.
+            * mu (array): The true ${\\mu} value.
             * p16 (array): The 16th percentile.
             * p84 (array): The 84th percentile.
             * set (int, optional): The set number. Defaults to 0.
@@ -312,7 +312,7 @@ class Scoring:
             ymax=len(p16s),
             colors="r",
             linestyles="dashed",
-            label="average $\mu$",
+            label="average $\\mu$",
         )
         plt.xlabel("mu")
         plt.ylabel("pseudo-experiments")
