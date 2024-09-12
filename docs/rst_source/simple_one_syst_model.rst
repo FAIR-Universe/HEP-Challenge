@@ -1,4 +1,4 @@
-simple_one_syst_model
+Simple One Syst Model
 =====================
 
 .. include:: ../pages/advanced_example.md

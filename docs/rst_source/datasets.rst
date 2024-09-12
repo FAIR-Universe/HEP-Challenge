@@ -15,10 +15,18 @@ The events are divided into four groups:
 3. Diboson background (:math:`VV \rightarrow \tau \tau`)
 4. :math:`t\bar{t}` background (:math:`t \bar{t}`)
 
+By default the repo has a sample dataset. To get the bigger Public dataset,  
+.. code-block:: python3
+   from datasets import Neurips2024_public_dataset as public_dataset
+   data = public_dataset()
+
+This code is already included in the starting kit and you can run it to get the public dataset.
 
 .. automodule:: datasets
    :members:
    :undoc-members:
    :show-inheritance:
+
+
 
 For more details on Data, see the :doc:`data page <../pages/data>`.

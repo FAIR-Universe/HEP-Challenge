@@ -1,4 +1,4 @@
-simple_stat_only_model
+Simple Stat Only Model
 ======================
 
 .. automodule:: simple_stat_only_model.model
