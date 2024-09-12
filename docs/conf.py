@@ -11,7 +11,8 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../'))
 sys.path.append(os.path.abspath('../ingestion_program'))
 sys.path.append(os.path.abspath('../scoring_program'))
-sys.path.append(os.path.abspath('../sample_code_submission'))
+sys.path.append(os.path.abspath('../simple_one_syst_model'))
+sys.path.append(os.path.abspath('../simple_stat_only_model'))
 sys.path.append(os.path.abspath('../pages'))
 
 
