@@ -32,7 +32,7 @@ parser.add_argument(
     "--submission",
     "-s",
     help="Submission file location",
-    default=os.path.join(root_dir_name, "sample_code_submission"),
+    default=os.path.join(root_dir_name, "simple_stat_only_model"),
 )
 parser.add_argument(
     "--public-dataset",
