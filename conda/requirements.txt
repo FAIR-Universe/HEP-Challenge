@@ -12,5 +12,6 @@ requests
 keras
 torch
 torchvision
+tabulate
 tensorflow==2.15.0
 ipykernel
