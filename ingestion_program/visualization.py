@@ -5,7 +5,7 @@ import seaborn as sns  # seaborn for nice plot quicker
 from sklearn.metrics import roc_curve
 from IPython.display import display
 from sklearn.metrics import roc_auc_score
-from tabulate import tabulate
+
 
 class Dataset_visualise:
     """
@@ -36,9 +36,6 @@ class Dataset_visualise:
     """
 
     def __init__(self, data_set, name="dataset", columns=None):
-        print("\nGeneral Structure of the data object is a dictionary")
-        custom_pretty_print(data_set)
-        
         self.dfall = data_set["data"]
         self.target = data_set["labels"]
         self.weights = data_set["weights"]
@@ -57,36 +54,24 @@ class Dataset_visualise:
         """
         Prints information about the dataset.
         """
+        print(f"[*] --- Dataset name : {self.name}")
+        print(f"[*] --- Number of events : {self.dfall.shape[0]}")
+        print(f"[*] --- Number of features : {self.dfall.shape[1]}")
 
-        print()
-        
-        info_dict = {
-            "Dataset name": self.name,
-            "Number of events": self.dfall.shape[0],
-            "Number of features": self.dfall.shape[1],
-        }
-        
-        print(tabulate(info_dict.items(), headers=["Key", "Value"], tablefmt='grid'),"\n")
-
-        weight_dict = {}
         for key in self.keys:
-            weight_dict[key] = (np.sum(self.weight_keys[key]),len(self.weight_keys[key]))
-            
-        table_data = []
-        for key in self.keys:
-            table_data.append([key, weight_dict[key][0], weight_dict[key][1]])
-        
-        table_data.append(["Total Signal", np.sum(self.weights[self.target == 1]), len(self.weights[self.target == 1])])
-        table_data.append(["Total Background", np.sum(self.weights[self.target == 0]), len(self.weights[self.target == 0])])
-            
-        print("[*] --- Detailed Label Summary")
+            print("  ", key, " ", self.weight_keys[key].sum())
 
-        print(tabulate(table_data, headers=["Detailed Label", "Total Weight", "Number of events"], tablefmt='grid'))
+        print(
+            f"[*] --- Number of signal events : {self.dfall[self.target==1].shape[0]}"
+        )
+        print(
+            f"[*] --- Number of background events : {self.dfall[self.target==0].shape[0]}"
+        )
 
-        print("\n[*] --- Examples of all features\n")
+        print("[*] --- Examples of all features")
         display(self.dfall.head())
 
-        print("\n[*] --- Description of all features\n")
+        print("[*] --- Description of all features")
         display(self.dfall.describe())
 
     def histogram_dataset(self, columns=None,nbin = 25):
@@ -117,17 +102,33 @@ class Dataset_visualise:
 
         for i, column in enumerate(columns):
             # Determine the combined range for the current column
-            min_value = df[column].min()
-            max_value = df[column].max()
+
+            lower_percentile = 0
+            upper_percentile = 97.5
+            
+            lower_bound = np.percentile(df[column], lower_percentile)
+            upper_bound = np.percentile(df[column], upper_percentile)
+            
+            df_clipped = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            weights_clipped = self.weights[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            target_clipped = self.target[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            
+            min_value = df_clipped[column].min()
+            max_value = df_clipped[column].max()
 
             # Define the bin edges
             bin_edges = np.linspace(min_value, max_value, nbin + 1)
             
-            # Plot the histogram for label == 1 (Signal)
-            axes[i].hist(df[self.target == 1][column],weights=self.weights[self.target == 1], bins=bin_edges, alpha=0.4, color='blue', label='Signal (label=1)', density=True)
+            signal_field = df_clipped[target_clipped == 1][column]
+            background_field = df_clipped[target_clipped == 0][column]
+            signal_weights = weights_clipped[target_clipped == 1]
+            background_weights = weights_clipped[target_clipped == 0]
             
-            # Plot the histogram for label == 0 (Background)
-            axes[i].hist(df[self.target == 0][column],weights=self.weights[self.target == 0], bins=bin_edges, alpha=0.4, color='red', label='Background (label=0)', density=True)
+            # Plot the histogram for label == 1 (Signal)
+            axes[i].hist(signal_field, bins=bin_edges, alpha=0.4, color='blue', label='Signal', weights=signal_weights, density=True)
+            
+            axes[i].hist(background_field, bins=bin_edges, alpha=0.4, color='red', label='Background', weights=background_weights, density=True)    
+
             
             # Set titles and labels
             axes[i].set_title(f'{column}', fontsize=16)
@@ -210,7 +211,7 @@ class Dataset_visualise:
         plt.show()
         plt.close()
 
-    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30,y_scale='linear'):
+    def stacked_histogram(self, field_name, mu_hat=1.0, bins=30):
         """
         Plots a stacked histogram of a specific field in the dataset.
 
@@ -277,10 +278,9 @@ class Dataset_visualise:
         plt.title(f"Stacked histogram of {field_name} in {self.name}")
         plt.xlabel(f"{field_name}")
         plt.ylabel("Weighted count")
-        plt.yscale(y_scale)
         plt.show()
 
-    def pair_plots_syst(self, df_syst, sample_size=10):
+    def pair_plots_syst(self, df_syst, sample_size=100):
         """
         Plots pair plots between the dataset and a system dataset.
 
@@ -293,10 +293,10 @@ class Dataset_visualise:
         df_sample = self.dfall[self.columns].copy()
         df_sample_syst = df_syst[self.columns].copy()
 
-        df_sample = df_sample.sample(n=sample_size)
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
         df_sample["syst"] = False
-
-        df_sample_syst = df_sample_syst.sample(n=sample_size)
         df_sample_syst["syst"] = True
 
         frames = [df_sample, df_sample_syst]
@@ -320,6 +320,152 @@ class Dataset_visualise:
         ax.figure.suptitle("Pair plots of features between syst and no_syst")
         plt.show()
         plt.close()
+
+    def histogram_syst(self, df_syst, weight_syst, columns=None,nbin = 25):
+
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+
+        
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 2  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+
+            lower_percentile = 0
+            upper_percentile = 97.5
+            
+            lower_bound = np.percentile(df_sample[column], lower_percentile)
+            upper_bound = np.percentile(df_sample[column], upper_percentile)
+            
+            df_clipped = df_sample[(df_sample[column] >= lower_bound) & (df_sample[column] <= upper_bound)]
+            weights_clipped = self.weights[(df_sample[column] >= lower_bound) & (df_sample[column] <= upper_bound)]
+            
+            df_clipped_syst = df_sample_syst[(df_sample_syst[column] >= lower_bound) & (df_sample_syst[column] <= upper_bound)] 
+            weights_clipped_syst = weight_syst[(df_sample_syst[column] >= lower_bound) & (df_sample_syst[column] <= upper_bound)]
+            
+            min_value = df_clipped[column].min()
+            max_value = df_clipped[column].max()
+
+            # Define the bin edges
+            bin_edges = np.linspace(min_value, max_value, nbin + 1)
+            
+            norminal_field = df_clipped[column]
+            syst_field = df_clipped_syst[column]
+
+            
+            # Plot the histogram for label == 1 (Signal)
+            axes[i].hist(norminal_field, bins=bin_edges, alpha=0.4, color='blue', label='Nominal', weights=weights_clipped, density=True)
+            
+            axes[i].hist(syst_field, bins=bin_edges, alpha=0.4, color='red', label='Systematics shifted', weights=weights_clipped_syst, density=True)    
+
+
+            
+            # Set titles and labels
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel(column)
+            axes[i].set_ylabel('Density')
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+            
+    def event_vise_syst(self,df_syst, columns=None, sample_size=100):
+        
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
+        df_sample["syst"] = False
+        df_sample_syst["syst"] = True
+        
+        print ("df_sample",df_sample.shape)
+        print ("df_sample_syst",df_sample_syst.shape)
+        
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 2  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+            field = df_sample[column]
+            delta_field = df_sample_syst[column]-df_sample[column]
+            axes[i].plot(field,delta_field, 'o', color='blue', label='No Syst')
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel(column)
+            axes[i].set_ylabel('no_syst - syst')
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+
+    def event_vise_syst_arrow(self,df_syst, columns=None, sample_size=100):
+        
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
+        df_sample["syst"] = False
+        df_sample_syst["syst"] = True
+        
+        print ("df_sample",df_sample.shape)
+        print ("df_sample_syst",df_sample_syst.shape)
+        
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 2  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+            field = df_sample[column]
+            delta_field = df_sample_syst[column]-df_sample[column]
+            for j in index:
+                axes[i].arrow(df_sample_syst[column],delta_field[j],0,delta_field[j],head_width=0.1, head_length=0.1, fc='k', ec='k')
+                
+            # Adding labels for the arrows
+            axes[i].scatter(index, df_sample[column], color='green', label='No syst', zorder=5)
+            axes[i].scatter(index, df_sample_syst[column], color='red', label='syst', zorder=5)
+            
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel("Event ID")
+            axes[i].set_ylabel(column)
+            
+            # Add a legend to each subplot
+            axes[i].legend()
 
 
 
@@ -413,33 +559,3 @@ def visualize_coverage(ingestion_result_dict, ground_truth_mus):
         plt.legend()
         
     plt.show()
-
-def custom_pretty_print(d):
-    table_data = []  # To collect data for tabular printing
-
-    for key, value in d.items():
-        if isinstance(value, pd.DataFrame):
-            
-            table_data.append([key, f"DataFrame of shape {value.shape}", "DataFrame"])
-        elif isinstance(value, dict):
-            # Convert dictionary to list of tuples for tabulate
-            str_dict = f"Dictionary with {len(value.keys())} keys"
-            table_data.append([key, str_dict, f"{type(value)}"])
-        elif isinstance(value, np.ndarray):
-            str_np = (f"Array of shape {value.shape}")
-            table_data.append([key, str_np, f"{type(value)}"])
-        else:
-            try: 
-                array = np.array(value)
-                str_np = (f"Array of shape {array.shape}")
-                table_data.append([key, str_np, f"{type(value)}"])
-            except:
-                try:
-                    table_data.append([key, value, type(value)])
-                except:
-                    table_data.append([key, "Not Available", "Not Available"])
-                    
-    # Print collected table data if any
-    if table_data:
-
-        print(tabulate(table_data, headers=["Key", "Value","Type"], tablefmt='grid'))
