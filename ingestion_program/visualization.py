@@ -409,9 +409,7 @@ class Dataset_visualise:
         df_sample["syst"] = False
         df_sample_syst["syst"] = True
         
-        print ("df_sample",df_sample.shape)
-        print ("df_sample_syst",df_sample_syst.shape)
-        
+
         if columns is None:
             columns = self.columns
         sns.set_theme(style="whitegrid")
@@ -450,9 +448,6 @@ class Dataset_visualise:
         df_sample_syst = df_sample_syst.loc[index]
         df_sample["syst"] = False
         df_sample_syst["syst"] = True
-        
-        print ("df_sample",df_sample.shape)
-        print ("df_sample_syst",df_sample_syst.shape)
         
         if columns is None:
             columns = self.columns
