@@ -512,6 +512,7 @@ def systematics(
     ttbar_scale=None,
     diboson_scale=None,
     bkg_scale=None,
+    dopostprocess=True,
 ):
     """
     Apply systematics to the dataset
@@ -566,10 +567,11 @@ def systematics(
         if key not in ["data","settings"]:
             data_syst[key] = data_set_new[key]
 
-    # deal with thresholds on had pt and jet pt
-    # possibly remove sub leading jet
-    # possibly remove events
-    data_syst = postprocess(data_syst)
+    if dopostprocess:
+        # deal with thresholds on had pt and jet pt
+        # possibly remove sub leading jet
+        # possibly remove events
+        data_syst = postprocess(data_syst)
 
     # build resulting dictionary
     #dict
