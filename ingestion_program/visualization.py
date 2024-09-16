@@ -332,11 +332,11 @@ class Dataset_visualise:
         sns.set_theme(style="whitegrid")
         
         # Number of rows and columns in the subplot grid
-        n_cols = 2  # Number of columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
         n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
 
         # Create a figure and a grid of subplots
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
         axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
 
         for i, column in enumerate(columns):
@@ -386,7 +386,7 @@ class Dataset_visualise:
         
         df_sample = self.dfall[self.columns].copy()
         df_sample_syst = df_syst[self.columns].copy()
-
+        
         index = np.random.choice(df_sample.index, sample_size, replace=False)
         df_sample = df_sample.loc[index]
         df_sample_syst = df_sample_syst.loc[index]
@@ -401,11 +401,11 @@ class Dataset_visualise:
         sns.set_theme(style="whitegrid")
         
         # Number of rows and columns in the subplot grid
-        n_cols = 2  # Number of columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
         n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
 
         # Create a figure and a grid of subplots
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
         axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
 
         for i, column in enumerate(columns):
@@ -443,31 +443,34 @@ class Dataset_visualise:
         sns.set_theme(style="whitegrid")
         
         # Number of rows and columns in the subplot grid
-        n_cols = 2  # Number of columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
         n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
 
         # Create a figure and a grid of subplots
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
         axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
 
         for i, column in enumerate(columns):
             field = df_sample[column]
             delta_field = df_sample_syst[column]-df_sample[column]
             for j in index:
-                axes[i].arrow(df_sample_syst[column],delta_field[j],0,delta_field[j],head_width=0.1, head_length=0.1, fc='k', ec='k')
+                axes[i].arrow(field[j],field[j],0,delta_field[j],head_width=0.1, head_length=0.1, fc='k', ec='k')
                 
             # Adding labels for the arrows
-            axes[i].scatter(index, df_sample[column], color='green', label='No syst', zorder=5)
-            axes[i].scatter(index, df_sample_syst[column], color='red', label='syst', zorder=5)
+            axes[i].scatter(field, df_sample[column], color='green', label='No syst', zorder=5)
+            axes[i].scatter(field, df_sample_syst[column], color='red', label='syst', zorder=5)
             
             axes[i].set_title(f'{column}', fontsize=16)
-            axes[i].set_xlabel("Event ID")
+            axes[i].set_xlabel("column")
             axes[i].set_ylabel(column)
             
             # Add a legend to each subplot
             axes[i].legend()
 
-
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+            
 
 def visualize_scatter(ingestion_result_dict, ground_truth_mus):
     """

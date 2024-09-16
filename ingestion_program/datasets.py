@@ -172,7 +172,7 @@ class Data:
 
         if self.__train_set is None:
             self.load_train_set()
-        return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale)
+        return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale,dopostprocess=False)
 
 
 current_path = os.path.dirname(os.path.realpath(__file__))
