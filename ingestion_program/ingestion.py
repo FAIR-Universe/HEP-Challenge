@@ -173,7 +173,6 @@ class Ingestion:
         random_state_initial.shuffle(all_combinations)
 
         full_test_set = self.data.get_test_set()
-        del self.data
 
         self.results_dict = {}
         for set_index, test_set_index in all_combinations:
