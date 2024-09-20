@@ -165,6 +165,21 @@ class Data:
         """
         del self.__train_set
 
+    def get_syst_train_set(
+        self, tes=1.0, 
+        jes=1.0, 
+        soft_met=0.0, 
+        ttbar_scale=None, 
+        diboson_scale=None, 
+        bkg_scale=None, 
+        dopostprocess=False
+    ):
+        from systematics import systematics
+
+        if self.__train_set is None:
+            self.load_train_set()
+        return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale,dopostprocess=dopostprocess)
+
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 parent_path = os.path.dirname(current_path)
