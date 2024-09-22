@@ -6,6 +6,7 @@ import requests
 from zipfile import ZipFile
 import logging
 import io
+from tqdm import tqdm
 
 # Get the logging level from an environment variable, default to INFO
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -224,7 +225,7 @@ def Neurips2024_public_dataset():
         if response.status_code == 200:
             with open(public_data_zip_path, 'wb') as file:
                 # Iterate over the response in chunks
-                for chunk in response.iter_content(chunk_size=chunk_size):
+                for chunk in tqdm(response.iter_content(chunk_size=chunk_size)):
                     # Filter out keep-alive new chunks
                     if chunk:
                         file.write(chunk)
