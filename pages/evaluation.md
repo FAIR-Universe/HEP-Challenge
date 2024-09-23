@@ -1,6 +1,6 @@
 # Evaluation
 
-**The specific target of this challenge is to determine a one standard deviation ( 68.3%)  confidence interval for $\mu$ on provided test dataset(s) (see main “Overview” page)**
+**The specific target of this challenge is to determine a one standard deviation ( 68.27%)  confidence interval for $\mu$ on provided test dataset(s) (see main “Overview” page)**
 
 For this competition participants models will be tested on ***4*** sets of ***50*** pseudo experiments (Total **200** pseudo experiments). Each set will have a different value of **$\mu$**. The Overall Quantile score will be based on total coverage and average interval.
 
