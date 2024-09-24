@@ -117,17 +117,33 @@ class Dataset_visualise:
 
         for i, column in enumerate(columns):
             # Determine the combined range for the current column
-            min_value = df[column].min()
-            max_value = df[column].max()
+
+            lower_percentile = 0
+            upper_percentile = 97.5
+            
+            lower_bound = np.percentile(df[column], lower_percentile)
+            upper_bound = np.percentile(df[column], upper_percentile)
+            
+            df_clipped = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            weights_clipped = self.weights[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            target_clipped = self.target[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+            
+            min_value = df_clipped[column].min()
+            max_value = df_clipped[column].max()
 
             # Define the bin edges
             bin_edges = np.linspace(min_value, max_value, nbin + 1)
             
-            # Plot the histogram for label == 1 (Signal)
-            axes[i].hist(df[self.target == 1][column],weights=self.weights[self.target == 1], bins=bin_edges, alpha=0.4, color='blue', label='Signal (label=1)', density=True)
+            signal_field = df_clipped[target_clipped == 1][column]
+            background_field = df_clipped[target_clipped == 0][column]
+            signal_weights = weights_clipped[target_clipped == 1]
+            background_weights = weights_clipped[target_clipped == 0]
             
-            # Plot the histogram for label == 0 (Background)
-            axes[i].hist(df[self.target == 0][column],weights=self.weights[self.target == 0], bins=bin_edges, alpha=0.4, color='red', label='Background (label=0)', density=True)
+            # Plot the histogram for label == 1 (Signal)
+            axes[i].hist(signal_field, bins=bin_edges, alpha=0.4, color='blue', label='Signal', weights=signal_weights, density=True)
+            
+            axes[i].hist(background_field, bins=bin_edges, alpha=0.4, color='red', label='Background', weights=background_weights, density=True)    
+
             
             # Set titles and labels
             axes[i].set_title(f'{column}', fontsize=16)
@@ -280,7 +296,7 @@ class Dataset_visualise:
         plt.yscale(y_scale)
         plt.show()
 
-    def pair_plots_syst(self, df_syst, sample_size=10):
+    def pair_plots_syst(self, df_syst, sample_size=100):
         """
         Plots pair plots between the dataset and a system dataset.
 
@@ -293,10 +309,10 @@ class Dataset_visualise:
         df_sample = self.dfall[self.columns].copy()
         df_sample_syst = df_syst[self.columns].copy()
 
-        df_sample = df_sample.sample(n=sample_size)
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
         df_sample["syst"] = False
-
-        df_sample_syst = df_sample_syst.sample(n=sample_size)
         df_sample_syst["syst"] = True
 
         frames = [df_sample, df_sample_syst]
@@ -321,7 +337,151 @@ class Dataset_visualise:
         plt.show()
         plt.close()
 
+    def histogram_syst(self, df_syst, weight_syst, columns=None,nbin = 25):
 
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+
+        
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+
+            lower_percentile = 0
+            upper_percentile = 97.5
+            
+            lower_bound = np.percentile(df_sample[column], lower_percentile)
+            upper_bound = np.percentile(df_sample[column], upper_percentile)
+            
+            df_clipped = df_sample[(df_sample[column] >= lower_bound) & (df_sample[column] <= upper_bound)]
+            weights_clipped = self.weights[(df_sample[column] >= lower_bound) & (df_sample[column] <= upper_bound)]
+            
+            df_clipped_syst = df_sample_syst[(df_sample_syst[column] >= lower_bound) & (df_sample_syst[column] <= upper_bound)] 
+            weights_clipped_syst = weight_syst[(df_sample_syst[column] >= lower_bound) & (df_sample_syst[column] <= upper_bound)]
+            
+            min_value = df_clipped[column].min()
+            max_value = df_clipped[column].max()
+
+            # Define the bin edges
+            bin_edges = np.linspace(min_value, max_value, nbin + 1)
+            
+            norminal_field = df_clipped[column]
+            syst_field = df_clipped_syst[column]
+
+            
+            # Plot the histogram for label == 1 (Signal)
+            axes[i].hist(norminal_field, bins=bin_edges, alpha=0.4, color='blue', label='Nominal', weights=weights_clipped, density=True)
+            
+            axes[i].hist(syst_field, bins=bin_edges, alpha=0.4, color='red', label='Systematics shifted', weights=weights_clipped_syst, density=True)    
+
+
+            
+            # Set titles and labels
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel(column)
+            axes[i].set_ylabel('Density')
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+            
+    def event_vise_syst(self,df_syst, columns=None, sample_size=100):
+        
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+        
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
+        df_sample["syst"] = False
+        df_sample_syst["syst"] = True
+        
+
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+            field = df_sample[column]
+            delta_field = df_sample_syst[column]-df_sample[column]
+            axes[i].plot(field,delta_field, 'o', color='blue', label='No Syst')
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel(column)
+            axes[i].set_ylabel('no_syst - syst')
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+
+    def event_vise_syst_arrow(self,df_syst, columns=None, sample_size=100):
+        
+        df_sample = self.dfall[self.columns].copy()
+        df_sample_syst = df_syst[self.columns].copy()
+
+        index = np.random.choice(df_sample.index, sample_size, replace=False)
+        df_sample = df_sample.loc[index]
+        df_sample_syst = df_sample_syst.loc[index]
+        df_sample["syst"] = False
+        df_sample_syst["syst"] = True
+        
+        if columns is None:
+            columns = self.columns
+        sns.set_theme(style="whitegrid")
+        
+        # Number of rows and columns in the subplot grid
+        n_cols = 3  # Number of columns in the subplot grid
+        n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+        # Create a figure and a grid of subplots
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8 * n_cols, 6 * n_rows))
+        axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+        for i, column in enumerate(columns):
+            field = df_sample[column]
+            delta_field = df_sample_syst[column]-df_sample[column]
+            for j in index:
+                axes[i].arrow(field[j],field[j],0,delta_field[j],head_width=0.1, head_length=0.1, fc='k', ec='k')
+                
+            # Adding labels for the arrows
+            axes[i].scatter(field, df_sample[column], color='green', label='No syst', zorder=5)
+            axes[i].scatter(field, df_sample_syst[column], color='red', label='syst', zorder=5)
+            
+            axes[i].set_title(f'{column}', fontsize=16)
+            axes[i].set_xlabel("column")
+            axes[i].set_ylabel(column)
+            
+            # Add a legend to each subplot
+            axes[i].legend()
+
+        # Hide any unused subplots
+        for j in range(i + 1, len(axes)):
+            fig.delaxes(axes[j])
+            
 
 def visualize_scatter(ingestion_result_dict, ground_truth_mus):
     """

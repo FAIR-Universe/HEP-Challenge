@@ -14,3 +14,4 @@ plots
 *.ipynb_checkpoints
 test/temp/
 docs/_build/html
+detailed_results.html
