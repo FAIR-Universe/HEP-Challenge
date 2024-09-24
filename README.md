@@ -5,7 +5,7 @@ This repo consists of material for the HiggsML Uncertainty Challenge. The compet
 ***
 
 ## Challenge Website
-The challenge website will appear on Codabench: https://www.codabench.org/. Details about how to join the challenge and the challenge description will be made available on the website
+The challenge website is on [Codabench](https://www.codabench.org/competitions/2977/). Details about how to join the challenge and the challenge description are available on the website
 
 ## Docs
 We have added detailed documentation on our website that details every aspect of the competition. 
