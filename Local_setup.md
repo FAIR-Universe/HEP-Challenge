@@ -4,6 +4,7 @@
 If you are running this starting kit locally, you may want to use a dedicated conda env.  
 [Instructions to setup a conda env](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/conda)
 
+### With Docker
 The main advantage of using docker is that you dont have to worry about dependencies since a good docker container generally has all the dependencies.
 
 * Step 1. Check if have docker **if not** install docker 
