@@ -165,7 +165,7 @@ class Scoring:
             self._print(f"Coverage: {set_coverage}")
             self._print(f"Quantiles Score: {set_quantiles_score}")
 
-            self.save_figure(mu=np.mean(mu_hats), p16s=p16s, p84s=p84s, set=i)
+            self.save_figure(mu=np.mean(mu_hats), p16s=p16s, p84s=p84s, set=i, true_mu=mu)
 
             # Save set scores in lists
             rmses.append(set_rmse)
@@ -292,7 +292,7 @@ class Scoring:
         print(content)
         self.write_html(content + "<br>")
 
-    def save_figure(self, mu, p16s, p84s, set=0):
+    def save_figure(self, mu,p16s, p84s, set=0,true_mu=None):
         """
         Save the figure of the mu distribution.
 
@@ -305,7 +305,10 @@ class Scoring:
         fig = plt.figure(figsize=(5, 5))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
-            plt.hlines(y=i, xmin=p16, xmax=p84, colors="b")
+            if i == 0:
+                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='Coverage interval')
+            else:   
+                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b')
         plt.vlines(
             x=mu,
             ymin=0,
@@ -314,10 +317,19 @@ class Scoring:
             linestyles="dashed",
             label="average $\\mu$",
         )
-        plt.xlabel("mu")
+        if true_mu is not None:
+            plt.vlines(
+                x=true_mu,
+                ymin=0,
+                ymax=len(p16s),
+                colors="g",
+                linestyles="dashed",
+                label="true $\\mu$",
+            )
+        plt.xlabel("$\\mu$")
         plt.ylabel("pseudo-experiments")
-        plt.title(f"mu distribution - Set {set}")
-        plt.legend()
+        plt.title(f"$\\mu$ distribution - Set {set}")
+        plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
 
         buf = io.BytesIO()
         fig.savefig(buf, format="png")

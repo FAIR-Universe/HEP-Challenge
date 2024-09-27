@@ -563,14 +563,17 @@ def visualize_coverage(ingestion_result_dict, ground_truth_mus):
         
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
-            plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='p16-p84')
+            if i == 0:
+                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='Coverage interval')
+            else:   
+                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b')
 
         plt.vlines(x=mu_hats, ymin=0, ymax=len(p16s), colors='r', linestyles='dashed', label='Predicted $\\mu$')
         plt.vlines(x=mu, ymin=0, ymax=len(p16s), colors='g', linestyles='dashed', label='Ground Truth $\\mu$')
-        plt.xlabel('mu')
+        plt.xlabel("$\\mu$")
         plt.ylabel('pseudo-experiments')
-        plt.title(f'mu distribution - Set_{key}')
-        plt.legend()
+        plt.title(f'$\\mu$ distribution - Set_{key}')
+        plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
         
     plt.show()
 
