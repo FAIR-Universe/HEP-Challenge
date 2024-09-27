@@ -2,12 +2,11 @@
 
 ## Introduction 
 
-This High-energy Physics (HEP) Machine Learning competition is the first to strongly emphasise uncertainties: mastering uncertainties in the input training dataset and outputting credible confidence intervals.
+ This NeurIPS 2024 Machine Learning competition is one of the first to strongly emphasise mastering uncertainties in the input training dataset and outputting credible confidence intervals. This challenge explores uncertainty-aware AI techniques for High Energy Physics (HEP).
 
-The context is the measurement of the $H \rightarrow \tau^+ \tau^-$ cross section like in [HiggsML challenge on Kaggle](https://www.kaggle.com/c/higgs-boson) in 2014. Participants should design an advanced analysis technique that can not only measure the signal strength but also provide a confidence interval.
+The context is the measurement of the Higgs Boson signal like in [HiggsML challenge on Kaggle](https://www.kaggle.com/c/higgs-boson) in 2014. Participants should design an advanced analysis technique that can not only measure the signal strength but also provide a confidence interval.
 
-The confidence interval should include statistical and systematic uncertainties (concerning detector calibration, background levels, etc…). It is expected that advanced analysis techniques that can control the impact of systematics will perform best, thereby pushing the field of uncertainty-aware AI techniques for HEP and beyond.
-
+The confidence interval should include statistical and systematic uncertainties (concerning detector calibration, background levels, etc…). It is expected that advanced analysis techniques that can control the impact of systematics will perform best. This challenge presents an opportunity to push the boundaries of machine learning applications within physics while still focusing on essential ML skills like robust model development and uncertainty quantification.
 
 ***
 There are several information sources regarding the FAIR Universe - HiggsML Uncertainty Challenge:
