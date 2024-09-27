@@ -1,8 +1,5 @@
 # Overview 
 
-
-## Codabench Walkthrough tutorial: [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf)
-
 ## Introduction 
 In 2012, the Nobel-prize-winning discovery of the Higgs Boson by the ATLAS and CMS experiments at the Large Hadron Collider (LHC) at CERN in Geneva, Switzerland was a major milestone in the history of physics. However, despite the validation it provided of the Standard Model of particle physics (SM), there are still numerous questions in physics that the SM does not answer. One promissing approach to uncover some of these mysteries is to study the Higgs Boson in great detail, as the rate of Higgs Boson production and its decay properties may hold the secrets to the nature of dark matter and other phenomena not explained by the SM.
 
@@ -27,64 +24,6 @@ The standard approach used in LHC analyses is to construct a 1D feature $f(x)$ (
 
 The aim of this challenge is to determine the signal strength $\mu$ and its uncertainty. In addition participants submissions will be evaluated against test datasets which can have a range of true “$\mu$” values.  Furthermore the test datasets have systematic uncertainties applied on nuisance parameters at values that may be different to those available during training. There are six systematic uncertainties parametrised by nuisance parameters (NP) corresponding to the Tau Energy Scale (TES), the Jet Energy Scale (JES), the soft missing energy component (SOFT_MET), the total background scale (BKG_SCALE), the smaller magnitude backgrounds ttbar (TTBAR_SCALE) and diboson (DIBOSON_SCALE). The default (no bias) values of these  NP is 1., except for SOFT_MET for which it is 0.
 
-**The specific target of this challenge is to determine a 68% confidence interval for \mu on these test dataset(s).** We desire the interval to be as small as possible so long as the coverage is close to 68%. **Participants should consult the “Evaluation” tab for more details on what quantity should be returned and how it will be scored, and the “Starting Kit” tab for examples of how to return these values from your models within their submission. In addition the “Starting Kit” provides examples of how to apply TES systematics to the training data when training your model.** Though the values of TES applied in this way may not be the one in the test set, this information can be used to constrain (“profile”) the TES value. It is not necessary for participants to provide the value of TES on the test data (we only care about $\mu$), but it may be necessary to determine TES and its uncertainty in order to win the challenge.
+**The specific target of this challenge is to determine a 68.27% confidence interval for \mu on these test dataset(s).** We desire the interval to be as small as possible so long as the coverage is close to 68.27%. **Participants should consult the “Evaluation” tab for more details on what quantity should be returned and how it will be scored, and the “Starting Kit” tab for examples of how to return these values from your models within their submission. In addition the “Starting Kit” provides examples of how to apply TES systematics to the training data when training your model.** Though the values of TES applied in this way may not be the one in the test set, this information can be used to constrain (“profile”) the TES value. It is not necessary for participants to provide the value of TES on the test data (we only care about $\mu$), but it may be necessary to determine TES and its uncertainty in order to win the challenge.
 
 ***
-
-## How to join this challenge?
-
-- Go to the "Starting Kit" tab
-- Download the "Dummy sample submission" or "sample submission"
-- Go to the "My Submissions" tab
-- Submit the downloaded file
-
-For more instructions feel free to checkout these [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf) 
-
-***
-
-## Submissions
-
-This competition allows code submissions. Participants can submit either of the following:
-- code submission without any trained model
-- code submission with pre-trained model
-
-***
-
-## Credits
-
-### Lawrence Berkeley National Laboratory 
-- Benjamin Nachman
-- Chris Harris
-- Sascha Diefenbacher
-- Steven Farrell
-- Wahid Bhimji
-- Jordan Dudley 
-
-### University of Washington
-- Elham E Khoda
-- Shih-Chieh Hsu
-- Yulei Zhang
-- Yaun-Tang Chou
-
-### ChaLearn
-- Isabelle Guyon
-- Ihsan Ullah
-
-### Université Paris-Saclay
-- David Rousseau
-- Ragansu Chakkappai
-
-### UC Irvine
-- Aishik Ghosh
-
-***
-
-## Contact
-
-Visit our website: https://fair-universe.lbl.gov/
-
-Email: fair-universe@lbl.gov
-
-Updates will be announced through fair-universe-announcements google group. [Click to join Google Group](https://groups.google.com/u/0/a/lbl.gov/g/Fair-Universe-Announcements/)
-
-Join **#higgsml-uncertainty-challenge** channel in [FAIR Universe slack workspace](https://join.slack.com/t/fairuniverse/shared_invite/zt-2dt9ovrp1-jvi0DnCK9jzL3VGrdwYNMA)

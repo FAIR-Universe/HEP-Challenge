@@ -1,4 +1,11 @@
-## Local Setup
+## Getting Started
+
+To get started with in a local Machine you need to first clone our github repository.
+```shell
+git clone --depth 1 https://github.com/FAIR-Universe/HEP-Challenge.git
+```
+
+To get the right dependencies you could use different strategies depending on your local machine. 
 
 ### With Conda :
 If you are running this starting kit locally, you may want to use a dedicated conda env.  
