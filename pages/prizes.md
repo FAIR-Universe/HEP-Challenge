@@ -11,4 +11,4 @@ Eligibility is determined by the Terms and Conditions that all participants must
 
 In addition to monetary prizes, a jury will evaluate models for which a short write-up will have been submitted. The models will be evaluated in terms of score, practicality, frugality in terms of resources and novelty. 
 
-The special jury prizes will be funded invitations to NeurIPS 2024 or a dedicated workshop at CERN, Geneva, Switzerland.
+The special jury prizes will be funded invitations to NeurIPS 2024, to talk during the dedicated session (Saturday 14th Dec) of the competitions workshop or in a dedicated workshop at CERN, Geneva, Switzerland.
