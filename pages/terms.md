@@ -6,7 +6,7 @@ This challenge is for educational purposes only and no prizes are granted. It is
 
 ## Disqualification Terms
 
-- Participant's code is called multiple times to make predictions for multiple test sets. All the test sets are provided independently. Using information from other test sets in any way could lead to disqualification from the competition.
+- Participant's code is called multiple times to make predictions for multiple test sets(pseudo experiments). All the test sets are provided independently. Using information from other test sets in any way could lead to disqualification from the competition.
 - Any kind of information sharing is not allowed. Doing this will lead to disqualification from the competition.
 - In post challenge analysis, participants' code will be run with a different order of test sets. Getting different results in this process will lead to disqualification from the competition.
 
