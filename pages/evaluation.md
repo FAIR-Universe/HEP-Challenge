@@ -1,12 +1,12 @@
 # Evaluation
 
-**The specific target of this challenge is to determine a one standard deviation ( 68.27%)  confidence interval for $\mu$ on provided test dataset(s) (see main “Overview” page)**
+**The specific target of this challenge is to determine a one standard deviation ( 68.27%)  confidence interval for $\mu$ on provided pseudo-experiment(s) (see main “Overview” page)**
 
-For this competition participants models will be tested on ***4*** sets of ***50*** pseudo experiments (Total **200** pseudo experiments). Each set will have a different value of **$\mu$**. The Overall Quantile score will be based on total coverage and average interval.
+For this competition participants models will be tested on ***10*** sets of ***100*** pseudo-experiments (Total **1000** pseudo experiments). Each set will have a different value of **$\mu$**. The Overall Quantile score will be based on total coverage and average interval.
 
 ## Quantiles Score
 
-The participants are requested to provide a method that, for a given test data set, returns an interval [$\hat \mu_{16}, \hat \mu_{84}$]. This interval should describe the central 68.27% quantile of the likelihood function of the signal strength $\mu$. In other words, the interval should contain the true $\mu$ value of a given data set 68.27% of the time.
+The participants are requested to provide a method that, for a given pseudo-experiment, returns an interval [$\hat \mu_{16}, \hat \mu_{84}$]. This interval should describe the central 68.27% quantile of the likelihood function of the signal strength $\mu$. In other words, the interval should contain the true $\mu$ value of a given data set 68.27% of the time.
 
 ### Constructing the Interval
 
@@ -21,7 +21,7 @@ Not every uncertainty quantification method is able to return a full likelihood 
 
 The score consist of two parts, the interval width and the coverage:
 
-**Interval width**: we define the width as the average size of the interval over $N$ test sets $w = \frac{1}{N} \sum_{i=0}^{N} \left| \hat \mu_{84,i} - \hat \mu_{16,i} \right|$. 
+**Interval width**: we define the width as the average size of the interval over $N$ pseudo-experiments $w = \frac{1}{N} \sum_{i=0}^{N} \left| \hat \mu_{84,i} - \hat \mu_{16,i} \right|$. 
 
 **Coverage**: we define the coverage as the fraction of times the true $\mu$ is contained withing the respective interval. $c = \frac{1}{N} \sum_{i=0}^{N} 1~\textrm{if} (\mu_{true,i} \in [\hat \mu_{16,i} , \hat \mu_{84,i}])$. 
 
