@@ -103,8 +103,7 @@ These variables are derived from the primary varibales with the help of `derived
 
 ## How to get Public Data?
 
-- Go to the "Files" tab
-- Download the "Neurips_Public_data_26_08_2024"
+Download the [Neurips_Public_data_26_08_2024](https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/)
 
 or use the following command to download using terminal
 ```
