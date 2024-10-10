@@ -115,7 +115,7 @@ class Scoring:
 
         self.score_file = os.path.join(score_dir, "scores.json")
         self.html_file = os.path.join(score_dir, "detailed_results.html")
-
+        self.score_dir = score_dir
         logger.info(f"Read ingestion results from {prediction_dir}")
 
     def compute_scores(self, test_settings):
@@ -292,7 +292,7 @@ class Scoring:
         print(content)
         self.write_html(content + "<br>")
 
-    def save_figure(self, mu,p16s, p84s, set=0,true_mu=None):
+    def save_figure(self, mu,p16s, p84s,true_mu=None, set=0):
         """
         Save the figure of the mu distribution.
 
@@ -302,7 +302,7 @@ class Scoring:
             * p84 (array): The 84th percentile.
             * set (int, optional): The set number. Defaults to 0.
         """
-        fig = plt.figure(figsize=(5, 5))
+        fig = plt.figure(figsize=(8, 6))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
             if i == 0:
@@ -326,10 +326,15 @@ class Scoring:
                 linestyles="dashed",
                 label="true $\\mu$",
             )
-        plt.xlabel("$\\mu$")
-        plt.ylabel("pseudo-experiments")
-        plt.title(f"$\\mu$ distribution - Set {set}")
-        plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+        plt.xlabel("$\\mu$",fontdict={"size": 14})
+        plt.ylabel("pseudo-experiments",fontdict={"size": 14})
+        plt.xticks(fontsize=14)  # Set the x-tick font size
+        plt.yticks(fontsize=14)  # Set the y-tick font size
+        plt.title(f"Set {set}",fontdict={"size": 14})
+        
+        plt.legend(loc="upper left", bbox_to_anchor=(1, 1), fontsize  = 12)
+        plt.grid()
+        plt.tight_layout()
 
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
