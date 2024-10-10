@@ -16,6 +16,16 @@ Not every uncertainty quantification method is able to return a full likelihood 
 
 **Methods that a central value and Gaussian uncertainty**: Define $\hat \mu_{16} = \hat \mu - \Delta \hat \mu$ and $\hat \mu_{84} = \hat \mu + \Delta \hat \mu$. If the underlying assumption of a symmetrical uncertainty made by the Gaussian uncertainty is given, this should contain 68.27% of the probability, since the 1 standard deviation region of a Gaussian distribution contains 68.27% of the probability mass.
 
+## Submission requirements
+
+Participants’ submissions must consist of a zip file containing a `model.py` file (which must not be inside a directory), and it can contain any other necessary files (eg, a pre-trained model). The `model.py` file must define a `Model` class which must satisfy the following criteria.
+1. The `Model` class must accept two arguments, `get_train_set` and `systematics`, when it is initialized. The `get_train_set` argument will receive a callable which, when called, will return the public dataset. The `systematics` argument will receive a callable which can be used to apply the systematic effects (adjusting weights and primary features, computing derived features, and applying post-selection cuts) to a dataset.
+1. The `Model` class must have a `fit` method, which will be called once when the submission is being evaluated. This method can be used prepare the model for inference. We encourage participants to submit models which have already been trained, as there is limited compute time for each submission to be evaluated.
+1. The `Model` class must have a `predict` method which must accept a test dataset and return the results as a dictionary containing four items: `”mu_hat”`: the predicted value of mu, `”delta_mu_hat”`: the uncertainty in the predicted value of mu, `”p16”`: the lower bound of the 16th percentile of mu, and `”p84”`: the upper bound of the 84th percentile of mu.
+
+## Hardware description
+
+Throughout the competition, participants’ submissions will be run on either the Perlmutter supercomputer at NERSC or an alternative workstation at LBNL, but they will only be run on Perlmutter for the final evaluation. When running on Perlmutter, submissions will have one node assigned, which consists of 1 AMD EPYC 7763 CPU, 256GB of RAM, and 4 NVIDIA A100 GPUs with 40GB of memory each (https://docs.nersc.gov/systems/perlmutter/architecture/#gpu-nodes). The alternative workstation consists of 1 Intel(R) Xeon(R) Gold 6148 CPU, 376GB of RAM, and 3 Tesla V100-SXM2-16GB GPUs available. On either system, participants’ submissions will be allotted 2 hours to complete evaluation on all of the pseudoexperiments  (10 sets of 100 pseudoexperiments each for the initial phase, and 10 sets of 1000 pseudoexperiments for the final phase). These pseudoexperiments will be parallelized in the following way. Each participants’ `Model.fit()` will be run once, and then each of the pseudoexperiments will be run by one of many parallel workers, with each worker calling `Model.predict()` once. There will be 30 parallel workers when running on Perlmutter. This will be reduced to 10 parallel workers when running on the alternative workstation.
 
 ## Scoring
 
