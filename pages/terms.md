@@ -14,10 +14,7 @@ This challenge is for educational purposes only and no prizes are granted. It is
 
 To ensure proper representation and verification of your affiliation with an organization in our competition, please adhere to the following guidelines
 
-#### Profile Affiliation
-
-Ensure that your Codabench profile includes your current organizational affiliation. This helps in verifying your credentials and associating your contributions with the correct institution.
-
-#### Registration Requirements
-
-Use your organization-issued email address to register for the competition. This will help us confirm that you are officially associated with the organization and prevent unauthorized entries.
+- Ensure that your Codabench profile includes your current organizational affiliation. This helps in verifying your credentials and associating your contributions with the correct institution.
+- If participants are freelancers they should provide brief details (via email to fair-universe@lbl.gov) of their freelance operation, any supporting URL, and their country of residence.
+- Use your organization-issued email address to register for the competition. This will help us confirm that you are officially associated with the organization and prevent unauthorized entries.
+- Registration is not required to access the dataset that is provided on the “Data” tab. We encourage the use of the dataset for research. In the event that a participant who is not eligible for submission via codabench according to the conditions above, can demonstrate a successful method on the challenge task we encourage them to contact the organizers for attribution and potential inclusion in the final competition stage if possible.
