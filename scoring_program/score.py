@@ -253,7 +253,10 @@ class Scoring:
 
         def Interval(p16, p84):
             """Compute the average of the intervals defined by vectors p16 and p84."""
-            return np.mean(np.abs(p84 - p16))
+            interval = np.mean(p84 - p16)
+            if interval < 0:
+                logger.warning(f"Interval is negative: {interval}")
+            return np.mean(abs(p84 - p16))
 
         def Coverage(mu, p16, p84):
             """Compute the fraction of times scalar mu is within intervals defined by vectors p16 and p84."""
@@ -305,6 +308,8 @@ class Scoring:
         fig = plt.figure(figsize=(8, 6))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
+            if p16 > p84:
+                p16, p84 = 0,0
             if i == 0:
                 plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='Coverage interval')
             else:   
