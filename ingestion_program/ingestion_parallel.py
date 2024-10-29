@@ -396,7 +396,7 @@ class Ingestion:
         Args:
             test_settings (dict): The test settings.
         """
-        logger.info("Calling predict method of submitted model")
+        logger.info("Calling predict method of submitted model with seed: %s", initial_seed)
 
         num_pseudo_experiments = test_settings["num_pseudo_experiments"]
         num_of_sets = test_settings["num_of_sets"]
