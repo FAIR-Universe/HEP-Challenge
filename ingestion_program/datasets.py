@@ -109,13 +109,15 @@ class Data:
             with open(data_file, "r") as f:
                 for i, line in enumerate(f):
                     # Check if the current line index is in the selected indices
-                    if i in selected_indices_set:
-                        if data_file.endswith(".detailed_labels"):
-                            selected_list.append(line.strip())
+                    if i not in selected_indices_set:
+                        continue
+                    if data_file.endswith(".detailed_labels"):
+                        selected_list.append(line.strip())
+                    else:
                         selected_list.append(float(line.strip()))
-                        # Optional: stop early if all indices are found
-                        if len(selected_list) == len(selected_indices):
-                            break
+                    # Optional: stop early if all indices are found
+                    if len(selected_list) == len(selected_indices):
+                        break
             return np.array(selected_list)
 
         current_row = 0
@@ -148,7 +150,7 @@ class Data:
             "detailed_labels": selected_train_detailed_labels,
         }
 
-        del train_labels, train_settings, train_weights, train_detailed_labels
+        del sampled_df, selected_train_labels, selected_train_weights, selected_train_detailed_labels
 
         buffer = io.StringIO()
         self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
