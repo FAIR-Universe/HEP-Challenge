@@ -107,7 +107,8 @@ class Scoring:
         """
         self.ingestion_results = []
         # loop over sets (1 set = 1 value of mu)
-        for file in os.listdir(prediction_dir):
+        for file in sorted(os.listdir(prediction_dir)):
+            logger.debug(f"Reading ingestion results from {file}")
             if file.startswith("result_"):
                 results_file = os.path.join(prediction_dir, file)
                 with open(results_file) as f:
