@@ -1,16 +1,16 @@
 # ------------------------------------------
 # Imports
 # ------------------------------------------
-import os
-import numpy as np
-import json
-from datetime import datetime as dt
-import matplotlib.pyplot as plt
-
-import sys
-import io
 import base64
+import io
+import json
 import logging
+import os
+import sys
+from datetime import datetime as dt
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -105,14 +105,19 @@ class Scoring:
             prediction_dir (str, optional): location of the predictions. Defaults to "./".
             score_dir (str, optional): location of the scores. Defaults to "./".
         """
-        self.ingestion_results = []
+        ingestion_results_with_set_index = []
         # loop over sets (1 set = 1 value of mu)
-        for file in sorted(os.listdir(prediction_dir)):
-            logger.debug(f"Reading ingestion results from {file}")
+        for file in os.listdir(prediction_dir):
             if file.startswith("result_"):
+                set_index = int(file.split("_")[1].split(".")[0]) # file format: result_{set_index}.json
                 results_file = os.path.join(prediction_dir, file)
                 with open(results_file) as f:
-                    self.ingestion_results.append(json.load(f))
+                    ingestion_results_with_set_index.append({
+                        "set_index": set_index,
+                        "results": json.load(f)
+                    })
+        ingestion_results_with_set_index = sorted(ingestion_results_with_set_index, key=lambda x: x["set_index"])
+        self.ingestion_results = [x["results"] for x in ingestion_results_with_set_index]
 
         self.score_file = os.path.join(score_dir, "scores.json")
         self.html_file = os.path.join(score_dir, "detailed_results.html")
