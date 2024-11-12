@@ -134,16 +134,8 @@ class Model:
         """
 
 
-        train_set = self.get_train_set(sample_size=1000) # train_set is a dictionary with data, labels, and weights
+        train_set = self.get_train_set() # train_set is a dictionary with data, labels, and weights
         
-        # random_range = np.random.randint(0, 10000, 2500) # random_range is a list of 1000 random integers between 0 and 10000
-
-
-        # for i in range(10):
-        #     range_temp = random_range[i*250:(i+1)*250]
-        #     train_set = self.get_train_set(selected_indices=range_temp) # train_set is a dictionary with data, labels, and weights
-        #     print(f"Train set size is {len(train_set['data'])}")
-
         training_set, holdout_set = train_test_split(
             train_set, test_size=0.5, random_state=42, reweight=True
         )
