@@ -201,7 +201,9 @@ class Data:
         Returns:
             dict: The train dataset.
         """
-        return self.__train_set
+        train_set = self.__train_set
+        self.delete_train_set()
+        return train_set
 
     def get_test_set(self):
         """
