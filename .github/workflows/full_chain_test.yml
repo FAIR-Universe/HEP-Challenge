@@ -22,6 +22,8 @@ jobs:
 
     - name: Run ingestion script
       run: |
+        mkdir -p sample_result_submission
+        mkdir -p scoring_output
         python ingestion_program/run_ingestion.py --submission test/sample_submission 
         python scoring_program/run_scoring.py 
 
