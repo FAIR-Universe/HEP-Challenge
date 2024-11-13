@@ -100,9 +100,10 @@ class Data:
  
         if selected_indices is None:
             selected_indices = np.sort(np.random.choice(total_rows, size=sample_size, replace=False))
-        
-        selected_indices_set = set(selected_indices)
+        elif isinstance(selected_indices, list):
+            selected_indices = np.array(selected_indices)
 
+        selected_indices_set = set(selected_indices)
 
         def get_sampled_data(data_file):
             selected_list = []
