@@ -34,7 +34,7 @@ if __name__ == "__main__":
         "--result-file",
         type=pathlib.Path,
         help="Path to the result JSON file",
-        default=root_dir / "scoring_output" / "score.json",
+        default=root_dir / "scoring_output" / "scores.json",
     )
 
     args = parser.parse_args()
