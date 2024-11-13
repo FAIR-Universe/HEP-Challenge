@@ -40,4 +40,4 @@ jobs:
         python-version: '3.x'
 
     - name: Run performance test
-      run: python3 test/run_performance_test.py scoring_output/score.json
+      run: python3 test/run_performance_test.py scoring_output/scores.json
