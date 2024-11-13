@@ -21,4 +21,21 @@ jobs:
         pip install -r conda/requirements.txt
 
     - name: Run ingestion script
-      run: python ingestion_program/run_ingestion.py --seed 25 --submission test/sample_submission 
+      run: |
+        python ingestion_program/run_ingestion.py --submission test/sample_submission 
+        python scoring_program/run_scoring.py 
+
+  check-performace:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Run performance test
+      run: test/run_performance_test.py scoring_output/score.json
