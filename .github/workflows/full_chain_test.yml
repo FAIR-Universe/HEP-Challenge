@@ -39,8 +39,5 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Make test script executable
-      run: chmod +x test/run_performance_test.py
-      
     - name: Run performance test
-      run: test/run_performance_test.py scoring_output/score.json
+      run: python3 test/run_performance_test.py scoring_output/score.json
