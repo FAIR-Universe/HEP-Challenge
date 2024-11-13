@@ -1,4 +1,6 @@
 import numpy as np
+import pyarrow.parquet as pq
+import pyarrow as pa
 import pandas as pd
 import json
 import os
@@ -22,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 test_set_settings = None
 
-PUBLIC_DATA_URL = "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
+PUBLIC_DATA_URL = (
+    "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
+)
 
 
 class Data:
@@ -45,6 +49,7 @@ class Data:
         * delete_train_set(): Deletes the train dataset.
         * get_syst_train_set(): Returns the train dataset with systematic variations.
     """
+
     def __init__(self, input_dir):
         """
         Constructs a Data object.
@@ -57,7 +62,7 @@ class Data:
         self.__test_set = None
         self.input_dir = input_dir
 
-    def load_train_set(self):
+    def load_train_set(self, sample_size=None, selected_indices=None):
 
         train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
         train_labels_file = os.path.join(
@@ -73,31 +78,84 @@ class Data:
             self.input_dir, "train", "detailed_labels", "data.detailed_labels"
         )
 
-        # read train labels
-        with open(train_labels_file, "r") as f:
-            train_labels = np.array(f.read().splitlines(), dtype=float)
+        parquet_file = pq.ParquetFile(train_data_file)
 
-        # read train settings
-        with open(train_settings_file) as f:
-            train_settings = json.load(f)
+        # Step 1: Determine the total number of rows
+        total_rows = sum(parquet_file.metadata.row_group(i).num_rows for i in range(parquet_file.num_row_groups))
 
-        # read train weights
-        with open(train_weights_file) as f:
-            train_weights = np.array(f.read().splitlines(), dtype=float)
+        if sample_size is not None:
+            if isinstance(sample_size, int):
+                sample_size = min(sample_size, total_rows)
+            elif isinstance(sample_size, float):
+                if 0.0 <= sample_size <= 1.0:
+                    sample_size = int(sample_size * total_rows)
+                else:
+                    raise ValueError("Sample size must be between 0.0 and 1.0")
+            else:
+                raise ValueError("Sample size must be an integer or a float")
+        elif selected_indices is not None:
+            if isinstance(selected_indices, list):
+                selected_indices = np.array(selected_indices)
+            elif isinstance(selected_indices, np.ndarray):
+                pass
+            else:
+                raise ValueError("Selected indices must be a list or a numpy array")
+            sample_size = len(selected_indices)
+        else:
+            sample_size = total_rows
 
-        # read train process flags
-        with open(train_detailed_labels_file) as f:
-            train_detailed_labels = f.read().splitlines()
+        if selected_indices is None:
+            selected_indices = np.sort(np.random.choice(total_rows, size=sample_size, replace=False))
+
+        selected_indices_set = set(selected_indices)
+
+        def get_sampled_data(data_file):
+            selected_list = []
+            with open(data_file, "r") as f:
+                for i, line in enumerate(f):
+                    # Check if the current line index is in the selected indices
+                    if i not in selected_indices_set:
+                        continue
+                    if data_file.endswith(".detailed_labels"):
+                        selected_list.append(line.strip())
+                    else:
+                        selected_list.append(float(line.strip()))
+                    # Optional: stop early if all indices are found
+                    if len(selected_list) == len(selected_indices):
+                        break
+            return np.array(selected_list)
+
+        current_row = 0
+        sampled_df = pd.DataFrame()
+        for row_group_index in range(parquet_file.num_row_groups):
+            row_group = parquet_file.read_row_group(row_group_index).to_pandas()
+            row_group_size = len(row_group)
+
+            # Determine indices within the current row group that fall in the selected range
+            within_group_indices = selected_indices[(selected_indices >= current_row) & (selected_indices < current_row + row_group_size)] - current_row
+            sampled_df = pd.concat([sampled_df, row_group.iloc[within_group_indices]], ignore_index=True)
+
+            # Update the current row count
+            current_row += row_group_size
+
+        selected_train_labels = get_sampled_data(train_labels_file)
+        selected_train_weights = get_sampled_data(train_weights_file)
+        selected_train_detailed_labels = get_sampled_data(train_detailed_labels_file)
+
+        logger.info(f"Sampled train data shape: {sampled_df.shape}")
+        logger.info(f"Sampled train labels shape: {selected_train_labels.shape}")
+        logger.info(f"Sampled train weights shape: {selected_train_weights.shape}")
+        logger.info(f"Sampled train detailed labels shape: {selected_train_detailed_labels.shape}")
 
         self.__train_set = {
-                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
-                "labels": train_labels,
-                "settings": train_settings,
-                "weights": train_weights,
-                "detailed_labels": train_detailed_labels,
-            }
+            "data": sampled_df,
+            "labels": selected_train_labels,
+            "settings": selected_train_labels,
+            "weights": selected_train_weights,
+            "detailed_labels": selected_train_detailed_labels,
+        }
 
-        del train_labels, train_settings, train_weights, train_detailed_labels
+        del sampled_df, selected_train_labels, selected_train_weights, selected_train_detailed_labels
 
         buffer = io.StringIO()
         self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
@@ -131,14 +189,14 @@ class Data:
             test_settings = json.load(f)
 
         self.ground_truth_mus = test_settings["ground_truth_mus"]
-        
+
         for key in self.__test_set.keys():
             buffer = io.StringIO()
             self.__test_set[key].info(buf=buffer, memory_usage="deep", verbose=False)
             info_str = str(key) + ":\n" + buffer.getvalue()
-            
-            logger.debug(info_str)    
-        
+
+            logger.debug(info_str)
+
         logger.info("Test data loaded successfully")
 
     def get_train_set(self):
@@ -148,7 +206,9 @@ class Data:
         Returns:
             dict: The train dataset.
         """
-        return self.__train_set
+        train_set = self.__train_set
+        self.delete_train_set()
+        return train_set
 
     def get_test_set(self):
         """
@@ -166,19 +226,29 @@ class Data:
         del self.__train_set
 
     def get_syst_train_set(
-        self, tes=1.0, 
-        jes=1.0, 
-        soft_met=0.0, 
-        ttbar_scale=None, 
-        diboson_scale=None, 
-        bkg_scale=None, 
-        dopostprocess=False
+        self,
+        tes=1.0,
+        jes=1.0,
+        soft_met=0.0,
+        ttbar_scale=None,
+        diboson_scale=None,
+        bkg_scale=None,
+        dopostprocess=False,
     ):
         from systematics import systematics
 
         if self.__train_set is None:
             self.load_train_set()
-        return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale,dopostprocess=dopostprocess)
+        return systematics(
+            self.__train_set,
+            tes,
+            jes,
+            soft_met,
+            ttbar_scale,
+            diboson_scale,
+            bkg_scale,
+            dopostprocess=dopostprocess,
+        )
 
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -200,7 +270,9 @@ def Neurips2024_public_dataset():
     parent_path = os.path.dirname(os.path.realpath(__file__))
     current_path = os.path.dirname(parent_path)
     public_data_folder_path = os.path.join(current_path, "public_data")
-    public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
+    public_input_data_folder_path = os.path.join(
+        current_path, "public_data", "input_data"
+    )
     public_data_zip_path = os.path.join(current_path, "public_data.zip")
 
     # Check if public_data dir exists
@@ -210,7 +282,7 @@ def Neurips2024_public_dataset():
             return Data(public_input_data_folder_path)
         else:
             logger.warning("public_data/input_dir directory not found")
-            
+
     else:
         logger.warning("public_data directory not found")
 
@@ -218,11 +290,11 @@ def Neurips2024_public_dataset():
     if not os.path.isfile(public_data_zip_path):
         logger.warning("public_data.zip does not exist")
         logger.info("Downloading public data, this may take few minutes")
-        
+
         chunk_size = 1024 * 1024
         response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
-            with open(public_data_zip_path, 'wb') as file:
+            with open(public_data_zip_path, "wb") as file:
                 # Iterate over the response in chunks
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     # Filter out keep-alive new chunks
@@ -231,7 +303,7 @@ def Neurips2024_public_dataset():
 
     # Extract public_data.zip
     logger.info("Extracting public_data.zip")
-    with ZipFile(public_data_zip_path, 'r') as zip_ref:
+    with ZipFile(public_data_zip_path, "r") as zip_ref:
         zip_ref.extractall(public_data_folder_path)
 
     return Data(public_input_data_folder_path)
