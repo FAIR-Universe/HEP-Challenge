@@ -102,6 +102,11 @@ class Data:
             selected_indices = np.sort(np.random.choice(total_rows, size=sample_size, replace=False))
         elif isinstance(selected_indices, list):
             selected_indices = np.array(selected_indices)
+        elif isinstance(selected_indices, np.ndarray):
+            pass
+        else:
+            raise ValueError("Selected indices must be a list or a numpy array")
+
 
         selected_indices_set = set(selected_indices)
 
