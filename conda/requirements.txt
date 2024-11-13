@@ -13,5 +13,5 @@ keras
 torch
 torchvision
 tabulate
-tensorflow==2.15.0
+tensorflow>=2.15.0
 ipykernel
