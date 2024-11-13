@@ -117,14 +117,14 @@ class Ingestion:
             with open(duration_file, "w") as f:
                 f.write(json.dumps({"ingestion_duration": duration_in_mins}, indent=4))
 
-    def load_train_set(self):
+    def load_train_set(self,**kwargs):
         """
         Load the training set.
 
         Returns:
             object: The loaded training set.
         """
-        self.data.load_train_set()
+        self.data.load_train_set(**kwargs)
         return self.data.get_train_set()
 
     def init_submission(self, Model):
