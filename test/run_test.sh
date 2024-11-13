@@ -9,6 +9,7 @@ input_dir="/global/cfs/projectdirs/m4287/data"
 reference_dir="${working_dir}/public_data_neurips/reference_data"
 ingestion_program_dir=${working_dir}/HEP-Challenge/ingestion_program/run_ingestion.py 
 scoring_program_dir=${working_dir}/HEP-Challenge/scoring_program/run_scoring.py
+test_dir=${working_dir}/HEP-Challenge/test
 export MAX_WORKERS=30
 
 
@@ -42,6 +43,13 @@ if [ $reco_rc != 0 ]; then
     exit $reco_rc
 fi
 
-python3 ${scoring_program_dir} --prediction ${output_dir} 2> ${output_dir}/scoring.log
+python3 ${scoring_program_dir} --prediction ${output_dir} --output ${output_dir} 2> ${output_dir}/scoring.log
+
+reco_rc=$?
+if [ $reco_rc != 0 ]; then
+    exit $reco_rc
+fi
+
+python3 ${test_dir}/run_performance_test.py  --result-file ${output_dir}/scores.json
 
 rm -rf ${output_dir}/submission
