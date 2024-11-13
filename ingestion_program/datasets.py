@@ -89,26 +89,23 @@ class Data:
             elif isinstance(sample_size, float):
                 if 0.0 <= sample_size <= 1.0:
                     sample_size = int(sample_size * total_rows)
-                else :
+                else:
                     raise ValueError("Sample size must be between 0.0 and 1.0")
             else:
                 raise ValueError("Sample size must be an integer or a float")
         elif selected_indices is not None:
+            if isinstance(selected_indices, list):
+                selected_indices = np.array(selected_indices)
+            elif isinstance(selected_indices, np.ndarray):
+                pass
+            else:
+                raise ValueError("Selected indices must be a list or a numpy array")
             sample_size = len(selected_indices)
         else:
             sample_size = total_rows
- 
+
         if selected_indices is None:
             selected_indices = np.sort(np.random.choice(total_rows, size=sample_size, replace=False))
-        elif isinstance(selected_indices, list):
-            selected_indices = np.array(selected_indices)
-        elif isinstance(selected_indices, np.ndarray):
-            pass
-        elif isinstance(selected_indices, int):
-            selected_indices = np.array([selected_indices])
-        else:
-            raise ValueError("Selected indices must be a list or a numpy array")
-
 
         selected_indices_set = set(selected_indices)
 
@@ -133,11 +130,11 @@ class Data:
         for row_group_index in range(parquet_file.num_row_groups):
             row_group = parquet_file.read_row_group(row_group_index).to_pandas()
             row_group_size = len(row_group)
-            
+
             # Determine indices within the current row group that fall in the selected range
             within_group_indices = selected_indices[(selected_indices >= current_row) & (selected_indices < current_row + row_group_size)] - current_row
             sampled_df = pd.concat([sampled_df, row_group.iloc[within_group_indices]], ignore_index=True)
-            
+
             # Update the current row count
             current_row += row_group_size
 
