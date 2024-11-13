@@ -15,22 +15,23 @@ def coverage_test(result_file):
 
     coverage = result_data["coverage"]
     if coverage >= 0.60:
-        print("✅ Test Passed: Coverage is greater than 0.68.")
+        print("✅ Test Passed: Coverage is greater than 0.60 .")
         print(" Coverage: ", coverage)
 
         quantile_scores = result_data["quantiles_score"]
 
-        if quantile_scores > 0.0:       
+        if quantile_scores > 0.0:
             print("✅ Test Passed: Quantile score is greater than 0.0.")
-            print(" Quantile score: ", quantile_scores)
+        else:
+            print("❌ Test Failed: Quantile score is less than 0.0.")
+
+        print(" Quantile score: ", quantile_scores)
 
         return True
     else:
         print("❌ Test Failed: Coverage is less than 0.68.")
-        print(" Coverage: ", coverage
+        print(" Coverage: ", coverage)
         return False
-    
-
 
 
 if __name__ == "__main__":
