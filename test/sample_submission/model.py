@@ -5,6 +5,8 @@
 # - inputs and outputs of the functions
 # ------------------------------
 
+import numpy as np
+
 class Model:
     """
     This is a model class to be submitted by the participants in their submission.

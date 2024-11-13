@@ -27,7 +27,7 @@ jobs:
 
   check-performace:
     runs-on: ubuntu-latest
-
+    needs: run-ingestion
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
