@@ -104,6 +104,8 @@ class Data:
             selected_indices = np.array(selected_indices)
         elif isinstance(selected_indices, np.ndarray):
             pass
+        elif isinstance(selected_indices, int):
+            selected_indices = np.array([selected_indices])
         else:
             raise ValueError("Selected indices must be a list or a numpy array")
 
