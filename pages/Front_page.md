@@ -23,6 +23,8 @@ There are several information sources regarding the FAIR Universe - HiggsML Unce
 
 * [White Paper](https://arxiv.org/abs/2410.02867): This serves as a full breakdown of the competition in detail
 
+* [TES Systematics Competition](https://www.codabench.org/competitions/4346/): This is a simplified version of this competition with only one systematic (TES).
+
 ## How to join this challenge?
 
 - Go to the "Starting Kit" tab
