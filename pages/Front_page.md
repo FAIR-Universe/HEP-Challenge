@@ -1,6 +1,6 @@
 # FAIR Universe - HiggsML Uncertainty Challenge
 
-## Introduction 
+## Introduction
 
  This NeurIPS 2024 Machine Learning competition is one of the first to strongly emphasise mastering uncertainties in the input training dataset and outputting credible confidence intervals. This challenge explores uncertainty-aware AI techniques for High Energy Physics (HEP).
 
@@ -13,17 +13,19 @@ There are several information sources regarding the FAIR Universe - HiggsML Unce
 
 * [Codabench](https://www.codabench.org/competitions/2977/): This serves as the platform to submit entries to the competition.
 
-* [Tutorial video](https://youtu.be/_ihk5taa9sY): This tutorial will help you understand the competition and some useful tips. The slides for this video are available [here](https://drive.google.com/file/d/1DJjPk_h88WEBngDcI9YUVHnhT5ynNIHi/view?usp=sharing).
-
 * [Codabench tutorial](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf): These slides will help you register and submit a sample dummy submission. 
 
-* Download the [training data](https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/) if you you want to experiment with the data on your local machines.
+* [Tutorial video](https://youtu.be/_ihk5taa9sY): This tutorial will help you understand the competition and some useful tips. The slides for this video are available [here](https://drive.google.com/file/d/1DJjPk_h88WEBngDcI9YUVHnhT5ynNIHi/view?usp=sharing).
+
+* Download the [Training Data (6.5 GB)](https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/) if you you want to experiment with the data on your local machines.
 
 * [Documentation](https://fair-universe.lbl.gov/docs/): This contains detailed information about the [science behind the challenge](https://fair-universe.lbl.gov/docs/pages/overview.html#problem-setting), the [specifics of the data](https://fair-universe.lbl.gov/docs/pages/data.html), and [documents the code](https://fair-universe.lbl.gov/docs/rst_source/modules.html) used to facilitate the evaluation of the competition. It also describes the [evaluation metric](https://fair-universe.lbl.gov/docs/pages/evaluation.html)
 
 * [Github Repo](https://github.com/FAIR-Universe/HEP-Challenge/tree/master/): This hosts the code for testing submissions, as well as the [starting kit notebook](https://github.com/FAIR-Universe/HEP-Challenge/blob/master/StartingKit_HiggsML_Uncertainty_Challenge.ipynb). The starting kit is also available on [Google Colab](https://colab.research.google.com/github/FAIR-Universe/HEP-Challenge/blob/master/StartingKit_HiggsML_Uncertainty_Challenge.ipynb)
 
 * [White Paper](https://arxiv.org/abs/2410.02867): This serves as a full breakdown of the competition in detail
+
+* [TES Systematics Competition](https://www.codabench.org/competitions/4346/): This is a simplified version of this competition with only one systematic (TES).
 
 ## How to join this challenge?
 

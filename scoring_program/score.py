@@ -1,16 +1,16 @@
 # ------------------------------------------
 # Imports
 # ------------------------------------------
-import os
-import numpy as np
-import json
-from datetime import datetime as dt
-import matplotlib.pyplot as plt
-
-import sys
-import io
 import base64
+import io
+import json
 import logging
+import os
+import sys
+from datetime import datetime as dt
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -105,13 +105,19 @@ class Scoring:
             prediction_dir (str, optional): location of the predictions. Defaults to "./".
             score_dir (str, optional): location of the scores. Defaults to "./".
         """
-        self.ingestion_results = []
+        ingestion_results_with_set_index = []
         # loop over sets (1 set = 1 value of mu)
         for file in os.listdir(prediction_dir):
             if file.startswith("result_"):
+                set_index = int(file.split("_")[1].split(".")[0]) # file format: result_{set_index}.json
                 results_file = os.path.join(prediction_dir, file)
                 with open(results_file) as f:
-                    self.ingestion_results.append(json.load(f))
+                    ingestion_results_with_set_index.append({
+                        "set_index": set_index,
+                        "results": json.load(f)
+                    })
+        ingestion_results_with_set_index = sorted(ingestion_results_with_set_index, key=lambda x: x["set_index"])
+        self.ingestion_results = [x["results"] for x in ingestion_results_with_set_index]
 
         self.score_file = os.path.join(score_dir, "scores.json")
         self.html_file = os.path.join(score_dir, "detailed_results.html")
@@ -253,7 +259,10 @@ class Scoring:
 
         def Interval(p16, p84):
             """Compute the average of the intervals defined by vectors p16 and p84."""
-            return np.mean(np.abs(p84 - p16))
+            interval = np.mean(p84 - p16)
+            if interval < 0:
+                logger.warning(f"Interval is negative: {interval}")
+            return np.mean(abs(p84 - p16))
 
         def Coverage(mu, p16, p84):
             """Compute the fraction of times scalar mu is within intervals defined by vectors p16 and p84."""
@@ -305,6 +314,8 @@ class Scoring:
         fig = plt.figure(figsize=(8, 6))
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
+            if p16 > p84:
+                p16, p84 = 0,0
             if i == 0:
                 plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='Coverage interval')
             else:   
