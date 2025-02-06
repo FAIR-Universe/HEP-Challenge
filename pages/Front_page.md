@@ -13,7 +13,9 @@ There are several information sources regarding the FAIR Universe - HiggsML Unce
 
 * [Codabench](https://www.codabench.org/competitions/2977/): This serves as the platform to submit entries to the competition.
 
-* [Tutorial Slides](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf) : These slides will help you register and submit a sample dummy submission. 
+* [Codabench tutorial](https://fair-universe.lbl.gov/tutorials/Higgs_Uncertainty_Challenge-Codabench_Tutorial.pdf): These slides will help you register and submit a sample dummy submission. 
+
+* [Tutorial video](https://youtu.be/_ihk5taa9sY): This tutorial will help you understand the competition and some useful tips. The slides for this video are available [here](https://drive.google.com/file/d/1DJjPk_h88WEBngDcI9YUVHnhT5ynNIHi/view?usp=sharing).
 
 * Download the [Training Data (6.5 GB)](https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/) if you you want to experiment with the data on your local machines.
 
@@ -44,7 +46,8 @@ This competition allows code submissions. Participants are strongly encouraged t
 - Sascha Diefenbacher
 - Steven Farrell
 - Wahid Bhimji
-- Jordan Dudley
+- Jordan Dudley 
+- Po-Wen Chang
 
 ### University of Washington
 - Elham E Khoda
