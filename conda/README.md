@@ -7,7 +7,7 @@ https://conda.io/projects/conda/en/latest/user-guide/install/index.html
 
 2. Create env
 ```
-conda create --name fair python=3.9
+conda create --name fair python=3.12.8
 ```
 
 3. Activate env
