@@ -105,7 +105,9 @@ class Data:
             sample_size = total_rows
 
         if selected_indices is None:
-            selected_indices = np.sort(np.random.choice(total_rows, size=sample_size, replace=False))
+            selected_indices = np.random.choice(total_rows, size=sample_size, replace=False)
+        
+        selected_indices = np.sort(selected_indices)
 
         selected_indices_set = set(selected_indices)
 
