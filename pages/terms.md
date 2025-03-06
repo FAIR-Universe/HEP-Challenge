@@ -23,7 +23,7 @@ To ensure proper representation and verification of your affiliation with an org
 
 If you are interested in participating as a team, please read the following terms. To register your team, contact us by sending an email to fair-universe@lbl.gov.
 
-1. A team can consist of 2-5 members. All team members must be declared in advance, including their names, emails, and affiliations.
+1. A team can consist of 2-10 members. All team members must be declared in advance, including their names, emails, and affiliations.
 2. Each team must designate one member as the team leader, who will be responsible for communication and submissions.
 3. The team leader must create a Codabench account using their email, and all submissions should be made through this account only.
 4. Multiple accounts for a single team are not allowed. Any team found using multiple accounts will be disqualified.
