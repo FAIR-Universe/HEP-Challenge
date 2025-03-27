@@ -59,13 +59,13 @@ class Scoring:
 
     """
 
-    def __init__(self):
+    def __init__(self, name=""):
         # Initialize class variables
         self.start_time = None
         self.end_time = None
         self.ingestion_results = None
         self.ingestion_duration = None
-
+        self.name = name
         self.scores_dict = {}
 
     def start_timer(self):
@@ -93,7 +93,7 @@ class Scoring:
             ingestion_duration_file (str): The ingestion duration file.
         """
         logger.info(f"Reading ingestion duration from {ingestion_duration_file}")
-        
+
         with open(ingestion_duration_file) as f:
             self.ingestion_duration = json.load(f)["ingestion_duration"]
 
@@ -109,22 +109,27 @@ class Scoring:
         # loop over sets (1 set = 1 value of mu)
         for file in os.listdir(prediction_dir):
             if file.startswith("result_"):
-                set_index = int(file.split("_")[1].split(".")[0]) # file format: result_{set_index}.json
+                set_index = int(
+                    file.split("_")[1].split(".")[0]
+                )  # file format: result_{set_index}.json
                 results_file = os.path.join(prediction_dir, file)
                 with open(results_file) as f:
-                    ingestion_results_with_set_index.append({
-                        "set_index": set_index,
-                        "results": json.load(f)
-                    })
-        ingestion_results_with_set_index = sorted(ingestion_results_with_set_index, key=lambda x: x["set_index"])
-        self.ingestion_results = [x["results"] for x in ingestion_results_with_set_index]
+                    ingestion_results_with_set_index.append(
+                        {"set_index": set_index, "results": json.load(f)}
+                    )
+        ingestion_results_with_set_index = sorted(
+            ingestion_results_with_set_index, key=lambda x: x["set_index"]
+        )
+        self.ingestion_results = [
+            x["results"] for x in ingestion_results_with_set_index
+        ]
 
         self.score_file = os.path.join(score_dir, "scores.json")
         self.html_file = os.path.join(score_dir, "detailed_results.html")
         self.score_dir = score_dir
         logger.info(f"Read ingestion results from {prediction_dir}")
 
-    def compute_scores(self, test_settings):
+    def compute_scores(self, test_settings, no_html=False):
         """
         Compute the scores for the competition based on the test settings.
 
@@ -137,6 +142,10 @@ class Scoring:
         # loop over ingestion results
         rmses, maes = [], []
         all_p16s, all_p84s, all_mus = [], [], []
+        set_intervals, set_coverages, set_quantiles_scores = [], [], []
+        set_sizes = []
+        
+        self.ground_truth_mus = test_settings["ground_truth_mus"]
 
         for i in range(len(self.ingestion_results)):
             ingestion_result = self.ingestion_results[i]
@@ -147,6 +156,7 @@ class Scoring:
             p16s = ingestion_result["p16"]
             p84s = ingestion_result["p84"]
 
+            set_sizes.append(len(mu_hats))
             all_mus.extend(np.repeat(mu, len(p16s)))
             all_p16s.extend(p16s)
             all_p84s.extend(p84s)
@@ -159,23 +169,45 @@ class Scoring:
                 np.repeat(mu, len(p16s)), np.array(p16s), np.array(p84s)
             )
 
+            set_intervals.append(set_interval)
+            set_coverages.append(set_coverage)
+            set_quantiles_scores.append(set_quantiles_score)
+
             set_mae = np.mean(set_maes)
             set_rmse = np.mean(set_rmses)
 
-            self._print("------------------")
-            self._print(f"Set {i}")
-            self._print("------------------")
-            self._print(f"MAE (avg): {set_mae}")
-            self._print(f"RMSE (avg): {set_rmse}")
-            self._print(f"Interval: {set_interval}")
-            self._print(f"Coverage: {set_coverage}")
-            self._print(f"Quantiles Score: {set_quantiles_score}")
+            if not no_html:
 
-            self.save_figure(mu=np.mean(mu_hats), p16s=p16s, p84s=p84s, set=i, true_mu=mu)
+                self._print("------------------")
+                self._print(f"Set {i}")
+                self._print("------------------")
+                self._print(f"MAE (avg): {set_mae}")
+                self._print(f"RMSE (avg): {set_rmse}")
+                self._print(f"Interval: {set_interval}")
+                self._print(f"Coverage: {set_coverage}")
+                self._print(f"Quantiles Score: {set_quantiles_score}")
+
+                self.save_figure(
+                    mu=np.mean(mu_hats), p16s=p16s, p84s=p84s, set=i, true_mu=mu
+                )
 
             # Save set scores in lists
             rmses.append(set_rmse)
             maes.append(set_mae)
+
+        import pandas as pd
+
+        self.set_score_df = pd.DataFrame(
+            {
+                "set": range(len(self.ingestion_results)),
+                "mae": maes,
+                "rmse": rmses,
+                "interval": set_intervals,
+                "coverage": set_coverages,
+                "quantiles_score": set_quantiles_scores,
+                "set_size": set_sizes,
+            }
+        )
 
         overall_interval, overall_coverage, overall_quantiles_score = (
             self.Quantiles_Score(
@@ -191,18 +223,162 @@ class Scoring:
             "quantiles_score": overall_quantiles_score,
             "ingestion_duration": self.ingestion_duration,
         }
+        
+        if not no_html:
 
-        self._print("\n\n==================")
-        self._print("Overall Score")
-        self._print("==================")
-        self._print(f"[*] --- RMSE: {round(np.mean(rmses), 3)}")
-        self._print(f"[*] --- MAE: {round(np.mean(maes), 3)}")
-        self._print(f"[*] --- Interval: {round(overall_interval, 3)}")
-        self._print(f"[*] --- Coverage: {round(overall_coverage, 3)}")
-        self._print(f"[*] --- Quantiles score: {round(overall_quantiles_score, 3)}")
-        self._print(f"[*] --- Ingestion duration: {self.ingestion_duration}")
+            self._print("\n\n==================")
+            self._print("Overall Score")
+            self._print("==================")
+            self._print(f"[*] --- RMSE: {round(np.mean(rmses), 3)}")
+            self._print(f"[*] --- MAE: {round(np.mean(maes), 3)}")
+            self._print(f"[*] --- Interval: {round(overall_interval, 3)}")
+            self._print(f"[*] --- Coverage: {round(overall_coverage, 3)}")
+            self._print(f"[*] --- Quantiles score: {round(overall_quantiles_score, 3)}")
+            self._print(f"[*] --- Ingestion duration: {self.ingestion_duration}")
 
         print("[✔]")
+
+    def compute_bootstraped_scores(
+        self, eps=1e-3, n_bootstraps=10, sample_size=50, random_seed=42
+    ):
+
+        def f(x, n_tries, max_coverage=1e4, one_sigma=0.6827):
+            sigma68 = np.sqrt(((1 - one_sigma) * one_sigma * n_tries)) / n_tries
+
+            if x >= one_sigma - 2 * sigma68 and x <= one_sigma + 2 * sigma68:
+                out = 1
+            elif x < one_sigma - 2 * sigma68:
+                out = 1 + abs((x - (one_sigma - 2 * sigma68)) / sigma68) ** 4
+            elif x > one_sigma + 2 * sigma68:
+                out = 1 + abs((x - (one_sigma + 2 * sigma68)) / sigma68) ** 3
+            return out
+
+        coverages = []
+        intervals = []
+        quantiles_scores = []
+
+        for i in range(n_bootstraps):
+            random_state = np.random.RandomState(random_seed + i)
+
+            bootstrap_indices = random_state.choice(
+                self.set_score_df.index, size=sample_size, replace=True
+            )
+            bootstrap_df = self.set_score_df.loc[bootstrap_indices]
+            bootstrap_df = bootstrap_df.reset_index(drop=True)
+
+            coverage = np.mean(bootstrap_df["coverage"])
+            interval = np.mean(bootstrap_df["interval"])
+            n_rows = np.sum(bootstrap_df["set_size"])
+            quantiles_score = -np.log((interval + eps) * f(coverage, n_tries=n_rows))
+
+            coverages.append(coverage)
+            intervals.append(interval)
+            quantiles_scores.append(quantiles_score)
+
+            # print(f"[*] --- Interval: {round(interval, 3)}")
+            # print(f"[*] --- Coverage: {round(coverage, 3)}")
+            # print(f"[*] --- Quantiles score: {round(quantiles_score, 3)}")
+
+        self.bootstraped_scores = {
+            "interval": intervals,
+            "coverage": coverages,
+            "quantiles_score": quantiles_scores,
+        }
+
+    def plot_bootstraped_scores(self):
+        fig =plt.figure(figsize=(10, 6))
+        
+        plt.plot(
+            self.ground_truth_mus,
+            self.set_score_df["quantiles_score"],
+            "o",
+            label=f"Quantile Score {self.name}",
+        )
+        
+
+        plt.xlabel("Mu")
+        plt.ylabel("Quantile Score")
+        plt.title("Quantile Score vs Mu")
+        plt.legend()
+        plt.legend()
+        plt.grid(True)
+        
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>") 
+
+        fig = plt.figure(figsize=(10, 6))
+
+
+        std_err = np.array(self.bootstraped_scores["quantiles_score"]).std()
+
+        plt.hist(
+            self.bootstraped_scores["quantiles_score"],
+            bins=20,
+            alpha=0.7,
+            label=f"Bootstraped Scores {self.name} (std_err={std_err:.3f})",
+        )
+        plt.xlabel("Score")
+        plt.ylabel("Frequency")
+        plt.title("Histogram of Bootstraped Scores")
+        plt.legend()
+        plt.grid(True)
+        
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
+
+        fig = plt.figure(figsize=(10, 6))
+
+        std_err = np.array(self.bootstraped_scores["coverage"]).std()
+
+        plt.hist(
+            self.bootstraped_scores["coverage"],
+            bins=20,
+            alpha=0.7,
+            label=f"Bootstraped Coverage {self.name} (std_err={std_err:.3f})",
+        )
+        plt.xlabel("Coverage")
+        plt.ylabel("Frequency")
+        plt.title("Histogram of Bootstraped Coverage")
+        plt.legend()
+        plt.grid(True)
+        
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
+
+        fig = plt.figure(figsize=(10, 6))
+
+        std_err = np.array(self.bootstraped_scores["interval"]).std()
+
+        plt.hist(
+            self.bootstraped_scores["interval"],
+            bins=20,
+            alpha=0.7,
+            label=f"Bootstraped Interval Length {self.name} (std_err={std_err:.3f})",
+        )
+        plt.xlabel("Interval Length")
+        plt.ylabel("Frequency")
+        plt.title("Histogram of Bootstraped Interval Length")
+        plt.legend()
+        plt.grid(True)
+        
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
 
     def RMSE_score(self, mu, mu_hat, delta_mu_hat):
         """
@@ -286,12 +462,11 @@ class Scoring:
         return interval, coverage, score
 
     def write_scores(self):
-        
+
         logger.info(f"Writing scores to {self.score_file}")
 
         with open(self.score_file, "w") as f_score:
             f_score.write(json.dumps(self.scores_dict, indent=4))
-
 
     def write_html(self, content):
         with open(self.html_file, "a", encoding="utf-8") as f:
@@ -301,7 +476,7 @@ class Scoring:
         print(content)
         self.write_html(content + "<br>")
 
-    def save_figure(self, mu,p16s, p84s,true_mu=None, set=0):
+    def save_figure(self, mu, p16s, p84s, true_mu=None, set=0):
         """
         Save the figure of the mu distribution.
 
@@ -315,11 +490,13 @@ class Scoring:
         # plot horizontal lines from p16 to p84
         for i, (p16, p84) in enumerate(zip(p16s, p84s)):
             if p16 > p84:
-                p16, p84 = 0,0
+                p16, p84 = 0, 0
             if i == 0:
-                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b', label='Coverage interval')
-            else:   
-                plt.hlines(y=i, xmin=p16, xmax=p84, colors='b')
+                plt.hlines(
+                    y=i, xmin=p16, xmax=p84, colors="b", label="Coverage interval"
+                )
+            else:
+                plt.hlines(y=i, xmin=p16, xmax=p84, colors="b")
         plt.vlines(
             x=mu,
             ymin=0,
@@ -337,13 +514,13 @@ class Scoring:
                 linestyles="dashed",
                 label="true $\\mu$",
             )
-        plt.xlabel("$\\mu$",fontdict={"size": 14})
-        plt.ylabel("pseudo-experiments",fontdict={"size": 14})
+        plt.xlabel("$\\mu$", fontdict={"size": 14})
+        plt.ylabel("pseudo-experiments", fontdict={"size": 14})
         plt.xticks(fontsize=14)  # Set the x-tick font size
         plt.yticks(fontsize=14)  # Set the y-tick font size
-        plt.title(f"Set {set}",fontdict={"size": 14})
-        
-        plt.legend(loc="upper left", bbox_to_anchor=(1, 1), fontsize  = 12)
+        plt.title(f"Set {set}", fontdict={"size": 14})
+
+        plt.legend(loc="upper left", bbox_to_anchor=(1, 1), fontsize=12)
         plt.grid()
         plt.tight_layout()
 
