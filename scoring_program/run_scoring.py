@@ -38,7 +38,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--phase-2",
-    help="True when running on Codabench",
+    help="True when running phase 2 of the competition",
     action="store_true",
 )
 

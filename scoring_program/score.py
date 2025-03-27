@@ -300,7 +300,6 @@ class Scoring:
         plt.ylabel("Quantile Score")
         plt.title("Quantile Score vs Mu")
         plt.legend()
-        plt.legend()
         plt.grid(True)
         
         buf = io.BytesIO()
