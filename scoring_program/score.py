@@ -286,92 +286,114 @@ class Scoring:
         }
 
     def plot_bootstraped_scores(self):
-        fig =plt.figure(figsize=(10, 6))
         
-        plt.plot(
+        self._print_center("\n=====================================\n")
+        self._print_center("Results")
+        self._print_center("\n=====================================\n")
+        
+        fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+        axs[0].plot(
             self.ground_truth_mus,
             self.set_score_df["quantiles_score"],
             "o",
+            color="m",
             label=f"Quantile Score {self.name}",
         )
-        
+        axs[0].set_xlabel("Mu")
+        axs[0].set_ylabel("Quantile Score")
+        axs[0].set_title("Quantile Score vs Mu")
+        axs[0].legend()
+        axs[0].grid(True)
 
-        plt.xlabel("Mu")
-        plt.ylabel("Quantile Score")
-        plt.title("Quantile Score vs Mu")
-        plt.legend()
-        plt.grid(True)
-        
+        axs[1].plot(
+            self.ground_truth_mus,
+            self.set_score_df["coverage"],
+            "o",
+            color="darkblue",
+            label=f"Coverage {self.name}",
+        )
+        axs[1].set_xlabel("Mu")
+        axs[1].set_ylabel("Coverage")
+        axs[1].set_title("Coverage vs Mu")
+        axs[1].legend()
+        axs[1].grid(True)
+
+        axs[2].plot(
+            self.ground_truth_mus,
+            self.set_score_df["interval"],
+            "o",
+            color="orange",
+            label=f"Interval {self.name}",
+        )
+        axs[2].set_xlabel("Mu")
+        axs[2].set_ylabel("Interval")
+        axs[2].set_title("Interval vs Mu")
+        axs[2].legend()
+        axs[2].grid(True)
+
+        plt.tight_layout()
+
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
         buf.seek(0)
         fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
 
-        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>") 
+        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
 
-        fig = plt.figure(figsize=(10, 6))
+        self._print_center("\n=====================================\n")
+        self._print_center("Bootstraped Scores")
+        self._print_center("\n=====================================\n")
 
+        fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
-        std_err = np.array(self.bootstraped_scores["quantiles_score"]).std()
-
-        plt.hist(
+        # Plot histogram of bootstraped quantiles scores
+        std_err_quantiles = np.array(self.bootstraped_scores["quantiles_score"]).std()
+        axs[0].hist(
             self.bootstraped_scores["quantiles_score"],
             bins=20,
+            color="r",
             alpha=0.7,
-            label=f"Bootstraped Scores {self.name} (std_err={std_err:.3f})",
+            label=f"Bootstraped Scores {self.name} (std_err={std_err_quantiles:.3f})",
         )
-        plt.xlabel("Score")
-        plt.ylabel("Frequency")
-        plt.title("Histogram of Bootstraped Scores")
-        plt.legend()
-        plt.grid(True)
-        
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png")
-        buf.seek(0)
-        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        axs[0].set_xlabel("Score")
+        axs[0].set_ylabel("Frequency")
+        axs[0].set_title("Histogram of Bootstraped Scores")
+        axs[0].legend()
+        axs[0].grid(True)
 
-        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
-
-        fig = plt.figure(figsize=(10, 6))
-
-        std_err = np.array(self.bootstraped_scores["coverage"]).std()
-
-        plt.hist(
+        # Plot histogram of bootstraped coverage
+        std_err_coverage = np.array(self.bootstraped_scores["coverage"]).std()
+        axs[1].hist(
             self.bootstraped_scores["coverage"],
             bins=20,
+            color="g",
             alpha=0.7,
-            label=f"Bootstraped Coverage {self.name} (std_err={std_err:.3f})",
+            label=f"Bootstraped Coverage {self.name} (std_err={std_err_coverage:.3f})",
         )
-        plt.xlabel("Coverage")
-        plt.ylabel("Frequency")
-        plt.title("Histogram of Bootstraped Coverage")
-        plt.legend()
-        plt.grid(True)
-        
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png")
-        buf.seek(0)
-        fig_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        axs[1].set_xlabel("Coverage")
+        axs[1].set_ylabel("Frequency")
+        axs[1].set_title("Histogram of Bootstraped Coverage")
+        axs[1].legend()
+        axs[1].grid(True)
 
-        self.write_html(f"<img src='data:image/png;base64,{fig_b64}'><br>")
-
-        fig = plt.figure(figsize=(10, 6))
-
-        std_err = np.array(self.bootstraped_scores["interval"]).std()
-
-        plt.hist(
+        # Plot histogram of bootstraped interval lengths
+        std_err_interval = np.array(self.bootstraped_scores["interval"]).std()
+        axs[2].hist(
             self.bootstraped_scores["interval"],
             bins=20,
             alpha=0.7,
-            label=f"Bootstraped Interval Length {self.name} (std_err={std_err:.3f})",
+            color="b",
+            label=f"Bootstraped Interval Length {self.name} (std_err={std_err_interval:.3f})",
         )
-        plt.xlabel("Interval Length")
-        plt.ylabel("Frequency")
-        plt.title("Histogram of Bootstraped Interval Length")
-        plt.legend()
-        plt.grid(True)
-        
+        axs[2].set_xlabel("Interval Length")
+        axs[2].set_ylabel("Frequency")
+        axs[2].set_title("Histogram of Bootstraped Interval Length")
+        axs[2].legend()
+        axs[2].grid(True)
+
+        plt.tight_layout()
+
         buf = io.BytesIO()
         fig.savefig(buf, format="png")
         buf.seek(0)
@@ -474,6 +496,9 @@ class Scoring:
     def _print(self, content):
         print(content)
         self.write_html(content + "<br>")
+        
+    def _print_center(self, content):
+        self.write_html(f"<div style='text-align: center;'>{content}</div><br>")
 
     def save_figure(self, mu, p16s, p84s, true_mu=None, set=0):
         """
