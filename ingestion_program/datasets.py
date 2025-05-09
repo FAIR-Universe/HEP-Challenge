@@ -28,6 +28,11 @@ PUBLIC_DATA_URL = (
     "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
 )
 
+ZENODO_API = "https://zenodo.org/api/deposit/depositions"
+ACCESS_TOKEN = os.getenv("ZENODO_ACCESS","")   
+DEPOSITION_ID = os.getenv("ZENODO_ID","")
+ZENODO_DATA_URL = f"https://zenodo.org/api/records/{DEPOSITION_ID}/draft/files/public_data_new.zip/content"
+
 
 class Data:
     """
@@ -122,12 +127,12 @@ class Data:
                 pass
             else:
                 raise ValueError("Selected indices must be a list or a numpy array")
-            sample_size = len(selected_indices)
+            train_size = len(selected_indices)
         else:
-            sample_size = self.total_rows
+            train_size = self.total_rows
 
         if selected_indices is None:
-            selected_indices = np.random.choice(self.total_rows, size=sample_size, replace=False)
+            selected_indices = np.random.choice(self.total_rows, size=train_size, replace=False)
         
         selected_train_indices = np.sort(selected_indices) + self.test_size
         
@@ -213,7 +218,6 @@ class Data:
             dict: The train dataset.
         """
         train_set = self.__train_set
-        self.delete_train_set()
         return train_set
 
     def get_test_set(self):
@@ -277,9 +281,9 @@ def Neurips2024_public_dataset():
     current_path = os.path.dirname(parent_path)
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(
-        current_path, "public_data", "input_data"
+        current_path, "public_data"
     )
-    public_data_zip_path = os.path.join(current_path, "public_data.zip")
+    public_data_zip_path = os.path.join(current_path, "public_data_new.zip")
 
     # Check if public_data dir exists
     if os.path.isdir(public_data_folder_path):
@@ -298,7 +302,33 @@ def Neurips2024_public_dataset():
         logger.info("Downloading public data, this may take few minutes")
 
         chunk_size = 1024 * 1024
-        response = requests.get(PUBLIC_DATA_URL, stream=True)
+
+
+
+        response = requests.get(
+            f"{ZENODO_API}/{DEPOSITION_ID}",
+            params={"access_token": ACCESS_TOKEN},
+            stream=True
+        )
+
+        response.raise_for_status()
+        data = response.json()
+
+        # List the file download URLs
+        for file in data["files"]:
+            if file["filename"] == "public_data_new.zip":
+                download_url = file["links"]["download"]
+                print("File name:", file["filename"])
+                print("Download link:", file["links"]["download"])
+                break
+        else:
+            raise ValueError("public_data_new.zip not found in the response")
+        
+        response = requests.get(download_url, headers={"Authorization": f"Bearer {ACCESS_TOKEN}"}, stream=True)
+        response.raise_for_status()  # Will raise 403 if unauthorized
+
+
+        # response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
             with open(public_data_zip_path, "wb") as file:
                 # Iterate over the response in chunks
@@ -306,6 +336,13 @@ def Neurips2024_public_dataset():
                     # Filter out keep-alive new chunks
                     if chunk:
                         file.write(chunk)
+        else:
+            logger.error(
+                f"Failed to download the dataset. Status code: {response.status_code}"
+            )
+            raise requests.HTTPError(
+                f"Failed to download the dataset. Status code: {response.status_code}"
+            )
 
     # Extract public_data.zip
     logger.info("Extracting public_data.zip")

@@ -10,6 +10,7 @@ sample_result_submission/
 XGB_saved/
 docs/_build/doctrees
 *.log
+*.zip
 plots
 *.ipynb_checkpoints
 test/temp/

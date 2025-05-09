@@ -382,8 +382,7 @@ def DER_data(data):
     double_precision_cols = data.select_dtypes(include=['float64']).columns
 
     logger.debug(f"Converting columns {double_precision_cols} to float32")
-
-    data = data.astype(np.float32)
+    data[double_precision_cols] = data[double_precision_cols].astype(np.float32)
     buffer = io.StringIO()
     data.info(buf=buffer, memory_usage="deep", verbose=False)
     info_str = "Data with Derived Quantities float32 :\n" + buffer.getvalue()
