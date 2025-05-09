@@ -62,11 +62,30 @@ class Data:
         self.__test_set = None
         
         train_data_file = os.path.join(input_dir, "public_data.parquet")
+        metadata_file = os.path.join(input_dir, "public_data.json")
+        
+        try:
+            with open(metadata_file) as f:
+                metadata = json.load(f)
+            self.metadata = metadata
+        except FileNotFoundError:
+            logger.warning("Metadata file not found. Proceeding without metadata.")
+            self.metadata = {}
+        except json.JSONDecodeError:
+            logger.warning("Metadata file is not a valid JSON. Proceeding without metadata.")
+            self.metadata = {}
+        except Exception as e:
+            logger.warning(f"An error occurred while reading the metadata file: {e}")
+            self.metadata = {}
 
         self.parquet_file = pq.ParquetFile(train_data_file)
 
         # Step 1: Determine the total number of rows
-        self.total_rows = sum(self.parquet_file.metadata.row_group(i).num_rows for i in range(self.parquet_file.num_row_groups))        
+        if "total_rows" in self.metadata:
+            self.total_rows = self.metadata["total_rows"]
+        else :
+            # If total_rows is not in metadata, calculate it from the row groups
+            self.total_rows = sum(self.parquet_file.metadata.row_group(i).num_rows for i in range(self.parquet_file.num_row_groups))        
         
         if test_size is not None:
             if isinstance(test_size, int):
@@ -80,6 +99,10 @@ class Data:
                 raise ValueError("Test size must be an integer or a float")        
         
         self.test_size = test_size
+        
+        logger.info(f"Total rows: {self.total_rows}")
+        logger.info(f"Test size: {self.test_size}")
+        
 
     def load_train_set(self, train_size=None, selected_indices=None):
         if train_size is not None:
@@ -108,9 +131,14 @@ class Data:
         
         selected_train_indices = np.sort(selected_indices) + self.test_size
         
+        logger.info(f"Selected train size: {len(selected_train_indices)}")
+        
+        
         # Step 2: Load the data
         self.__train_set = self.__load_data(selected_train_indices)
         
+        # Balancing the weights 
+
         
         
     def __load_data(self, selected_indices):
@@ -130,10 +158,17 @@ class Data:
 
         
         buffer = io.StringIO()
-        self.__full_data_df.info(buf=buffer, memory_usage="deep", verbose=False)
+        sampled_df.info(buf=buffer, memory_usage="deep", verbose=False)
         info_str = "\n" + buffer.getvalue()
         logger.debug(info_str)
         logger.info("Data loaded successfully")
+        
+        if "sum_weights" in self.metadata:
+            sum_weights = self.metadata["sum_weights"]
+            if sum_weights > 0:
+                sampled_df["weights"] = (sum_weights * sampled_df["weights"])/sum(sampled_df["weights"])
+            else:
+                logger.warning("Sum of weights is zero. No balancing applied.")
         
         return sampled_df
 
@@ -156,6 +191,8 @@ class Data:
 
             test_set[key] = test_df[
                 test_df["detailed_labels"] == key]
+            test_set[key].pop("detailed_labels")
+            test_set[key].pop("labels")
 
         self.__test_set = test_set
 

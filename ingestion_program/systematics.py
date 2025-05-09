@@ -551,7 +551,7 @@ def systematics(
 
     # modify primary features according to tes, jes softmet    
     data_syst = mom4_manipulate(
-        data=data_df,
+        data=data_df.copy(),
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
         soft_met=soft_met,
