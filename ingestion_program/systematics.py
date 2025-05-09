@@ -593,7 +593,7 @@ def systematics(
         data_syst_set = {}
         for key in data_set.keys():
             if key not in ["data","settings"]:
-                data_syst_set[key] = data_syst[key]
+                data_syst_set[key] = data_syst.pop(key)
         # compute DERived features        
         data_syst_set["data"] = DER_data(data_syst)
         if "settings" in data_set.keys():
