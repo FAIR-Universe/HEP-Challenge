@@ -72,7 +72,7 @@ class Data:
         try:
             with open(croissant_file, "r", encoding="utf-8") as f:
                 croissant_data = json.load(f)
-            self.metadata = croissant_data["dataProperties"]
+            self.metadata = croissant_data["croissant"]["dataProperties"]
         except FileNotFoundError:
             logger.warning("Metadata file not found. Proceeding without metadata.")
             self.metadata = {}
