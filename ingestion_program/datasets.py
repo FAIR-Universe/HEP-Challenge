@@ -67,12 +67,12 @@ class Data:
         self.__test_set = None
         
         train_data_file = os.path.join(input_dir, "public_data.parquet")
-        metadata_file = os.path.join(input_dir, "public_data.json")
+        croissant_file = os.path.join(input_dir, "data.croissant.json")
         
         try:
-            with open(metadata_file) as f:
-                metadata = json.load(f)
-            self.metadata = metadata
+            with open(croissant_file, "r", encoding="utf-8") as f:
+                croissant_data = json.load(f)
+            self.metadata = croissant_data["dataProperties"]
         except FileNotFoundError:
             logger.warning("Metadata file not found. Proceeding without metadata.")
             self.metadata = {}
@@ -169,7 +169,7 @@ class Data:
         logger.info("Data loaded successfully")
         
         if "sum_weights" in self.metadata:
-            sum_weights = self.metadata["sum_weights"]
+            sum_weights = self.metadata["sumWeights"]
             if sum_weights > 0:
                 sampled_df["weights"] = (sum_weights * sampled_df["weights"])/sum(sampled_df["weights"])
             else:
