@@ -31,7 +31,6 @@ PUBLIC_DATA_URL = (
 ZENODO_API = "https://zenodo.org/api/deposit/depositions"
 ACCESS_TOKEN = os.getenv("ZENODO_ACCESS","")   
 DEPOSITION_ID = os.getenv("ZENODO_ID","")
-ZENODO_DATA_URL = f"https://zenodo.org/api/records/{DEPOSITION_ID}/draft/files/public_data_new.zip/content"
 
 
 class Data:
