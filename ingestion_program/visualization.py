@@ -39,14 +39,15 @@ class Dataset_visualise:
         print("\nGeneral Structure of the data object is a dictionary")
         custom_pretty_print(data_set)
         
-        self.dfall = data_set["data"]
         self.target = data_set["labels"]
         self.weights = data_set["weights"]
         self.detailed_label = np.array(data_set["detailed_labels"])
         if columns == None:
-            self.columns = self.dfall.columns
+            self.columns = [col for col in data_set.columns if col != "detailed_labels"]
         else:
             self.columns = columns
+
+        self.dfall = pd.DataFrame(data_set, columns=self.columns)
         self.name = name
         self.keys = np.unique(self.detailed_label)
         self.weight_keys = {}
@@ -117,6 +118,8 @@ class Dataset_visualise:
 
         for i, column in enumerate(columns):
             # Determine the combined range for the current column
+
+            print(f"[*] --- {column} histogram")
 
             lower_percentile = 0
             upper_percentile = 97.5

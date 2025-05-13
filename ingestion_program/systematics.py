@@ -518,7 +518,7 @@ def systematics(
     Apply systematics to the dataset
 
     Args:
-        * data_set (dict): The dataset to apply systematics to
+        * data_set (dict)/(df): The dataset to apply systematics to
         * tes (float): The factor applied to PRI_had_pt
         * jes (float): The factor applied to all jet pt
         * soft_met (float): The additional soft MET energy
@@ -530,42 +530,33 @@ def systematics(
     Returns:
         dict: The dataset with applied systematics
     """
-    data_set_new = data_set.copy()
-
-    if "weights" in data_set_new.keys():
-        weights = data_set_new["weights"].copy()
-
-        if ttbar_scale is not None:
-            weights = ttbar_bkg_weight_norm(
-                weights, data_set["detailed_labels"], ttbar_scale
-            )
-
-        if diboson_scale is not None:
-            weights = diboson_bkg_weight_norm(
-                weights, data_set["detailed_labels"], diboson_scale
-            )
-
-        if bkg_scale is not None:
-            weights = all_bkg_weight_norm(weights, data_set["labels"], bkg_scale)
-
-        data_set_new["weights"] = weights
+    if isinstance(data_set, pd.DataFrame):
+        data_df = data_set.copy()
+        data_type = "df"
+    elif isinstance(data_set, dict):
+        if "data" not in data_set.keys():
+            raise ValueError("data_set must contain a 'data' key")
+        if "weights" not in data_set.keys():
+            raise ValueError("data_set must contain a 'weights' key")
+        
+        data_type = "dict"
+        
+        data_df = data_set["data"].copy()
+        for key in data_set.keys():
+            if key not in ["data","settings"]:
+                data_df[key] = data_set[key]
+    else:
+        raise ValueError("data_set must be a pandas DataFrame or a dictionary")
+        
 
     # modify primary features according to tes, jes softmet    
     data_syst = mom4_manipulate(
-        data=data_set["data"].copy(),
+        data=data_df.copy(),
         systTauEnergyScale=tes,
         systJetEnergyScale=jes,
         soft_met=soft_met,
         seed=seed,
     )
-
-    
-# add back auxilliary columns label, weight, detailed label in a dataframe
-# if events are removed, they should also be removed from weights, label,detailedlabel
-
-    for key in data_set_new.keys():
-        if key not in ["data","settings"]:
-            data_syst[key] = data_set_new[key]
 
     if dopostprocess:
         # deal with thresholds on had pt and jet pt
@@ -573,18 +564,42 @@ def systematics(
         # possibly remove events
         data_syst = postprocess(data_syst)
 
-    # build resulting dictionary
-    #dict
-    data_syst_set = {}
-    for key in data_set_new.keys():
-        if key not in ["data","settings"]:
-            data_syst_set[key] = data_syst.pop(key)
-    # compute DERived features        
-    data_syst_set["data"] = DER_data(data_syst)
-    if "settings" in data_set_new.keys():
-        data_syst_set["settings"] = data_set_new["settings"]
+    if "detailedlabel" in data_syst.columns:
+        if "weights" in data_syst.columns:
+            weights = data_syst["weights"].copy()
+        else:
+            weights = np.ones(data_syst.shape[0])
 
-    return data_syst_set
+        if ttbar_scale is not None:
+            weights = ttbar_bkg_weight_norm(
+                weights, data_syst["detailed_labels"], ttbar_scale
+            )
+
+        if diboson_scale is not None:
+            weights = diboson_bkg_weight_norm(
+                weights, data_syst["detailed_labels"], diboson_scale
+            )
+
+        if bkg_scale is not None:
+            weights = all_bkg_weight_norm(weights, data_syst["labels"], bkg_scale)
+
+        data_syst["weights"] = weights
+
+    # build resulting dictionary / dataframe
+    
+    if data_type == "df":
+        return DER_data(data_syst)
+    else:
+        data_syst_set = {}
+        for key in data_set.keys():
+            if key not in ["data","settings"]:
+                data_syst_set[key] = data_syst.pop(key)
+        # compute DERived features        
+        data_syst_set["data"] = DER_data(data_syst)
+        if "settings" in data_set.keys():
+            data_syst_set["settings"] = data_set["settings"]
+        
+        return data_syst_set
 
 
 def get_bootstrapped_dataset(

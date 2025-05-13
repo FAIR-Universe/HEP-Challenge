@@ -28,6 +28,10 @@ PUBLIC_DATA_URL = (
     "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
 )
 
+ZENODO_API = "https://zenodo.org/api/deposit/depositions"
+ACCESS_TOKEN = os.getenv("ZENODO_ACCESS","")   
+DEPOSITION_ID = os.getenv("ZENODO_ID","")
+
 
 class Data:
     """
@@ -50,7 +54,7 @@ class Data:
         * get_syst_train_set(): Returns the train dataset with systematic variations.
     """
 
-    def __init__(self, input_dir):
+    def __init__(self, input_dir,test_size=0.3):
         """
         Constructs a Data object.
 
@@ -60,35 +64,56 @@ class Data:
 
         self.__train_set = None
         self.__test_set = None
-        self.input_dir = input_dir
+        
+        train_data_file = os.path.join(input_dir, "FAIR_Universe_HiggsML_data.parquet")
+        croissant_file = os.path.join(input_dir, "FAIR_Universe_HiggsML_data_metadata.json")
+        
+        try:
+            with open(croissant_file, "r", encoding="utf-8") as f:
+                self.metadata = json.load(f)
+        except FileNotFoundError:
+            logger.warning("Metadata file not found. Proceeding without metadata.")
+            self.metadata = {}
+        except json.JSONDecodeError:
+            logger.warning("Metadata file is not a valid JSON. Proceeding without metadata.")
+            self.metadata = {}
+        except Exception as e:
+            logger.warning(f"An error occurred while reading the metadata file: {e}")
+            self.metadata = {}
 
-    def load_train_set(self, sample_size=None, selected_indices=None):
-
-        train_data_file = os.path.join(self.input_dir, "train", "data", "data.parquet")
-        train_labels_file = os.path.join(
-            self.input_dir, "train", "labels", "data.labels"
-        )
-        train_settings_file = os.path.join(
-            self.input_dir, "train", "settings", "data.json"
-        )
-        train_weights_file = os.path.join(
-            self.input_dir, "train", "weights", "data.weights"
-        )
-        train_detailed_labels_file = os.path.join(
-            self.input_dir, "train", "detailed_labels", "data.detailed_labels"
-        )
-
-        parquet_file = pq.ParquetFile(train_data_file)
+        self.parquet_file = pq.ParquetFile(train_data_file)
 
         # Step 1: Determine the total number of rows
-        total_rows = sum(parquet_file.metadata.row_group(i).num_rows for i in range(parquet_file.num_row_groups))
+        if "total_rows" in self.metadata:
+            self.total_rows = self.metadata["total_rows"]
+        else :
+            # If total_rows is not in metadata, calculate it from the row groups
+            self.total_rows = sum(self.parquet_file.metadata.row_group(i).num_rows for i in range(self.parquet_file.num_row_groups))        
+        
+        if test_size is not None:
+            if isinstance(test_size, int):
+                test_size = min(test_size, self.total_rows)
+            elif isinstance(test_size, float):
+                if 0.0 <= test_size <= 1.0:
+                    test_size = int(test_size * self.total_rows)
+                else:
+                    raise ValueError("Test size must be between 0.0 and 1.0")
+            else:
+                raise ValueError("Test size must be an integer or a float")        
+        
+        self.test_size = test_size
+        
+        logger.info(f"Total rows: {self.total_rows}")
+        logger.info(f"Test size: {self.test_size}")
+        
 
-        if sample_size is not None:
-            if isinstance(sample_size, int):
-                sample_size = min(sample_size, total_rows)
-            elif isinstance(sample_size, float):
-                if 0.0 <= sample_size <= 1.0:
-                    sample_size = int(sample_size * total_rows)
+    def load_train_set(self, train_size=None, selected_indices=None):
+        if train_size is not None:
+            if isinstance(train_size, int):
+                train_size = min(train_size, self.total_rows - self.test_size)
+            elif isinstance(train_size, float):
+                if 0.0 <= train_size <= 1.0:
+                    train_size = int(train_size * (self.total_rows - self.test_size))
                 else:
                     raise ValueError("Sample size must be between 0.0 and 1.0")
             else:
@@ -100,37 +125,34 @@ class Data:
                 pass
             else:
                 raise ValueError("Selected indices must be a list or a numpy array")
-            sample_size = len(selected_indices)
+            train_size = len(selected_indices)
         else:
-            sample_size = total_rows
+            train_size = self.total_rows - self.test_size
+            
+        if train_size > self.total_rows - self.test_size:
+            raise ValueError("Sample size exceeds the number of available rows")
 
         if selected_indices is None:
-            selected_indices = np.random.choice(total_rows, size=sample_size, replace=False)
+            selected_indices = np.random.choice((self.total_rows - self.test_size), size=train_size, replace=False)
         
-        selected_indices = np.sort(selected_indices)
+        selected_train_indices = np.sort(selected_indices) + self.test_size
+        
+        logger.info(f"Selected train size: {len(selected_train_indices)}")
+        
+        
+        # Step 2: Load the data
+        self.__train_set = self.__load_data(selected_train_indices)
+        
+        # Balancing the weights 
 
-        selected_indices_set = set(selected_indices)
-
-        def get_sampled_data(data_file):
-            selected_list = []
-            with open(data_file, "r") as f:
-                for i, line in enumerate(f):
-                    # Check if the current line index is in the selected indices
-                    if i not in selected_indices_set:
-                        continue
-                    if data_file.endswith(".detailed_labels"):
-                        selected_list.append(line.strip())
-                    else:
-                        selected_list.append(float(line.strip()))
-                    # Optional: stop early if all indices are found
-                    if len(selected_list) == len(selected_indices):
-                        break
-            return np.array(selected_list)
+        
+        
+    def __load_data(self, selected_indices):
 
         current_row = 0
         sampled_df = pd.DataFrame()
-        for row_group_index in range(parquet_file.num_row_groups):
-            row_group = parquet_file.read_row_group(row_group_index).to_pandas()
+        for row_group_index in range(self.parquet_file.num_row_groups):
+            row_group = self.parquet_file.read_row_group(row_group_index).to_pandas()
             row_group_size = len(row_group)
 
             # Determine indices within the current row group that fall in the selected range
@@ -140,34 +162,28 @@ class Data:
             # Update the current row count
             current_row += row_group_size
 
-        selected_train_labels = get_sampled_data(train_labels_file)
-        selected_train_weights = get_sampled_data(train_weights_file)
-        selected_train_detailed_labels = get_sampled_data(train_detailed_labels_file)
-
-        logger.info(f"Sampled train data shape: {sampled_df.shape}")
-        logger.info(f"Sampled train labels shape: {selected_train_labels.shape}")
-        logger.info(f"Sampled train weights shape: {selected_train_weights.shape}")
-        logger.info(f"Sampled train detailed labels shape: {selected_train_detailed_labels.shape}")
-
-        self.__train_set = {
-            "data": sampled_df,
-            "labels": selected_train_labels,
-            "settings": selected_train_labels,
-            "weights": selected_train_weights,
-            "detailed_labels": selected_train_detailed_labels,
-        }
-
-        del sampled_df, selected_train_labels, selected_train_weights, selected_train_detailed_labels
-
+        
         buffer = io.StringIO()
-        self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
-        info_str = "Training Data :\n" + buffer.getvalue()
+        sampled_df.info(buf=buffer, memory_usage="deep", verbose=False)
+        info_str = "\n" + buffer.getvalue()
         logger.debug(info_str)
-        logger.info("Train data loaded successfully")
+        logger.info("Data loaded successfully")
+        
+        if "sum_weights" in self.metadata:
+            sum_weights = self.metadata["sum_weights"]
+            if sum_weights > 0:
+                sampled_df["weights"] = (sum_weights * sampled_df["weights"])/sum(sampled_df["weights"])
+            else:
+                logger.warning("Sum of weights is zero. No balancing applied.")
+        
+        return sampled_df
 
     def load_test_set(self):
 
-        test_data_dir = os.path.join(self.input_dir, "test", "data")
+        selected_test_indices = np.array(range(self.test_size))
+        
+        # Load the data
+        test_df = self.__load_data(selected_test_indices)
 
         # read test setting
         test_set = {
@@ -179,18 +195,12 @@ class Data:
 
         for key in test_set.keys():
 
-            test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
-            test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+            test_set[key] = test_df[
+                test_df["detailed_labels"] == key]
+            test_set[key].pop("detailed_labels")
+            test_set[key].pop("labels")
 
         self.__test_set = test_set
-
-        test_settings_file = os.path.join(
-            self.input_dir, "test", "settings", "data.json"
-        )
-        with open(test_settings_file) as f:
-            test_settings = json.load(f)
-
-        self.ground_truth_mus = test_settings["ground_truth_mus"]
 
         for key in self.__test_set.keys():
             buffer = io.StringIO()
@@ -209,7 +219,6 @@ class Data:
             dict: The train dataset.
         """
         train_set = self.__train_set
-        self.delete_train_set()
         return train_set
 
     def get_test_set(self):
@@ -273,13 +282,13 @@ def Neurips2024_public_dataset():
     current_path = os.path.dirname(parent_path)
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(
-        current_path, "public_data", "input_data"
+        current_path, "public_data"
     )
-    public_data_zip_path = os.path.join(current_path, "public_data.zip")
+    public_data_zip_path = os.path.join(current_path, "FAIR_Universe_HiggsML_data.zip")
 
     # Check if public_data dir exists
     if os.path.isdir(public_data_folder_path):
-        # Check if public_data/input_data dir exists
+        # Check if public_data dir exists
         if os.path.isdir(public_input_data_folder_path):
             return Data(public_input_data_folder_path)
         else:
@@ -294,7 +303,32 @@ def Neurips2024_public_dataset():
         logger.info("Downloading public data, this may take few minutes")
 
         chunk_size = 1024 * 1024
-        response = requests.get(PUBLIC_DATA_URL, stream=True)
+
+        response = requests.get(
+            f"{ZENODO_API}/{DEPOSITION_ID}",
+            params={"access_token": ACCESS_TOKEN},
+            stream=True
+        )
+
+        response.raise_for_status()
+        data = response.json()
+
+        # List the file download URLs
+        for file in data["files"]:
+            if file["filename"] == "FAIR_Universe_HiggsML_data.zip":
+                download_url = file["links"]["download"]
+                print("File name:", file["filename"])
+                print("Download link:", file["links"]["download"])
+                break
+        else:
+            raise ValueError("FAIR_Universe_HiggsML_data.zip not found in the response")
+        
+        response = requests.get(download_url, headers={"Authorization": f"Bearer {ACCESS_TOKEN}"}, stream=True)
+        response.raise_for_status()  # Will raise 403 if unauthorized
+
+        logger.info("Status code: %s", response.status_code)
+
+        # response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
             with open(public_data_zip_path, "wb") as file:
                 # Iterate over the response in chunks
@@ -302,9 +336,19 @@ def Neurips2024_public_dataset():
                     # Filter out keep-alive new chunks
                     if chunk:
                         file.write(chunk)
+        else:
+            logger.error(
+                f"Failed to download the dataset. Status code: {response.status_code}"
+            )
+            raise requests.HTTPError(
+                f"Failed to download the dataset. Status code: {response.status_code}"
+            )
+    else:
+        logger.info("public_data.zip already exists")
+        
 
     # Extract public_data.zip
-    logger.info("Extracting public_data.zip")
+    logger.info("Extracting FAIR_Universe_HiggsML_data.zip")
     with ZipFile(public_data_zip_path, "r") as zip_ref:
         zip_ref.extractall(public_data_folder_path)
 

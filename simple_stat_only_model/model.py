@@ -5,23 +5,21 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.preprocessing import StandardScaler
 
-def calculate_saved_info(model, train_set):
+def calculate_saved_info(model, train_df,labels,weights):
 
 
-    score = model.predict(train_set["data"])
+    score = model.predict(train_df)
 
     print("score shape before threshold", score.shape)
 
     score = score.flatten() > 0.5
     score = score.astype(int)
 
-    label = train_set["labels"]
-
     print("score shape after threshold", score.shape)
 
-    gamma = np.sum(train_set["weights"] * score * label) + 0.1
+    gamma = np.sum(weights * score * labels) + 0.1
 
-    beta = np.sum(train_set["weights"] * score * (1 - label)) - 0.1
+    beta = np.sum(weights * score * (1 - labels)) - 0.1
 
     saved_info = {"beta": beta, "gamma": gamma}
 
@@ -55,52 +53,41 @@ from sklearn.model_selection import train_test_split as sk_train_test_split
 
 def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
 
-    data = data_set["data"].copy()
-    train_set = {}
-    test_set = {}
+    data = data_set.copy()
+
     full_size = len(data)
 
     print(f"Full size of the data is {full_size}")
 
-    for key in data_set.keys():
-        if (key != "data") and (key != "settings"):
-            data[key] = np.array(data_set[key])
 
     train_data, test_data = sk_train_test_split(
         data, test_size=test_size, random_state=random_state
     )
 
-    for key in data_set.keys():
-        if (key != "data") and (key != "settings"):
-            train_set[key] = np.array(train_data.pop(key))
-            test_set[key] = np.array(test_data.pop(key))
-
-    train_set["data"] = train_data
-    test_set["data"] = test_data
 
     if reweight is True:
         signal_weight = np.sum(data_set["weights"][data_set["labels"] == 1])
         background_weight = np.sum(data_set["weights"][data_set["labels"] == 0])
-        signal_weight_train = np.sum(train_set["weights"][train_set["labels"] == 1])
-        background_weight_train = np.sum(train_set["weights"][train_set["labels"] == 0])
-        signal_weight_test = np.sum(test_set["weights"][test_set["labels"] == 1])
-        background_weight_test = np.sum(test_set["weights"][test_set["labels"] == 0])
+        signal_weight_train = np.sum(train_data["weights"][train_data["labels"] == 1])
+        background_weight_train = np.sum(train_data["weights"][train_data["labels"] == 0])
+        signal_weight_test = np.sum(test_data["weights"][test_data["labels"] == 1])
+        background_weight_test = np.sum(test_data["weights"][test_data["labels"] == 0])
 
-        train_set["weights"][train_set["labels"] == 1] = train_set["weights"][
-            train_set["labels"] == 1
+        train_data["weights"][train_data["labels"] == 1] = train_data["weights"][
+            train_data["labels"] == 1
         ] * (signal_weight / signal_weight_train)
-        test_set["weights"][test_set["labels"] == 1] = test_set["weights"][
-            test_set["labels"] == 1
+        test_data["weights"][test_data["labels"] == 1] = test_data["weights"][
+            test_data["labels"] == 1
         ] * (signal_weight / signal_weight_test)
 
-        train_set["weights"][train_set["labels"] == 0] = train_set["weights"][
-            train_set["labels"] == 0
+        train_data["weights"][train_data["labels"] == 0] = train_data["weights"][
+            train_data["labels"] == 0
         ] * (background_weight / background_weight_train)
-        test_set["weights"][test_set["labels"] == 0] = test_set["weights"][
-            test_set["labels"] == 0
+        test_data["weights"][test_data["labels"] == 0] = test_data["weights"][
+            test_data["labels"] == 0
         ] * (background_weight / background_weight_test)
 
-    return train_set, test_set
+    return train_data, test_data
 
 
 class Model:
@@ -134,18 +121,21 @@ class Model:
         """
 
 
-        train_set = self.get_train_set() # train_set is a dictionary with data, labels, and weights
+        train_set = self.get_train_set(train_size=50_000) # train_set is a dictionary with data, labels, and weights
         
-        training_set, holdout_set = train_test_split(
+        train_set.pop("detailed_labels")
+
+        training_df, holdout_df = train_test_split(
             train_set, test_size=0.5, random_state=42, reweight=True
         )
         
         del train_set
         
-        training_set = self.systematics(training_set)
+        training_df = self.systematics(training_df)
 
-        weights_train = training_set["weights"].copy()
-        train_labels = training_set["labels"].copy()
+        weights_train = training_df.pop("weights")
+        train_labels = training_df.pop("labels")
+
         class_weights_train = (
             weights_train[train_labels == 0].sum(),
             weights_train[train_labels == 1].sum(),
@@ -158,20 +148,23 @@ class Model:
             )
             # test dataset : increase test weight to compensate for sampling
 
-        training_set["weights"] = weights_train
+        print(training_df.columns)
+        print(training_df.shape)
                 
-        self.scaler.fit_transform(training_set["data"])
+        self.scaler.fit_transform(training_df)
 
-        X_train_data = self.scaler.transform(training_set["data"])
-        self.model.fit(X_train_data,training_set["labels"], training_set["weights"])
-        
-        holdout_set = self.systematics(holdout_set)
-    
-        self.saved_info = calculate_saved_info(self.model, holdout_set)
+        X_train_data = self.scaler.transform(training_df)
+        self.model.fit(X_train_data, train_labels, weights_train)
 
-        holdout_score = self.model.predict(holdout_set["data"])
+        holdout_df = self.systematics(holdout_df)
+        holdout_weights = holdout_df.pop("weights")
+        holdout_labels = holdout_df.pop("labels")
+
+        self.saved_info = calculate_saved_info(self.model, holdout_df, holdout_labels, holdout_weights)
+
+        holdout_score = self.model.predict(holdout_df)
         holdout_results = compute_mu(
-            holdout_score, holdout_set["weights"], self.saved_info
+            holdout_score, holdout_weights, self.saved_info
         )
             
         print("Holdout Results: ")
