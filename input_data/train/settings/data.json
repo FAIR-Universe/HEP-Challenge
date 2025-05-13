@@ -1,9 +1,0 @@
-{
-    "tes": 1.0,
-    "jes": 1.0,
-    "soft_met": 0.0,
-    "ttbar_scale": 1.0,
-    "diboson_scale": 1.0,
-    "bkg_scale": 1.0,
-    "ground_truth_mu": 1.0
-}

@@ -66,13 +66,12 @@ class Data:
         self.__train_set = None
         self.__test_set = None
         
-        train_data_file = os.path.join(input_dir, "public_data.parquet")
-        croissant_file = os.path.join(input_dir, "data.croissant.json")
+        train_data_file = os.path.join(input_dir, "FAIR_Universe_HiggsML_data.parquet")
+        croissant_file = os.path.join(input_dir, "FAIR_Universe_HiggsML_data_metadata.json")
         
         try:
             with open(croissant_file, "r", encoding="utf-8") as f:
-                croissant_data = json.load(f)
-            self.metadata = croissant_data["croissant"]["dataProperties"]
+                self.metadata = json.load(f)
         except FileNotFoundError:
             logger.warning("Metadata file not found. Proceeding without metadata.")
             self.metadata = {}
@@ -132,7 +131,7 @@ class Data:
             train_size = self.total_rows
 
         if selected_indices is None:
-            selected_indices = np.random.choice(self.total_rows, size=train_size, replace=False)
+            selected_indices = np.random.choice((self.total_rows - self.test_size), size=train_size, replace=False)
         
         selected_train_indices = np.sort(selected_indices) + self.test_size
         
@@ -169,7 +168,7 @@ class Data:
         logger.info("Data loaded successfully")
         
         if "sum_weights" in self.metadata:
-            sum_weights = self.metadata["sumWeights"]
+            sum_weights = self.metadata["sum_weights"]
             if sum_weights > 0:
                 sampled_df["weights"] = (sum_weights * sampled_df["weights"])/sum(sampled_df["weights"])
             else:
@@ -283,11 +282,11 @@ def Neurips2024_public_dataset():
     public_input_data_folder_path = os.path.join(
         current_path, "public_data"
     )
-    public_data_zip_path = os.path.join(current_path, "public_data_new.zip")
+    public_data_zip_path = os.path.join(current_path, "FAIR_Universe_HiggsML_data.zip")
 
     # Check if public_data dir exists
     if os.path.isdir(public_data_folder_path):
-        # Check if public_data/input_data dir exists
+        # Check if public_data dir exists
         if os.path.isdir(public_input_data_folder_path):
             return Data(public_input_data_folder_path)
         else:
@@ -303,8 +302,6 @@ def Neurips2024_public_dataset():
 
         chunk_size = 1024 * 1024
 
-
-
         response = requests.get(
             f"{ZENODO_API}/{DEPOSITION_ID}",
             params={"access_token": ACCESS_TOKEN},
@@ -316,17 +313,18 @@ def Neurips2024_public_dataset():
 
         # List the file download URLs
         for file in data["files"]:
-            if file["filename"] == "public_data_new.zip":
+            if file["filename"] == "FAIR_Universe_HiggsML_data.zip":
                 download_url = file["links"]["download"]
                 print("File name:", file["filename"])
                 print("Download link:", file["links"]["download"])
                 break
         else:
-            raise ValueError("public_data_new.zip not found in the response")
+            raise ValueError("FAIR_Universe_HiggsML_data.zip not found in the response")
         
         response = requests.get(download_url, headers={"Authorization": f"Bearer {ACCESS_TOKEN}"}, stream=True)
         response.raise_for_status()  # Will raise 403 if unauthorized
 
+        logger.info("Status code: %s", response.status_code)
 
         # response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
@@ -343,9 +341,12 @@ def Neurips2024_public_dataset():
             raise requests.HTTPError(
                 f"Failed to download the dataset. Status code: {response.status_code}"
             )
+    else:
+        logger.info("public_data.zip already exists")
+        
 
     # Extract public_data.zip
-    logger.info("Extracting public_data.zip")
+    logger.info("Extracting FAIR_Universe_HiggsML_data.zip")
     with ZipFile(public_data_zip_path, "r") as zip_ref:
         zip_ref.extractall(public_data_folder_path)
 
