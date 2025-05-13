@@ -45,11 +45,7 @@ parser.add_argument(
     help="True when running on Codabench",
     action="store_true",
 )
-parser.add_argument(
-    "--use-random-mus",
-    help="Use random mus for testing",
-    action="store_true",
-)
+
 parser.add_argument(
     "--systematics-tes",
     action="store_true",
@@ -165,17 +161,15 @@ if __name__ == "__main__":
     # load test data
     data.load_test_set()
     
-    if args.use_random_mus:
-        random_state = np.random.RandomState(args.random_seed)
-        test_settings["ground_truth_mus"] = (
-            random_state.uniform(0.1, 3, test_settings["num_of_sets"])
-        ).tolist()
-        test_settings["random_mu"] = True
-        random_settings_file = os.path.join(output_dir, "test_settings.json")
-        with open(random_settings_file, "w") as f:
-            json.dump(test_settings, f)
-    else:
-        test_settings["ground_truth_mus"] = data.ground_truth_mus
+    random_state = np.random.RandomState(args.random_seed)
+    test_settings["ground_truth_mus"] = (
+        random_state.uniform(0.1, 3, test_settings["num_of_sets"])
+    ).tolist()
+    test_settings["random_mu"] = True
+    random_settings_file = os.path.join(output_dir, "test_settings.json")
+    with open(random_settings_file, "w") as f:
+        json.dump(test_settings, f)
+
 
     # predict submission
     ingestion.predict_submission(test_settings, args.random_seed)
