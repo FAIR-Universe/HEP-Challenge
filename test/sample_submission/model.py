@@ -96,8 +96,8 @@ class Model:
         else:
             
             return {
-                "mu_hat": 2.78,
-                "delta_mu_hat": 0.1,
-                "p16": 2.76,
-                "p84": 2.79
+                "mu_hat": 1.2,
+                "delta_mu_hat": 0.02,
+                "p16": 1.0,
+                "p84": 1.3
             }
