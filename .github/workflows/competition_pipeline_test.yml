@@ -33,6 +33,7 @@ jobs:
           --submission test/sample_submission \
           --num-pseudo-experiments 100 \
           --num-of-sets 1
+          --random-seed 42 \
 
     # Step 5: Run Scoring
     - name: Run scoring script
