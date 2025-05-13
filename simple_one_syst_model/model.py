@@ -163,7 +163,7 @@ class Model:
         print("Model is ", self.name)
 
         self.stat_analysis = StatisticalAnalysis(
-            self.model, stat_only=STAT_ONLY, bins=10, systematics=self.systematics,
+            self.model, stat_only=STAT_ONLY, bins=20, systematics=self.systematics,
             fixed_syst=SYST_FIXED
         )
 

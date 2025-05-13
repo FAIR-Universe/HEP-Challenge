@@ -25,8 +25,8 @@ class BoostedDecisionTree:
     def __init__(self):
         self.model = XGBClassifier(
             n_estimators=300,
-            max_depth=8,
-            learning_rate=0.15,
+            max_depth=6,
+            learning_rate=0.1,
             eval_metric=["error", "logloss"],
             early_stopping_rounds=10,
         )
