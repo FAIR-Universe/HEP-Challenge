@@ -1,6 +1,6 @@
 # FAIR Universe - HiggsML Uncertainty Challenge
 
-This repo consists of material for the HiggsML Uncertainty Challenge. The NeuIPS competition ran from september 2024 to March 2025. The Challenge will soon be relased as a long term benchmarkk.
+This repo consists of material for the HiggsML Uncertainty Challenge. The NeuIPS competition ran from september 2024 to March 2025. The Challenge will soon be relased as a long term benchmark.
 
 ***
 
