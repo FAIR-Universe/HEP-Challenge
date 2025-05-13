@@ -24,11 +24,12 @@ class BoostedDecisionTree:
 
     def __init__(self):
         self.model = XGBClassifier(
-            n_estimators=150,
-            max_depth=5,
+            n_estimators=300,
+            max_depth=8,
             learning_rate=0.15,
-            eval_metric=["error", "logloss", "rmse"],
+            eval_metric=["error", "logloss"],
             early_stopping_rounds=10,
+            tree_method="hist", device="cuda"
         )
         self.scaler = StandardScaler()
 
@@ -48,15 +49,16 @@ class BoostedDecisionTree:
         X_train_data = self.scaler.transform(train_data)
         X_valid_data = self.scaler.transform(valid_set[0])
         self.model.fit(
-            X_train_data, labels, weights,
+            X_train_data, labels,
+            sample_weight=weights,
             eval_set=[(X_valid_data, valid_set[1])],
             sample_weight_eval_set=[valid_set[2]],
             verbose=True,
         )
 
         # printout the accuracy and AUC of the test set using sklearn
-        print(f"Accuracy: {accuracy_score(valid_set[1], self.model.predict(X_valid_data)):.3%}")
-        print(f"AUC: {roc_auc_score(valid_set[1], self.model.predict_proba(X_valid_data)[:, 1]):.3f}")
+        print(f"Accuracy: {accuracy_score(valid_set[1], self.model.predict(X_valid_data), sample_weight=valid_set[2]):.3%}")
+        print(f"AUC: {roc_auc_score(valid_set[1], self.model.predict_proba(X_valid_data)[:, 1], sample_weight=valid_set[2]):.3f}")
 
     def predict(self, data):
         """

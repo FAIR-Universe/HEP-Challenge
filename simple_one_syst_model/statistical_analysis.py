@@ -40,7 +40,7 @@ class StatisticalAnalysis:
     """
 
     def __init__(self, model, bins=10, stat_only=False, systematics=None, fixed_syst=None):
-        
+
         self.model = model
         self.bins = bins
         self.bin_edges = np.linspace(0, 1, bins + 1)
@@ -53,7 +53,7 @@ class StatisticalAnalysis:
             'diboson_scale': 1.0,
         }
         self.systematics = systematics  # Function to apply systematics
-        
+
         self.alpha_ranges = {
             "tes": {
                 "range": np.linspace(0.9, 1.1, 15),
@@ -98,7 +98,7 @@ class StatisticalAnalysis:
         self.saved_info = {}
         self.syst_load = {syst: False for syst in self.syst_settings.keys()}
 
-    def compute_mu(self, score, weight, plot=None):
+    def compute_mu(self, score, weight, plot=None, file_path=None):
         """
         Perform calculations to calculate mu using the profile likelihood method.
         
@@ -111,8 +111,12 @@ class StatisticalAnalysis:
             dict: Dictionary containing calculated values of mu_hat, delta_mu_hat, p16, and p84.
         """
 
-
-        N_obs, bins = np.histogram(score, bins=self.bin_edges, density=False, weights=weight)
+        N_obs, bins = np.histogram(
+            score.astype(np.float64),
+            bins=self.bin_edges,
+            density=False,
+            weights=weight.astype(np.float64)
+        )
 
         def combined_fit_function_s(alpha):
             combined_function_s = np.zeros(self.bins)
@@ -192,9 +196,9 @@ class StatisticalAnalysis:
                 )
 
             # adding Gaussian constraint
-            hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu + gaus_term
+            hist_llr = (- N_obs * np.log(sigma_asimov_mu)) + sigma_asimov_mu
 
-            return hist_llr.sum()
+            return hist_llr.sum() + gaus_term
 
         result = Minuit(NLL,
                         mu=1.0,
@@ -208,7 +212,7 @@ class StatisticalAnalysis:
 
         for key, value in self.alpha_ranges.items():
             result.limits[key] = (value['range'][0], value['range'][-1])
-        result.limits['mu'] = (0, 10)
+        result.limits['mu'] = (-50, 50)
 
         if self.syst_fixed_setting is not None:
             for key, value in self.syst_fixed_setting.items():
@@ -221,16 +225,23 @@ class StatisticalAnalysis:
             # print("[*] - Fixed all systematics to nominal values.")
 
         result.errordef = Minuit.LIKELIHOOD
+        result.strategy = 2
         result.migrad()
+        result.hesse()
 
         if not result.fmin.is_valid:
             print("Warning: migrad did not converge. Hessian errors might be unreliable.")
-            return {
-                "mu_hat": -999,
-                "delta_mu_hat": -999,
-                "p16": -999,
-                "p84": -999,
-            }
+
+            result.strategy = 1
+            result.migrad()
+            result.hesse()
+
+            # return {
+            #     "mu_hat": np.nan,
+            #     "delta_mu_hat": np.nan,
+            #     "p16": np.nan,
+            #     "p84": np.nan,
+            # }
 
         mu_hat = result.values['mu']
         mu_p16 = mu_hat - result.errors['mu']
@@ -240,9 +251,9 @@ class StatisticalAnalysis:
             print(result)
             result.draw_profile('mu')
             result.draw_mnprofile('mu')
-            plt.show()
+            # plt.show()
 
-            os.makedirs("plots", exist_ok=True)
+            os.makedirs(f"{file_path}/plots", exist_ok=True)
             alpha_test = {syst: result.values[syst] for syst in self.syst_settings.keys()}
             self.plot_stacked_histogram(
                 bins,
@@ -250,7 +261,7 @@ class StatisticalAnalysis:
                 combined_fit_function_b(alpha_test),
                 mu=mu_hat,
                 N_obs=N_obs,
-                save_name=f"plots/{plot}.png"
+                save_name=f"{file_path}/plots/{plot}.png"
             )
 
         return {
@@ -273,7 +284,7 @@ class StatisticalAnalysis:
             dict: Dictionary containing calculated values of beta and gamma.
         """
 
-        holdout_set["data"].reset_index(drop=True, inplace=True)
+        holdout_set.reset_index(drop=True, inplace=True)
 
         def nominal_histograms(alpha, key):
             """
@@ -294,21 +305,25 @@ class StatisticalAnalysis:
                 **syst_settings
             )
 
-            label_holdout = holdout_syst['labels']
-            weights_holdout = holdout_syst['weights']
+            label_holdout = holdout_syst.pop('labels')
+            weights_holdout = holdout_syst.pop('weights')
 
-            holdout_val = self.model.predict(holdout_syst['data'])
+            holdout_val = (self.model.predict(holdout_syst)).astype(np.float64)
 
-            weights_holdout_signal = weights_holdout[label_holdout == 1]
-            weights_holdout_background = weights_holdout[label_holdout == 0]
+            weights_holdout_signal = (weights_holdout[label_holdout == 1]).astype(np.float64)
+            weights_holdout_background = (weights_holdout[label_holdout == 0]).astype(np.float64)
 
-            holdout_signal_hist, bins_signal = np.histogram(holdout_val[label_holdout == 1],
-                                                            bins=self.bin_edges, density=False,
-                                                            weights=weights_holdout_signal)
+            holdout_signal_hist, bins_signal = np.histogram(
+                holdout_val[label_holdout == 1],
+                bins=self.bin_edges, density=False,
+                weights=weights_holdout_signal
+            )
 
-            holdout_background_hist, bins_background = np.histogram(holdout_val[label_holdout == 0],
-                                                                    bins=self.bin_edges, density=False,
-                                                                    weights=weights_holdout_background)
+            holdout_background_hist, bins_background = np.histogram(
+                holdout_val[label_holdout == 0],
+                bins=self.bin_edges, density=False,
+                weights=weights_holdout_background
+            )
 
             return holdout_signal_hist, holdout_background_hist
 
@@ -373,15 +388,15 @@ class StatisticalAnalysis:
 
             print(f"[*] --- coef_s_list shape: {len(coef_s_list)}")
 
-            os.makedirs("plots/fittings", exist_ok=True)
+            os.makedirs(f"{file_path}/plots/fittings", exist_ok=True)
 
             self.visualize_fit(
                 alpha_list=alpha_list, array=s_array, coefficient_list=coef_s_list, alpha_name=f'Signal: {key}',
-                save_name=f"plots/fittings/signal_{key}.png"
+                save_name=f"{file_path}/plots/fittings/signal_{key}.png"
             )
             self.visualize_fit(
                 alpha_list=alpha_list, array=b_array, coefficient_list=coef_b_list, alpha_name=f'Background: {key}',
-                log_y=True, save_name=f"plots/fittings/background_{key}.png"
+                log_y=True, save_name=f"{file_path}/plots/fittings/background_{key}.png"
             )
 
             return coef_s_list, coef_b_list
@@ -493,7 +508,7 @@ class StatisticalAnalysis:
         # Save the plot
         if save_name:
             plt.savefig(save_name)
-        plt.show()
+        plt.close(fig)
 
     def visualize_fit(self, alpha_list, array, coefficient_list, alpha_name=None, log_y=False, save_name=None):
         # Prepare the figure
@@ -548,4 +563,4 @@ class StatisticalAnalysis:
 
         if save_name:
             fig.savefig(save_name)
-        plt.show()
+        plt.close(fig)
