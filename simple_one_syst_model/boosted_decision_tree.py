@@ -29,6 +29,7 @@ class BoostedDecisionTree:
             learning_rate=0.1,
             eval_metric=["error", "logloss"],
             early_stopping_rounds=10,
+            tree_method="hist", device="cuda"
         )
         self.scaler = StandardScaler()
 
