@@ -127,7 +127,10 @@ class Data:
                 raise ValueError("Selected indices must be a list or a numpy array")
             train_size = len(selected_indices)
         else:
-            train_size = (self.total_rows - self.test_size)
+            train_size = self.total_rows - self.test_size
+            
+        if train_size > self.total_rows - self.test_size:
+            raise ValueError("Sample size exceeds the number of available rows")
 
         if selected_indices is None:
             selected_indices = np.random.choice((self.total_rows - self.test_size), size=train_size, replace=False)
