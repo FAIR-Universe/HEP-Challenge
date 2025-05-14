@@ -28,9 +28,7 @@ PUBLIC_DATA_URL = (
     "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
 )
 
-ZENODO_API = "https://zenodo.org/api/deposit/depositions"
-ACCESS_TOKEN = os.getenv("ZENODO_ACCESS","")   
-DEPOSITION_ID = os.getenv("ZENODO_ID","")
+ZENODO_URL = "https://zenodo.org/records/15131565/files/FAIR_Universe_HiggsML_data.zip?download=1"
 
 
 class Data:
@@ -304,26 +302,8 @@ def Neurips2024_public_dataset():
 
         chunk_size = 1024 * 1024
 
-        response = requests.get(
-            f"{ZENODO_API}/{DEPOSITION_ID}",
-            params={"access_token": ACCESS_TOKEN},
-            stream=True
-        )
-
-        response.raise_for_status()
-        data = response.json()
-
-        # List the file download URLs
-        for file in data["files"]:
-            if file["filename"] == "FAIR_Universe_HiggsML_data.zip":
-                download_url = file["links"]["download"]
-                print("File name:", file["filename"])
-                print("Download link:", file["links"]["download"])
-                break
-        else:
-            raise ValueError("FAIR_Universe_HiggsML_data.zip not found in the response")
         
-        response = requests.get(download_url, headers={"Authorization": f"Bearer {ACCESS_TOKEN}"}, stream=True)
+        response = requests.get(ZENODO_URL, stream=True)
         response.raise_for_status()  # Will raise 403 if unauthorized
 
         logger.info("Status code: %s", response.status_code)
