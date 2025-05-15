@@ -24,10 +24,6 @@ logger = logging.getLogger(__name__)
 
 test_set_settings = None
 
-PUBLIC_DATA_URL = (
-    "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
-)
-
 ZENODO_URL = "https://zenodo.org/records/15131565/files/FAIR_Universe_HiggsML_data.zip?download=1"
 
 
@@ -308,7 +304,6 @@ def Neurips2024_public_dataset():
 
         logger.info("Status code: %s", response.status_code)
 
-        # response = requests.get(PUBLIC_DATA_URL, stream=True)
         if response.status_code == 200:
             with open(public_data_zip_path, "wb") as file:
                 # Iterate over the response in chunks
