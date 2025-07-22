@@ -11,16 +11,14 @@ NbValidation = THV_size[2]
 
 def Parabola_Likelihood_plot(
     saved_info_hold,
-    score_test=0,
-    weight_test=0,
-    score_exp_hold=0,
-    weight_exp_hold=0,
-    label_exp_hold=0,
-    detailed_labels_exp_hold=0,
-    Methode_Mu_Compar=[ "UNLL", "BNLL", "BNLL_syst","Direct"],
+
+    score_test,
+    weight_test,
+
+    Methode_Mu_Compar,
+    nb_bins,
     threshold=0,
     mu_init=1.0,
-    nb_bins=1,
 ):
     # Plottttt parabole et sigma
     from statistical_analysis import compute_mu
@@ -40,16 +38,14 @@ def Parabola_Likelihood_plot(
     for i in range(len(Methode_Mu_Compar)):
         Compute_mu_tamp = compute_mu(
             saved_info_hold=saved_info_hold,
-            threshold=threshold,
-            mu_init=mu_init,
-            method=Methode_Mu_Compar[i],
-            nb_bins=nb_bins,
+
             score_test=score_test,
             weight_test=weight_test,
-            score_exp_hold=score_exp_hold,
-            weight_exp_hold=weight_exp_hold,
-            label_exp_hold=label_exp_hold,
-            detailed_labels_exp_hold=detailed_labels_exp_hold
+
+            method=Methode_Mu_Compar[i],
+            nb_bins=nb_bins,
+            threshold=threshold,
+            mu_init=mu_init,
         )
 
         log_likelihood_ratio = (
@@ -110,22 +106,22 @@ def Parabola_Likelihood_plot(
     #plt.ylim([0,4])
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/images/Compar/Parabola_Compar"):
-            os.makedirs("current_dir/images/Compar/Parabola_Compar")
+    if not os.path.exists("%s/images/Compar/Parabola_Compar"%(current_dir)):
+            os.makedirs("%s/images/Compar/Parabola_Compar"%(current_dir))
     plt.savefig(
-        "current_dir/images/Compar/Parabola_Compar/%s_Compar_ParabolaVsMethod_Train=%s_Holdout=%s_Valid=%s.png"
-        % (ModelType, NbTrain, NbHoldout, NbValidation)
+        "%s/images/Compar/Parabola_Compar/%s_Compar_ParabolaVsMethod_Train=%s_Holdout=%s_Valid=%s.png"
+        % (current_dir,ModelType, NbTrain, NbHoldout, NbValidation)
     )
     plt.show()
+    plt.close()
     ##Fin plot parabole et sigma
 
 
 def Bins_BNLL_varia(
+    saved_info_hold,
     score_test,
     weight_test,
-    label_exp_hold,
-    score_exp_hold,
-    weight_exp_hold,
+    
     bin_min,
     bin_max,
     value_bin_step,
@@ -144,11 +140,11 @@ def Bins_BNLL_varia(
         compute_mu_tamp = compute_mu(
             method="BNLL",
             nb_bins=bin_list[i],
+
             score_test=score_test,
             weight_test=weight_test,
-            label_exp_hold=label_exp_hold,
-            score_exp_hold=score_exp_hold,
-            weight_exp_hold=weight_exp_hold,
+            saved_info_hold=saved_info_hold,
+
             saved_info_hold=0,
             mu_init=mu_init,
             threshold=threshold,
@@ -187,10 +183,10 @@ def Bins_BNLL_varia(
     )
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/images/Compar/Bin_Compar"):
-            os.makedirs("current_dir/images/Compar/Bin_Compar")
+    if not os.path.exists("%s/images/Compar/Bin_Compar"%(current_dir)):
+            os.makedirs("%s/images/Compar/Bin_Compar"%(current_dir))
     plt.savefig(
-        "current_dir/images/Compar/Bin_Compar/%s_Compar_ParabolaVsMethod_thrsld=%s_Train=%s_Holdout=%s_Valid=%s.png"
-        % (ModelType, threshold, NbTrain, NbHoldout, NbValidation)
+        "%s/images/Compar/Bin_Compar/%s_Compar_ParabolaVsMethod_thrsld=%s_Train=%s_Holdout=%s_Valid=%s.png"
+        % (current_dir,ModelType, threshold, NbTrain, NbHoldout, NbValidation)
     )
     plt.show()

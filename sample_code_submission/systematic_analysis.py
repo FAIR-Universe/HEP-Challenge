@@ -1,7 +1,11 @@
 import numpy as np
-from HiggsML.systematics import systematics
 
-Plotteur = "True"
+
+Plotteur = "False"
+
+nb_points_soft_met_for_fitting = 15
+nb_points_tes_for_fitting=10
+nb_points_jes_for_fitting=10
 
 from scipy.optimize import curve_fit
 
@@ -24,7 +28,7 @@ def Polynomial_Reg_Model_forced_soft_met(x, a2, b1   ):
 #########################################################
 #Classic Sig VS bkg 
 #########################################################
-def regression_tes(dataset, model, nb_bins=25, threshold=0):
+def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -54,7 +58,7 @@ def regression_tes(dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    sigma = np.linspace(-0.106, 0.096, 100)
+    sigma = np.linspace(-0.106, 0.096, nb_points_tes_for_fitting)
     var_lenght=len(sigma)
     tes = [np.exp(sigma[i]) for i in range(var_lenght)]
     signal_obs = [None] * var_lenght
@@ -139,7 +143,7 @@ def regression_tes(dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            tes_fit = np.linspace(min(tes), max(tes), 100)
+            tes_fit = np.linspace(min(tes), max(tes), 40)
             y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -214,8 +218,12 @@ def regression_tes(dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
+                os.makedirs("current_dir/Fitting_Parameters/one_bkg")
     np.savez(
-        "TES_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/one_bkg/TES_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -226,7 +234,7 @@ def regression_tes(dataset, model, nb_bins=25, threshold=0):
 
 
 
-def regression_jes(dataset, model, nb_bins=25, threshold=0):
+def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -256,7 +264,7 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    sigma = np.linspace(-0.106, 0.096, 100)
+    sigma = np.linspace(-0.106, 0.096, nb_points_jes_for_fitting)
     var_lenght=len(sigma)
     jes = [np.exp(sigma[i]) for i in range(var_lenght)]
     signal_obs = [None] * var_lenght
@@ -343,7 +351,7 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            jes_fit = np.linspace(min(jes), max(jes), 100)
+            jes_fit = np.linspace(min(jes), max(jes), 40)
             y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -418,8 +426,12 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
+        os.makedirs("current_dir/Fitting_Parameters/one_bkg")
     np.savez(
-        "JES_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/one_bkg/JES_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -433,7 +445,7 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
 
 
 
-def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
+def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -463,7 +475,7 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    soft_met = np.linspace(0, 5, 250)
+    soft_met = np.linspace(0, 5, nb_points_soft_met_for_fitting)
     var_lenght=len(soft_met)
     signal_obs = [None] * var_lenght
     bkg_obs = [None] * var_lenght
@@ -548,7 +560,7 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 150)
+            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 60)
             y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -622,8 +634,12 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
+        os.makedirs("current_dir/Fitting_Parameters/one_bkg")
     np.savez(
-        "SOFTMET_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/one_bkg/SOFTMET_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -637,7 +653,7 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
 #Normalization bkg : Sig Vs Diboson VS Ztautau VS ttbar
 #########################################################
 
-def regression_tes_3bkg (dataset, model, nb_bins=25, threshold=0):
+def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -679,7 +695,7 @@ def regression_tes_3bkg (dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    sigma = np.linspace(-0.106, 0.096, 100)
+    sigma = np.linspace(-0.106, 0.096, nb_points_tes_for_fitting)
     var_lenght=len(sigma)
     tes = [np.exp(sigma[i]) for i in range(var_lenght)]
     signal_obs = [None] * var_lenght
@@ -771,7 +787,7 @@ def regression_tes_3bkg (dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            tes_fit = np.linspace(min(tes), max(tes), 100)
+            tes_fit = np.linspace(min(tes), max(tes), 40)
             y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -812,8 +828,12 @@ def regression_tes_3bkg (dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
+        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
     np.savez(
-        "TES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/bkg_subchannel/TES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -824,7 +844,7 @@ def regression_tes_3bkg (dataset, model, nb_bins=25, threshold=0):
 
 
 
-def regression_jes_3bkg (dataset, model, nb_bins=25, threshold=0):
+def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -866,7 +886,7 @@ def regression_jes_3bkg (dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    sigma = np.linspace(-0.106, 0.096, 100)
+    sigma = np.linspace(-0.106, 0.096, nb_points_jes_for_fitting)
     var_lenght=len(sigma)
     jes = [np.exp(sigma[i]) for i in range(var_lenght)]
     signal_obs = [None] * var_lenght
@@ -958,7 +978,7 @@ def regression_jes_3bkg (dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            jes_fit = np.linspace(min(jes), max(jes), 100)
+            jes_fit = np.linspace(min(jes), max(jes), 40)
             y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -999,8 +1019,12 @@ def regression_jes_3bkg (dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
+        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
     np.savez(
-        "JES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/bkg_subchannel/JES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -1010,7 +1034,7 @@ def regression_jes_3bkg (dataset, model, nb_bins=25, threshold=0):
     # print(data['fit_cov'])
 
 
-def regression_soft_met_3bkg (dataset, model, nb_bins=25, threshold=0):
+def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
@@ -1052,7 +1076,7 @@ def regression_soft_met_3bkg (dataset, model, nb_bins=25, threshold=0):
     ]
     
 
-    soft_met = np.linspace(0, 5, 250)
+    soft_met = np.linspace(0, 5, nb_points_soft_met_for_fitting)
     var_lenght=len(soft_met)
     signal_obs = [None] * var_lenght
     ztautau_obs = [None] * var_lenght
@@ -1143,7 +1167,7 @@ def regression_soft_met_3bkg (dataset, model, nb_bins=25, threshold=0):
             fit_cov[j][i] =  m.covariance
 
 
-            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 100)
+            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 60)
             y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
@@ -1184,8 +1208,12 @@ def regression_soft_met_3bkg (dataset, model, nb_bins=25, threshold=0):
                 plt.show()
 
     # Save fiting param
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
+        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
     np.savez(
-        "SOFTMET_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "current_dir/Fitting_Parameters/bkg_subchannel/SOFTMET_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -1205,6 +1233,7 @@ def regression_soft_met_3bkg (dataset, model, nb_bins=25, threshold=0):
 def tes_fitter(
     score,  # model previously
     train_set,
+    systematics,
 ):
     """
     Task 1 : Analysis TES Uncertainty
@@ -1236,6 +1265,7 @@ def tes_fitter(
 def jes_fitter(
     score,
     train_set,
+    systematics,
 ):
     """
     Task 1 : Analysis JES Uncertainty

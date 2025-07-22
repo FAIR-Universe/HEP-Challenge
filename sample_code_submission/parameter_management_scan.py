@@ -1,10 +1,48 @@
 class Parameter_Distribution:
 
     import numpy as np
+    
+    import time
+    seed = int(time.time_ns() % (2**32))  # or use os.urandom() if needed
+    
 
     parameter = {
         "ModelType": "BDT",
         "THV_size": np.array([600_000, 5_000_000, 4_000_000]),
+        "Nb_bins_distrib": 20,
+        "threshold_distrib": 0,
+
+        "random_seed":10912983, #10912983 or seed for random seed
+
+        "Force_3bkg_regression": False ,
+        "Force_1bkg_regression": False ,
+        "fitting_3bkg": True ,
+        "fitting_1bkg": True ,
+
+        "First_plots_hist_roc": False ,
+
+        "Bins_varia_plot": False,
+        "Bins_varia_Min_Max_Step": [1,52,5],
+
+        "Compute_Best_Opti": False,
+        "NbPoints_Prec_Thresh":50,
+
+#        The method define the model used
+#  "BNLL_all_syst" = all syst 
+#  "BNLL_syst_normal_bkg"  = bkg_scale, ttbar_scale and diboson_scale but without tes or jes
+#  "BNLL_syst" = tes and jes (soft_met is commented out)
+#  "BNLL" = only binned 
+#  "Direct"
+#  "UNLL"
+
+        "Predict_method":[ "BNLL_all_syst" ],
+        "Parabola_method":[],
+
+
+        "Dont_compute_tes" : False,
+        "Dont_compute_jes" : False,
+        "Dont_compute_soft_met" : False,
+
     }
 
 
@@ -17,6 +55,10 @@ class Parameter_Distribution:
     def get_all(cls):
         return cls.parameter
 
+    @classmethod
+    def get_THV_ModelType (cls):
+        keys = ["ModelType", "THV_size"]
+        return {k: cls.parameter[k] for k in keys}
     
     @classmethod
     def overwrite_size(cls, Algebraic_diff_Pop_Main_Sub, Main_Study_Subset, Pop_modified ):
