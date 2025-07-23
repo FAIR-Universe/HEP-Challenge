@@ -145,7 +145,6 @@ def Bins_BNLL_varia(
             weight_test=weight_test,
             saved_info_hold=saved_info_hold,
 
-            saved_info_hold=0,
             mu_init=mu_init,
             threshold=threshold,
         )

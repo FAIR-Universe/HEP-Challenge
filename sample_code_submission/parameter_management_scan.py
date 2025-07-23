@@ -8,16 +8,13 @@ class Parameter_Distribution:
 
     parameter = {
         "ModelType": "BDT",
+        "Load_Classifier":False,
+
         "THV_size": np.array([600_000, 5_000_000, 4_000_000]),
         "Nb_bins_distrib": 20,
         "threshold_distrib": 0,
 
         "random_seed":10912983, #10912983 or seed for random seed
-
-        "Force_3bkg_regression": False ,
-        "Force_1bkg_regression": False ,
-        "fitting_3bkg": True ,
-        "fitting_1bkg": True ,
 
         "First_plots_hist_roc": False ,
 
@@ -27,6 +24,8 @@ class Parameter_Distribution:
         "Compute_Best_Opti": False,
         "NbPoints_Prec_Thresh":50,
 
+        "Parabola_method":[],
+
 #        The method define the model used
 #  "BNLL_all_syst" = all syst 
 #  "BNLL_syst_normal_bkg"  = bkg_scale, ttbar_scale and diboson_scale but without tes or jes
@@ -34,14 +33,16 @@ class Parameter_Distribution:
 #  "BNLL" = only binned 
 #  "Direct"
 #  "UNLL"
-
-        "Predict_method":[ "BNLL_all_syst" ],
-        "Parabola_method":[],
-
+        "Predict_method":[ "BNLL" ],
 
         "Dont_compute_tes" : False,
         "Dont_compute_jes" : False,
         "Dont_compute_soft_met" : False,
+
+        "Force_3bkg_regression": False ,
+        "Force_1bkg_regression": False ,
+        "fitting_3bkg": True ,
+        "fitting_1bkg": True ,
 
     }
 

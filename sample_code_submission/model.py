@@ -30,9 +30,11 @@ from parameter_management_scan import Parameter_Distribution
 Tamp_parameter = Parameter_Distribution.get_all()
 
 THV_size = Tamp_parameter["THV_size"]
-ModelType = Tamp_parameter["ModelType"]
 Nb_bins_distrib=Tamp_parameter["Nb_bins_distrib"]
 threshold_distrib=Tamp_parameter["threshold_distrib"]
+
+ModelType = Tamp_parameter["ModelType"]
+Load_Classifier =Tamp_parameter["Load_Classifier"]
 
 random_seed=Tamp_parameter["random_seed"]
 
@@ -59,16 +61,17 @@ NbHoldout = THV_size[1]
 NbValidation = THV_size[2]
 
 
-""
-    #####################        class Model
-""
-class Model:
 
 ###############################################################
+######## Class Model
+###############################################################
+class Model:
+
+
 ###############################################################
 ######## Init
 ###############################################################
-    def __init__(self, get_train_set=None, systematics=None, model_type="sample_model"):
+    def __init__(self, get_train_set=None, systematics=None, model_type=ModelType):
 
         """
         Define the THV subset : 
@@ -130,15 +133,15 @@ class Model:
 
         
     #///////////////////////////////////////////////////////////////////////////////
-    ## computation methode BDT / NN / other
+    ## define classification method BDT / NN / other
     #/////////////////////////////////////////////////////////////////////////////// 
         if model_type == "BDT":
             from boosted_decision_tree import BoostedDecisionTree
-            self.model = BoostedDecisionTree(train_data=self.training_set["data"])
+            self.model = BoostedDecisionTree(train_data=self.training_set["data"],Load_Classifier=Load_Classifier)
 
         elif model_type == "NN":
             from neural_network import NeuralNetwork
-            self.model = NeuralNetwork(train_data=self.training_set["data"])
+            self.model = NeuralNetwork(train_data=self.training_set["data"],Load_Classifier=Load_Classifier)
 
         elif model_type == "sample_model":
             from sample_model import SampleModel
@@ -149,11 +152,12 @@ class Model:
             raise ValueError(f"model_type {model_type} not found")
         
         self.name = model_type
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         print(f" Model is { self.name}")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 
     
-###############################################################
 ###############################################################
 ######## FIT
 ###############################################################
@@ -184,9 +188,14 @@ class Model:
 
         balanced_set["weights"] = weights_train
 
-        self.model.fit(
-            balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
-        )
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #### Train the classifier or load an already trained classifier
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        if Load_Classifier != True or ModelType == "sample_model":
+            self.model.fit(
+                balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
+            )
 
         
     #///////////////////////////////////////////////////////////////////////////////
@@ -395,9 +404,7 @@ class Model:
         
 
 
-    
 
-###############################################################
 ###############################################################
 ######## Predict
 ###############################################################

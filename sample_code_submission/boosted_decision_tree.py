@@ -10,18 +10,28 @@ class BoostedDecisionTree:
 
     """
 
-    def __init__(self, train_data):
-        #self.model = XGBClassifier()
-        self.model = XGBClassifier(
-         n_estimators=100,     # Number of trees
-         learning_rate=0.1,    # Step size shrinkage
-         max_depth=10,          # Depth of each tree
-         subsample=0.8,        # Row sampling
-         colsample_bytree=0.8, # Feature sampling
-         use_label_encoder=False,
-         eval_metric='logloss' # For classification
-        )
-        self.scaler = StandardScaler()
+    def __init__(self, train_data,Load_Classifier):
+
+        if Load_Classifier == True :
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists("%s/Saved_Classifier/BDT"%(current_dir)):
+                print("Problem : Saved BDT Not Found")
+            else :
+                self.model = XGBClassifier()
+                self.model.load_model('%s/Saved_Classifier/BDT/BDT_trained_wt_%s_events.json'%(current_dir,len(train_data)))
+
+        else :
+            self.model = XGBClassifier(
+            n_estimators=100,     # Number of trees
+            learning_rate=0.1,    # Step size shrinkage
+            max_depth=10,          # Depth of each tree
+            subsample=0.8,        # Row sampling
+            colsample_bytree=0.8, # Feature sampling
+            use_label_encoder=False,
+            eval_metric='logloss' # For classification
+            )
+            self.scaler = StandardScaler()
 
     def fit(self, train_data, labels, weights=None):
 
@@ -66,6 +76,13 @@ class BoostedDecisionTree:
         plt.figure(1, figsize=(15,20))
         plot_importance(booster)
         plt.show()
+
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if not os.path.exists("%s/Saved_Classifier/BDT"%(current_dir)):
+            os.makedirs("%s/Saved_Classifier/BDT"%(current_dir))
+        self.model.save_model('%s/Saved_Classifier/BDT/BDT_trained_wt_%s_events.json'%(current_dir,len(train_data)))
+
 
     def predict(self, test_data):
         test_data = self.scaler.transform(test_data)
