@@ -1,6 +1,6 @@
 from xgboost import XGBClassifier, plot_importance
 from sklearn.preprocessing import StandardScaler
-
+import joblib
 
 class BoostedDecisionTree:
     """
@@ -10,7 +10,7 @@ class BoostedDecisionTree:
 
     """
 
-    def __init__(self, train_data,Load_Classifier):
+    def __init__(self, train_size,seed,Load_Classifier):
 
         if Load_Classifier == True :
             import os
@@ -19,8 +19,9 @@ class BoostedDecisionTree:
                 print("Problem : Saved BDT Not Found")
             else :
                 self.model = XGBClassifier()
-                self.model.load_model('%s/Saved_Classifier/BDT/BDT_trained_wt_%s_events.json'%(current_dir,len(train_data)))
-
+                self.model.load_model('%s/Saved_Classifier/BDT/model_BDT_trained_wt_%s_events_seed%s.json'%(current_dir,train_size,seed))
+                self.scaler = joblib.load('%s/Saved_Classifier/BDT/scaler_BDT_trained_wt_%s_events_seed%s.pkl'%(current_dir,train_size,seed))
+        
         else :
             self.model = XGBClassifier(
             n_estimators=100,     # Number of trees
@@ -29,16 +30,19 @@ class BoostedDecisionTree:
             subsample=0.8,        # Row sampling
             colsample_bytree=0.8, # Feature sampling
             use_label_encoder=False,
-            eval_metric='logloss' # For classification
+            eval_metric='logloss', # For classification
+            n_jobs=100,
             )
+
             self.scaler = StandardScaler()
 
-    def fit(self, train_data, labels, weights=None):
+
+    def fit(self,train_data, labels, train_size,seed, weights_train=None):
 
         self.scaler.fit_transform(train_data)
 
         X_train_data = self.scaler.transform(train_data)
-        self.model.fit(X_train_data, labels, weights)
+        self.model.fit(X_train_data, labels, weights_train)
 
         import matplotlib.pyplot as plt
 
@@ -81,8 +85,9 @@ class BoostedDecisionTree:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         if not os.path.exists("%s/Saved_Classifier/BDT"%(current_dir)):
             os.makedirs("%s/Saved_Classifier/BDT"%(current_dir))
-        self.model.save_model('%s/Saved_Classifier/BDT/BDT_trained_wt_%s_events.json'%(current_dir,len(train_data)))
-
+        self.model.save_model('%s/Saved_Classifier/BDT/model_BDT_trained_wt_%s_events_seed%s.json'%(current_dir,train_size,seed))
+        joblib.dump(self.scaler, '%s/Saved_Classifier/BDT/scaler_BDT_trained_wt_%s_events_seed%s.pkl'%(current_dir,train_size,seed) )
+        print("BDT saved information (model and scaler)")
 
     def predict(self, test_data):
         test_data = self.scaler.transform(test_data)

@@ -10,7 +10,7 @@ class Parameter_Distribution:
         "ModelType": "BDT",
         "Load_Classifier":False,
 
-        "THV_size": np.array([600_000, 5_000_000, 4_000_000]),
+        "THV_size": np.array([600_000, 1_000_000, 1_000_000]),  #5M for NN
         "Nb_bins_distrib": 20,
         "threshold_distrib": 0,
 
@@ -33,7 +33,7 @@ class Parameter_Distribution:
 #  "BNLL" = only binned 
 #  "Direct"
 #  "UNLL"
-        "Predict_method":[ "BNLL" ],
+        "Predict_method":[ "BNLL_syst" ],
 
         "Dont_compute_tes" : False,
         "Dont_compute_jes" : False,
@@ -41,6 +41,7 @@ class Parameter_Distribution:
 
         "Force_3bkg_regression": False ,
         "Force_1bkg_regression": False ,
+
         "fitting_3bkg": True ,
         "fitting_1bkg": True ,
 

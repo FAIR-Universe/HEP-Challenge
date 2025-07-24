@@ -24,6 +24,7 @@ Task 2 : Systematic Uncertainty
 """
 import math
 from iminuit import Minuit
+import time
 
 # from iminuit import cost
 # from scipy.stats import poisson, norm
@@ -59,6 +60,7 @@ def compute_mu(
     label_exp_hold=0,
     detailed_labels_exp_hold=0
 ):  
+    start1 = time.perf_counter()
 
     if saved_info_hold["threshold"]!=threshold or saved_info_hold["nb_bins"]!=nb_bins:
         if saved_info_hold["threshold"]!=threshold :
@@ -95,6 +97,9 @@ def compute_mu(
 
 
     mu, del_mu_stat, del_mu_tot, del_mu_sys = (0, 0, 0, 0)
+
+    end1 = time.perf_counter()
+    print(f"1st section : {(end1 - start1) :.5f} s")
 
     ###############################################################
     ###############################################################
@@ -170,6 +175,7 @@ def compute_mu(
     ###############################################################
     elif method == "BNLL":
 
+        start_bnll = time.perf_counter()
         #///////////////////////////////////////////////////////////////////////////////
         ## Cost_bnll
         #///////////////////////////////////////////////////////////////////////////////   
@@ -184,8 +190,19 @@ def compute_mu(
             m_bnll.limits["mu"] = (0, 4)
             m_bnll.errordef = Minuit.LIKELIHOOD
 
+            start_bnll_migrad = time.perf_counter()
+
             m_bnll.migrad()
+
+            end_bnll_migrad = time.perf_counter()
+            print(f"bnll migrad section : {(end_bnll_migrad - start_bnll_migrad):.5f} s")
+            start_bnll_hesse = time.perf_counter()
+
             m_bnll.hesse()
+
+            end_bnll_hesse = time.perf_counter()
+            print(f"bnll hesse section : {(end_bnll_hesse - start_bnll_hesse) * 1e6:.5f} s")
+
             #m_bnll.draw_mnprofile("mu")
             mu = m_bnll.values["mu"]
             del_mu_stat = m_bnll.errors["mu"]
@@ -198,6 +215,9 @@ def compute_mu(
         tes=tes_init_ref
         jes=jes_init_ref
         soft_met=soft_met_init_ref
+
+        end_bnll = time.perf_counter()
+        print(f"bnll whole section : {(end_bnll - start_bnll) * 1e6:.3f} µs")
 
 
     ###############################################################
@@ -260,9 +280,9 @@ def compute_mu(
             return -np.sum(-N_exp_hold + n_obs_hist() * np.log(N_exp_hold))
             
 
-        def BNLL_syst_mu_computation (mu_init ,tes_init,jes_init): # ,tes_init ,jes_init ,soft_met_init):
+        def BNLL_syst_mu_computation (mu_init ,tes_init,jes_init,soft_met_init): # ,tes_init ,jes_init ,soft_met_init):
     
-            m_bnll_syst = Minuit(Cost_bnll_syst, mu=mu_init, tes=tes_init,jes=jes_init )# tes=tes_init, jes=jes_init, soft_met=soft_met_init)
+            m_bnll_syst = Minuit(Cost_bnll_syst, mu=mu_init, tes=tes_init,jes=jes_init, soft_met=soft_met_init )# tes=tes_init, jes=jes_init, soft_met=soft_met_init)
             m_bnll_syst.limits["mu"] = (0, 4)
             m_bnll_syst.limits["tes"] = (0.9, 1.1)
             m_bnll_syst.limits["jes"] = (0.9, 1.1)
@@ -526,8 +546,13 @@ def compute_mu(
        
         
     elif (method == "BNLL"):  #or (method == "BNLL_syst")or (method == "BNLL_syst_normal_bkg") or (method == "BNLL_all_syst")
+        start_bnll_negloglike = time.perf_counter()
+
         negloglike_values = np.array([Cost_bnll(mub) for mub in mu_axis_values])
         negloglike_mu_hat = Cost_bnll(mu)  # saved_info["signal"]+saved_info["bkg"])
+
+        end_bnll_negloglike = time.perf_counter()
+        print(f"bnll negloglike section : {(end_bnll_negloglike - start_bnll_negloglike) :.5f} s")
 
 
     elif method=="BNLL_syst":   ######  and method=="REf" Just BLOCK THE CALCULATION
