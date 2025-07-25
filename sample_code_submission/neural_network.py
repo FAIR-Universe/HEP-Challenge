@@ -26,13 +26,12 @@ class NeuralNetwork:
 
             n_dim = 28 #Nb of features in the dataset
 
-            self.model.add(Dense(100, input_dim=n_dim, activation="relu"))
-            self.model.add(Dense(100, activation="relu"))
-            self.model.add(Dense(100, activation="relu"))
-            self.model.add(Dense(100, activation="relu"))
-            self.model.add(Dense(100, activation="relu"))
-            self.model.add(Dense(1, activation="si" \
-                                 "gmoid"))
+            self.model.add(Dense(1000, input_dim=n_dim, activation="relu"))
+            self.model.add(Dense(1000, activation="relu"))
+            self.model.add(Dense(1000, activation="relu"))
+            self.model.add(Dense(1000, activation="relu"))
+            self.model.add(Dense(1000, activation="relu"))
+            self.model.add(Dense(1, activation="sigmoid"))
 
             self.model.compile(
                 loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"]

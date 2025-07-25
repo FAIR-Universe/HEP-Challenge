@@ -4,10 +4,17 @@ import numpy as np
 Plotteur = "False"
 
 nb_points_soft_met_for_fitting = 15
-nb_points_tes_for_fitting=10
+nb_points_tes_for_fitting=1000
 nb_points_jes_for_fitting=10
 
-from scipy.optimize import curve_fit
+
+n_jobs_distrib=18
+
+from joblib import Parallel, delayed
+from iminuit import Minuit
+# Automatic error propagation at each x
+from iminuit.util import propagate
+
 
 
 def Polynomial_Reg_Model_soft_met(x, c, a1, a2):
@@ -29,11 +36,17 @@ def Polynomial_Reg_Model_forced_soft_met(x, a2, b1   ):
 #Classic Sig VS bkg 
 #########################################################
 def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
-    from utils import histogram_dataset
-    from statistical_analysis import calculate_saved_info
     import matplotlib.pyplot as plt
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    dataset_tamp=dataset
+
+    #################Be careful
+    if "score" in dataset["data"].columns:
+            dataset["data"] = dataset["data"].drop(columns=["score"])
+    ######################
+
+    dataset_tamp=dataset.copy()
     dataset_tamp = systematics(dataset_tamp, tes=1)
     if "score" in dataset_tamp["data"].columns:
         dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -57,13 +70,24 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
         0
     ]
     
+    delta_sig_ref =np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        & (label_Roiscore == 1) )],2) ) ) for j in range(nb_bins) ])
+
+    delta_bkg_ref =np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        & (label_Roiscore == 0) ) ],2) ) ) for j in range(nb_bins) ])
+    
+    delta_N_ref =np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        )],2) ) ) for j in range(nb_bins) ])
 
     sigma = np.linspace(-0.106, 0.096, nb_points_tes_for_fitting)
     var_lenght=len(sigma)
     tes = [np.exp(sigma[i]) for i in range(var_lenght)]
-    signal_obs = [None] * var_lenght
-    bkg_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
 
     # data_score=[model.predict(systematics(dataset,tes=tes[i]))  for i in range(len(sigma)) ]  #Alternative to the for loop
     # weight_ROIscore=[dataset["weights"][data_score[i] > threshold] for i in range(len(sigma))]
@@ -75,7 +99,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
     # N_obs=[np.histogram(score_ROIscore[i], bins=Bins_edges[i], weights=weight_ROIscore[i])[0] for i in range(len(sigma))]
 
     # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
+    def tes_hist_syst_points(i):
         ##We need the for loop due to the addition of the score cell in the data_score
         dataset_tamp = systematics(dataset, tes=tes[i])
         if "score" in dataset_tamp["data"].columns:
@@ -86,7 +110,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
         label_Roiscore = dataset_tamp["labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
         # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = (
+        signal = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 1],
                 bins=Bins_edges,
@@ -94,7 +118,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
             )[0]
             - signal_obs_ref
         )  # 3 lignes below new
-        bkg_obs[i] = (
+        bkg = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 0],
                 bins=Bins_edges,
@@ -102,128 +126,168 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
             )[0]
             - bkg_obs_ref
         )
-        N_obs[i] = (
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
 
-    y_obs_name = ["signal obs", "bkg obs", " total obs"]
-    signal_obs_order = [
+
+        d_sig =np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        & (label_Roiscore == 1) )],2) ) ) for j in range(nb_bins) ])
+
+        d_bkg =np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        & (label_Roiscore == 0) )],2) ) ) for j in range(nb_bins) ])
+
+        d_N=np.array([ np.sqrt( np.sum( np.power(weight_ROIscore[ (
+        (score_ROIscore >= Bins_edges[j])
+        & (score_ROIscore < Bins_edges[j + 1])
+        )],2) ) ) for j in range(nb_bins) ])
+
+        return signal, bkg, N , d_sig, d_bkg,d_N
+
+    results_tes_hist_syst_points = Parallel(n_jobs=n_jobs_distrib)(delayed(tes_hist_syst_points)(i) for i in range(var_lenght))
+    print("End of the tes hist")
+    del dataset, dataset_tamp
+
+    signal_obs = [None] * var_lenght
+    bkg_obs    = [None] * var_lenght
+    N_obs      = [None] * var_lenght
+    delta_sig  = [None] * var_lenght
+    delta_bkg  = [None] * var_lenght
+    
+    delta_N = [None] * var_lenght
+
+    for i, (signal, bkg, N, d_sig, d_bkg,d_N) in enumerate(results_tes_hist_syst_points):
+        signal_obs[i] = signal
+        bkg_obs[i]    = bkg
+        N_obs[i]      = N
+        delta_sig[i] = d_sig
+        delta_bkg[i] = d_bkg
+        delta_N[i]   = d_N
+
+
+    y_obs_name = ["signal_obs", "bkg_obs", " total_obs"]
+    signal_obs_order = np.array( [
         [signal_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)
-    ]
-    bkg_obs_order = [[bkg_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
-    N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
+        ])
+    bkg_obs_order = np.array( [[bkg_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)])
+    N_obs_order = np.array([[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)])
+
+    delta_sig_order =np.array([[delta_sig[j][i] for j in range(var_lenght)] for i in range(nb_bins)])
+    delta_bkg_order =np.array([[delta_bkg[j][i] for j in range(var_lenght)] for i in range(nb_bins)])
+    delta_N_order =np.array([[delta_N[j][i] for j in range(var_lenght)] for i in range(nb_bins)])
+
+    delta_sig_ref_order=np.array([[delta_sig_ref[i] for j in range(var_lenght)] for i in range(nb_bins)] )
+    delta_bkg_ref_order=np.array([[delta_bkg_ref[i] for j in range(var_lenght)] for i in range(nb_bins)] )
+    delta_N_ref_order=np.array([[delta_N_ref[i] for j in range(var_lenght)] for i in range(nb_bins)] )
+
     y_obs = [signal_obs_order, bkg_obs_order, N_obs_order]
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un TES précis
+    delta_y_obs=[delta_sig_order,delta_bkg_order,delta_N_order ]
+    delta_y_ref=[delta_sig_ref_order,delta_bkg_ref_order,delta_N_ref_order ]
+    """
+    y_obs[0:2] = sig, bkg, tot
+    y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
+    y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un TES précis*
+    """
+    #for i in range(len(y_obs)):  # =3
+    #for j in range(nb_bins):
+    def tes_fit_and_plot_over_bins (i,j) :
+        # Fit
+        x_data = np.array(tes)
+        y_data = y_obs[i][j]
+        
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
+            return np.sum((y_data - y_fit)**2)
+
+        # Minimize
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse() 
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        tes_fit = np.linspace(min(tes), max(tes), 40)
+        y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_params))
+
+
+        results_propa = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov) for xi in tes_fit]
+
+        y = np.array([r[0] for r in results_propa])
+        ycov = np.array([r[1] for r in results_propa])  # shape (len(tes_fit), 1, 1)
+        y_std = ycov**0.5
+        
+        # Plot
+        if Plotteur == "True" and (j in [2 ,nb_bins-2]):
+
+            plt.scatter(
+                tes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue", s=4,
+            )
+            plt.fill_between (
+                tes,
+                y_obs[i][j] - delta_y_obs[i][j]-delta_y_ref[i][j],
+                y_obs[i][j] + delta_y_obs[i][j]+delta_y_ref[i][j],
+                color="blue",
+                alpha=0.3,
+                label="Data total uncertainty",
+            )
+            plt.fill_between (
+                tes,
+                y_obs[i][j] - delta_y_obs[i][j],
+                y_obs[i][j] + delta_y_obs[i][j],
+                color="black",
+                alpha=0.5,
+                label="syst data uncertainty (no ref)",
+            )
+            plt.plot(tes_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(
+                tes_fit,
+                y - y_std,
+                y + y_std,
+                color="orange",
+                alpha=0.3,
+                label="Fitting uncertainty",
+            )
+            plt.ylabel("data observed")
+            plt.xlabel("Tes factor")
+            plt.title("Data observed with a variation of Tes (bin n°%s)" % (j + 1))
+            plt.legend()
+            plt.grid()
+
+            if not os.path.exists("%s/Images/Fitting/TES/one_bkg"%(current_dir)):
+                os.makedirs("%s/Images/Fitting/TES/one_bkg"%(current_dir))
+            plt.savefig("%s/Images/Fitting/TES/one_bkg/TES_%s_Bins%s_over_%s_1bkg"%(current_dir,y_obs_name[i],j,nb_bins))
+            plt.close()
+        
+        return j, fit_params, fit_cov
+    
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =3
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(tes)
-            y_data = y_obs[i][j]
-            
-            def chi2(a, b):
-                y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
-                return np.sum((y_data - y_fit)**2)
-
-            # Minimize
-            m = Minuit(chi2, a=0, b=0)
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
-
-            fit_param[j][i] = [m.values["a"],m.values["b"]]
-            fit_cov[j][i] =  m.covariance
-
-
-            tes_fit = np.linspace(min(tes), max(tes), 40)
-            y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_param[j][i]))
-
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
-
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in tes_fit])   
-
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in tes_fit]
-
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(tes_fit), 1, 1)
-
-            y_std = ycov**0.5
-            
-
-
-                            # fit_param_tamp, fit_cov_tamp = curve_fit(
-                            #     Polynomial_Reg_Model_forced_jes_tes, tes, y_obs[i][j]
-                            # )
-                            # fit_param[j][i] = fit_param_tamp
-                            # fit_cov[j][i] = fit_cov_tamp
-
-                            # # popt = best-fit parameters [a0, a1, a2]
-                            # # pcov = covariance matrix of parameters
-
-                            # # Calculate uncertainty (standard deviation) of parameters
-                            # param_err = np.sqrt(np.diag(fit_cov[j][i]))
-
-                            # print("Fit parameters:", fit_param[j][i])
-                            # print("Parameter uncertainties:", param_err)
-
-                            # # Predict values
-                            # tes_fit = np.linspace(min(tes), max(tes), 200)
-                            # y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_param[j][i]))
-
-                            # # To get uncertainty on the fit curve, propagate errors:
-                            # # Compute Jacobian matrix at each x_fit
-                            # J = np.vstack(
-                            #     [tes_fit**k for k in range(len(fit_param[j][i]))]
-                            # ).T  # shape (num_points, 4)
-                            # print("J:", J)
-
-                            # # y_var = np.sum(J @ fit_cov[j][i] * J, axis=1)
-                            # y_var = np.einsum("ij,jk,ik->i", J, fit_cov[j][i], J)
-                            
-                            # y_std = np.sqrt(y_var)
-
-
-            # Plot
-
-            if Plotteur == "True" and (j in [2 ,nb_bins-2]):
-
-                plt.scatter(
-                    tes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(tes_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    tes_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("Tes factor")
-                plt.title("Data observed with a variation of Tes (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
+    for i in range(len(y_obs)):
+        results = Parallel(n_jobs=n_jobs_distrib)(
+            delayed(tes_fit_and_plot_over_bins)(i, j) for j in range(nb_bins)
+            )
+        
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
+    
+    print("End of the fit of tes")
 
     # Save fiting param
-    import os
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
-                os.makedirs("current_dir/Fitting_Parameters/one_bkg")
+    if not os.path.exists("%s/Fitting_Parameters/one_bkg"%(current_dir) ):
+        os.makedirs("%s/Fitting_Parameters/one_bkg"%(current_dir))
+
     np.savez(
-        "current_dir/Fitting_Parameters/one_bkg/TES_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/one_bkg/TES_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -428,10 +492,10 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     # Save fiting param
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
+    if not os.path.exists("%s/Fitting_Parameters/one_bkg"%(current_dir)):
         os.makedirs("current_dir/Fitting_Parameters/one_bkg")
     np.savez(
-        "current_dir/Fitting_Parameters/one_bkg/JES_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/one_bkg/JES_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -636,10 +700,10 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     # Save fiting param
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/one_bkg"):
-        os.makedirs("current_dir/Fitting_Parameters/one_bkg")
+    if not os.path.exists("%s/Fitting_Parameters/one_bkg"%(current_dir)):
+        os.makedirs("%s/Fitting_Parameters/one_bkg"%(current_dir))
     np.savez(
-        "current_dir/Fitting_Parameters/one_bkg/SOFTMET_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/one_bkg/SOFTMET_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -830,10 +894,10 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     # Save fiting param
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
-        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
+    if not os.path.exists("%s/Fitting_Parameters/bkg_subchannel"%(current_dir)):
+        os.makedirs("%s/Fitting_Parameters/bkg_subchannel"%(current_dir))
     np.savez(
-        "current_dir/Fitting_Parameters/bkg_subchannel/TES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/bkg_subchannel/TES_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -1021,10 +1085,10 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     # Save fiting param
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
-        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
+    if not os.path.exists("%s/Fitting_Parameters/bkg_subchannel"%(current_dir)):
+        os.makedirs("%s/Fitting_Parameters/bkg_subchannel"%(current_dir))
     np.savez(
-        "current_dir/Fitting_Parameters/bkg_subchannel/JES_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/bkg_subchannel/JES_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
@@ -1210,10 +1274,10 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
     # Save fiting param
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("current_dir/Fitting_Parameters/bkg_subchannel"):
-        os.makedirs("current_dir/Fitting_Parameters/bkg_subchannel")
+    if not os.path.exists("%s/Fitting_Parameters/bkg_subchannel"%(current_dir)):
+        os.makedirs("%s/Fitting_Parameters/bkg_subchannel"%(current_dir))
     np.savez(
-        "current_dir/Fitting_Parameters/bkg_subchannel/SOFTMET_3bkg_%sbins_2orderFittingParam.npz" % (nb_bins),
+        "%s/Fitting_Parameters/bkg_subchannel/SOFTMET_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
