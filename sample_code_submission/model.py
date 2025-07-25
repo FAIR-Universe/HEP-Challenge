@@ -285,6 +285,7 @@ class Model:
     #///////////////////////////////////////////////////////////////////////////////
     ## Definition of the validation set 
     #/////////////////////////////////////////////////////////////////////////////// 
+        print("Validation Subset : Created")
         valid_df = self.get_train_set(selected_indices=valid_indices)
         valid_set = {
             "labels": valid_df.pop("labels"),

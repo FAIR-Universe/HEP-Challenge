@@ -24,6 +24,8 @@ class BoostedDecisionTree:
         
         else :
             self.model = XGBClassifier(
+            tree_method='gpu_hist',  # New for GPU
+            predictor='gpu_predictor',  # New for GPU
             n_estimators=100,     # Number of trees
             learning_rate=0.1,    # Step size shrinkage
             max_depth=10,          # Depth of each tree
@@ -31,7 +33,7 @@ class BoostedDecisionTree:
             colsample_bytree=0.8, # Feature sampling
             use_label_encoder=False,
             eval_metric='logloss', # For classification
-            n_jobs=100,
+            #n_jobs=100,
             )
 
             self.scaler = StandardScaler()
@@ -77,12 +79,34 @@ class BoostedDecisionTree:
                     "DER_met_phi_centrality",
                     "DER_lep_eta_centrality",
                 ]
-        plt.figure(1, figsize=(15,20))
-        plot_importance(booster)
-        plt.show()
-
         import os
         current_dir = os.path.dirname(os.path.abspath(__file__))
+        if not os.path.exists("%s/Images/BDT/Features_Importances"%(current_dir)):
+            os.makedirs("%s/Images/BDT/Features_Importances"%(current_dir))
+        plt.figure(figsize=(10, 6))
+        plot_importance(booster)
+        plt.tight_layout()
+        plt.savefig("%s/Images/BDT/Features_Importances/BDT_trained_wt_%s_events_seed%s.png"%(current_dir,train_size,seed))
+        plt.close()
+
+        
+        from sklearn.inspection import permutation_importance
+        perm_importance = permutation_importance(self.model, X_train_data, labels, 
+                                                n_repeats=20, random_state=1, 
+                                                scoring="roc_auc", n_jobs=5)
+        sorted_idx = perm_importance.importances_mean.argsort()
+        plt.figure(figsize=(10, 6))
+        plt.barh(range(len(sorted_idx)), perm_importance.importances_mean[sorted_idx], align='center')
+        plt.yticks(range(len(sorted_idx)), [f'feature_{i}' for i in sorted_idx])
+        plt.xlabel('Permutation Feature Importance (based on AUC)')
+        plt.ylabel('Feature')
+        plt.title('Permutation Feature Importance (XGBoost)')
+        plt.tight_layout()
+        if not os.path.exists("%s/Images/BDT/Features_Permutation"%(current_dir)):
+            os.makedirs("%s/Images/BDT/Features_Permutation"%(current_dir))
+        plt.savefig("%s/Images/BDT/Features_Permutation/BDT_trained_wt_%s_events_seed%s.png"%(current_dir,train_size,seed))
+        plt.close()
+        
         if not os.path.exists("%s/Saved_Classifier/BDT"%(current_dir)):
             os.makedirs("%s/Saved_Classifier/BDT"%(current_dir))
         self.model.save_model('%s/Saved_Classifier/BDT/model_BDT_trained_wt_%s_events_seed%s.json'%(current_dir,train_size,seed))

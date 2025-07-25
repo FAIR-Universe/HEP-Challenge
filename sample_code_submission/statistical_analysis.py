@@ -398,10 +398,10 @@ def compute_mu(
             current_dir = os.path.dirname(os.path.abspath(__file__))
             for i in range(3):   #######ATTENTION BESOIN DE METTRE A 3 for all
                 if os.path.isfile(
-                    "current_dir/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (SystName[i], nb_bins)
+                    "%s/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,SystName[i], nb_bins)
                 ):
                     FitingData[i] = np.load(
-                        "current_dir/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (SystName[i], nb_bins)
+                        "%s/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,SystName[i], nb_bins)
                     )
                 else:
                     print("A file is missing \n ~~~~ \n ~~~ \n ~~ \n ~")

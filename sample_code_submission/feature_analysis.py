@@ -320,6 +320,174 @@ def stacked_histogram_modified(
     plt.show()
 
 
+def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
+    
+
+
+    # histogram_dataset(
+    #     dfall=data_set,
+    #     target=target,
+    #     weights=weights,
+    #     columns=["PRI_lep_phi", "PRI_met", "DER_mass_vis", "DER_deltaeta_jet_jet"],
+    #     nbin=25
+    # )
+    """
+    Plots histograms of the dataset features.
+
+    Args:
+        * columns (list): The list of column names to consider (default: None, which includes all columns).
+        * nbin (int): The number of bins for the histogram (default: 25).
+
+    .. Image:: images/histogram_datasets.png
+    """
+
+    from parameter_management_scan import Parameter_Distribution
+    Tamp_parameter = Parameter_Distribution.get_all()
+    THV_size = Tamp_parameter["THV_size"]
+    ModelType = Tamp_parameter["ModelType"]
+
+    weights = dfall["weights"]
+    target = dfall["labels"]
+
+
+    import os
+    import matplotlib.pyplot as plt
+    import logging
+    import seaborn as sns
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics import roc_auc_score, roc_curve
+
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+    logging.basicConfig(
+        level=getattr(
+            logging, log_level, logging.INFO
+        ),  # Fallback to INFO if the level is invalid
+        format="%(asctime)s - %(name)-20s - %(levelname) -8s - %(message)s",
+    )
+
+    logger = logging.getLogger(__name__)
+
+    if columns is None:
+        columns = columns
+    else:
+        for col in columns:
+            if col not in columns:
+                logger.warning(f"Column {col} not found in dataset. Skipping.")
+                columns.remove(col)
+    if len(columns) == 0:
+        raise ValueError("No valid columns provided for histogram plotting.")
+
+    sns.set_theme(style="whitegrid")
+
+    dfall_tamp=dfall.copy()
+    dfall_poscut=systematics(dfall_tamp)
+    del dfall_tamp
+    df_ref = pd.DataFrame(dfall_poscut, columns=columns)
+    del dfall_poscut
+
+
+    # Number of rows and columns in the subplot grid
+    n_cols = 2  # Number of columns in the subplot grid
+    n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
+
+    # Create a figure and a grid of subplots
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
+    axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+
+    for i, column in enumerate(columns):
+        # Determine the combined range for the current column
+
+        print(f"[*] --- {column} histogram")
+
+        min_value = df_ref[column].min()
+        max_value = df_ref[column].max()
+
+        # Define the bin edges
+        bin_edges = np.linspace(min_value, max_value, nb_bins + 1)  #Serait bien de définir min et max par rapport à la valeur moyenne
+
+        signal_field = df_ref[target == 1][column]
+        background_field = df_ref[target == 0][column]
+        del df_ref
+        signal_weights = weights[target == 1]
+        background_weights = weights[target == 0]
+        
+        signal_hist_ref=np.histogram(signal_field,bins=bin_edges,weights=signal_weights,density=True)[0]
+        bkg_hist_ref=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True)[0]
+        del signal_weights, background_weights
+
+        var_lenght=10
+        tes=np.linspace(0.9,1.1,var_lenght)
+        signal_hist=[None]*var_lenght
+        bkg_hist=[None]*var_lenght
+        for i in range(var_lenght) :
+            dfall_tamp=dfall.copy()
+            dfall_poscut=systematics(dfall_tamp,tes[i])
+            del dfall_tamp
+            df_syst = pd.DataFrame(dfall_poscut, columns=columns)
+            del dfall_poscut
+
+            signal_field = df_syst[target == 1][column]
+            background_field = df_syst[target == 0][column]
+            del df_syst
+            signal_weights = weights[target == 1]
+            background_weights = weights[target == 0]
+
+            signal_hist[i]=np.histogram(signal_field,bins=bin_edges,weights=signal_weights,density=True
+                                        )[0]-signal_hist_ref
+            
+            bkg_hist[i]=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True
+                                     )[0] - bkg_hist_ref
+            del signal_weights, background_weights
+        
+        signal_hist_order = np.array( [
+        [signal_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
+        ])
+        del signal_hist
+        bkg_hist_order = np.array( [
+        [bkg_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
+        ])
+        del bkg_hist
+
+
+        from mpl_toolkits.mplot3d import Axes3D
+        y_obs=[signal_hist_order,bkg_hist_order]
+        y_obs_name=["signal","bkg"]
+        for k in range(len(y_obs)) :
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+
+            # Plot surface with facecolors set by normalized Z values
+            surf_signal = ax.plot_surface(tes, bin_edges, y_obs[k], facecolors=plt.cm.viridis((y_obs[k] - y_obs[k].min()) / (y_obs[k].max() - y_obs[k].min())), shade=False)
+
+            ax.set_xlabel('tes')
+            ax.set_ylabel('Bins')
+            ax.set_zlabel('Density shift')
+
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir)):
+                os.makedirs("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir))
+            plt.savefig("%s/Images/FeaturesAnalysis_VS_syst/FAIRuniverse_StackedHist_%s_tot_size%s.png"%(current_dir,y_obs_name[k],THV_size[0]+THV_size[1]+THV_size[2]))
+
+            plt.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def systematics_dependence(data):

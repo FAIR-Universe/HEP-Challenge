@@ -170,6 +170,12 @@ class Data:
             else:
                 logger.warning("Sum of weights is zero. No balancing applied.")
         
+        
+        int_precision_cols = sampled_df.select_dtypes(include=['int']).columns
+
+        logger.debug(f"Converting columns {int_precision_cols} to float32")
+        sampled_df[int_precision_cols] = sampled_df[int_precision_cols].astype(np.float32)
+
         return sampled_df
 
     def load_test_set(self):

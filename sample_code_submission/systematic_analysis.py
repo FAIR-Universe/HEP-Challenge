@@ -8,7 +8,7 @@ nb_points_tes_for_fitting=1000
 nb_points_jes_for_fitting=10
 
 
-n_jobs_distrib=18
+n_jobs_distrib=10
 
 from joblib import Parallel, delayed
 from iminuit import Minuit
