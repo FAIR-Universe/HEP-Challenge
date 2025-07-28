@@ -4,11 +4,11 @@ import numpy as np
 Plotteur = "False"
 
 nb_points_soft_met_for_fitting = 15
-nb_points_tes_for_fitting=1000
+nb_points_tes_for_fitting=10
 nb_points_jes_for_fitting=10
 
 
-n_jobs_distrib=10
+n_jobs_distrib=6
 
 from joblib import Parallel, delayed
 from iminuit import Minuit
