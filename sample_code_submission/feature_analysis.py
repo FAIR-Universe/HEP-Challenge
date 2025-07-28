@@ -227,11 +227,7 @@ def stacked_histogram_modified(
 
         sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
 
-        lower_percentile = 0
-        upper_percentile = 100 # 97.5
 
-        lower_bound = np.percentile(field, lower_percentile)
-        upper_bound = np.percentile(field, upper_percentile)
 
         """
         field_clipped = field[(field >= lower_bound) & (field <= upper_bound)]
@@ -322,8 +318,6 @@ def stacked_histogram_modified(
 
 def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
     
-
-
     # histogram_dataset(
     #     dfall=data_set,
     #     target=target,
@@ -374,7 +368,7 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
         columns = columns
     else:
         for col in columns:
-            if col not in columns:
+            if col not in dfall.columns:   #maybee just columns
                 logger.warning(f"Column {col} not found in dataset. Skipping.")
                 columns.remove(col)
     if len(columns) == 0:
@@ -418,7 +412,7 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
         bkg_hist_ref=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True)[0]
         del signal_weights, background_weights
 
-        var_lenght=10
+        var_lenght=3
         tes=np.linspace(0.9,1.1,var_lenght)
         signal_hist=[None]*var_lenght
         bkg_hist=[None]*var_lenght
@@ -428,6 +422,11 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
             del dfall_tamp
             df_syst = pd.DataFrame(dfall_poscut, columns=columns)
             del dfall_poscut
+            
+            #########################################################
+            ##########Can be removed, not sure if it's nice to have this
+            bin_edges[0]=df_syst[column].min()
+            bin_edges[-1]=df_syst[column].max()
 
             signal_field = df_syst[target == 1][column]
             background_field = df_syst[target == 0][column]

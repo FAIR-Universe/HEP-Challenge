@@ -54,7 +54,7 @@ if Bins_varia_plot == True:
 Compute_Best_Opti = Tamp_parameter["Compute_Best_Opti"]
 if Compute_Best_Opti == True:
     NbPoints_Prec_Thresh = Tamp_parameter["NbPoints_Prec_Thresh"]
-
+Features_VS_syst= Tamp_parameter["Features_VS_syst"]
 
 NbTrain = THV_size[0]
 NbHoldout = THV_size[1]
@@ -254,6 +254,15 @@ class Model:
             regression_soft_met ( holdout_set, self.model,self.systematics,nb_bins=Nb_bins_distrib )
             print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
+
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## features_systematics_dependence plot
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if  Features_VS_syst   :  
+            from feature_analysis import features_systematics_dependence
+            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,columns=["PRI_lep_phi", "PRI_met", "DER_mass_vis", "DER_deltaeta_jet_jet"])
+            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #### Apply systematics on the holdout set 
