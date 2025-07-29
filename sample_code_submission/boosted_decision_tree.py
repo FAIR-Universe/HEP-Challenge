@@ -24,8 +24,8 @@ class BoostedDecisionTree:
         
         else :
             self.model = XGBClassifier(
-            tree_method='gpu_hist',  # New for GPU
-            predictor='gpu_predictor',  # New for GPU
+            #tree_method='gpu_hist',  # New for GPU
+            #predictor='gpu_predictor',  # New for GPU
             n_estimators=100,     # Number of trees
             learning_rate=0.1,    # Step size shrinkage
             max_depth=10,          # Depth of each tree
@@ -33,7 +33,7 @@ class BoostedDecisionTree:
             colsample_bytree=0.8, # Feature sampling
             use_label_encoder=False,
             eval_metric='logloss', # For classification
-            #n_jobs=100,
+            n_jobs=100,
             )
 
             self.scaler = StandardScaler()

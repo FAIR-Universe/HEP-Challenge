@@ -10,7 +10,7 @@ class Parameter_Distribution:
         "ModelType": "BDT",
         "Load_Classifier":True,
 
-        "THV_size": np.array([2_500_000, 50_000_000, 20_000_000]),  #5M for BDT 40 for NN   2_500_000 for little BDT    50_000_000, 20_000_000
+        "THV_size": np.array([5_000_000, 20_000_000, 20_000_000]),  #5M for BDT 40 for NN   2_500_000 for little BDT    50_000_000, 20_000_000
         "Nb_bins_distrib": 20,
         "threshold_distrib": 0,
 

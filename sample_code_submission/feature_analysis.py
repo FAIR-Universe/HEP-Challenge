@@ -316,15 +316,33 @@ def stacked_histogram_modified(
     plt.show()
 
 
-def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
+
+
+
+
+def features_systematics_dependence (dfall,systematics,columns,nb_bins=20,var_lenght=100):
     
-    # histogram_dataset(
-    #     dfall=data_set,
-    #     target=target,
-    #     weights=weights,
-    #     columns=["PRI_lep_phi", "PRI_met", "DER_mass_vis", "DER_deltaeta_jet_jet"],
-    #     nbin=25
-    # )
+    import os
+    import matplotlib.pyplot as plt
+    import logging
+    import seaborn as sns
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics import roc_auc_score, roc_curve
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors  
+
+    tes=np.linspace(0.9,1.1,var_lenght)
+    jes =tes
+    soft_met=np.linspace(0,5,var_lenght)
+    systematics_list_TJS_type=[tes,jes,soft_met]
+    systematics_TJS_list_name=["TES","JES","SOFTMET"]
+
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir)):
+        os.makedirs("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir))
+
     """
     Plots histograms of the dataset features.
 
@@ -339,18 +357,6 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
     Tamp_parameter = Parameter_Distribution.get_all()
     THV_size = Tamp_parameter["THV_size"]
     ModelType = Tamp_parameter["ModelType"]
-
-    weights = dfall["weights"]
-    target = dfall["labels"]
-
-
-    import os
-    import matplotlib.pyplot as plt
-    import logging
-    import seaborn as sns
-    import numpy as np
-    import pandas as pd
-    from sklearn.metrics import roc_auc_score, roc_curve
 
     log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
@@ -368,21 +374,26 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
         columns = columns
     else:
         for col in columns:
-            if col not in dfall.columns:   #maybee just columns
+            if col not in columns:   #maybee just columns
                 logger.warning(f"Column {col} not found in dataset. Skipping.")
                 columns.remove(col)
     if len(columns) == 0:
         raise ValueError("No valid columns provided for histogram plotting.")
 
-    sns.set_theme(style="whitegrid")
+    #sns.set_theme(style="whitegrid")
+    sns.set_theme(rc={"figure.figsize": (10, 10)}, style="whitegrid")
 
     dfall_tamp=dfall.copy()
-    dfall_poscut=systematics(dfall_tamp)
+    dfall_poscut_ref=systematics(dfall_tamp)
     del dfall_tamp
-    df_ref = pd.DataFrame(dfall_poscut, columns=columns)
-    del dfall_poscut
 
+    labels_ref=dfall_poscut_ref["labels"]
+    weights_ref=dfall_poscut_ref["weights"]
+    data_ref=dfall_poscut_ref["data"]
+    del dfall_poscut_ref
+    
 
+    """
     # Number of rows and columns in the subplot grid
     n_cols = 2  # Number of columns in the subplot grid
     n_rows = int(np.ceil(len(columns) / n_cols))  # Calculate the number of rows needed
@@ -390,93 +401,158 @@ def features_systematics_dependence (dfall,systematics,columns,nb_bins=20):
     # Create a figure and a grid of subplots
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(17, 6 * n_rows))
     axes = axes.flatten()  # Flatten the 2D array of axes to 1D for easy indexing
+    """
 
-    for i, column in enumerate(columns):
+    for h,column in enumerate(columns):
         # Determine the combined range for the current column
 
         print(f"[*] --- {column} histogram")
+        min_value = data_ref[column].min()
+        max_value = data_ref[column].max()
 
-        min_value = df_ref[column].min()
-        max_value = df_ref[column].max()
+        print( "min value :", min_value,"  max value:",max_value)
 
         # Define the bin edges
         bin_edges = np.linspace(min_value, max_value, nb_bins + 1)  #Serait bien de définir min et max par rapport à la valeur moyenne
 
-        signal_field = df_ref[target == 1][column]
-        background_field = df_ref[target == 0][column]
-        del df_ref
-        signal_weights = weights[target == 1]
-        background_weights = weights[target == 0]
-        
-        signal_hist_ref=np.histogram(signal_field,bins=bin_edges,weights=signal_weights,density=True)[0]
-        bkg_hist_ref=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True)[0]
-        del signal_weights, background_weights
+    ### Faire une liste des mins et max pour chaque colonne comme ca on peut virer def ref
+        signal_field_ref = data_ref[column][labels_ref==1]
+        background_field_ref =  data_ref[column][labels_ref==0]
+        signal_weights = weights_ref[labels_ref==1]
+        background_weights =  weights_ref[labels_ref==0]
 
-        var_lenght=3
-        tes=np.linspace(0.9,1.1,var_lenght)
-        signal_hist=[None]*var_lenght
-        bkg_hist=[None]*var_lenght
-        for i in range(var_lenght) :
-            dfall_tamp=dfall.copy()
-            dfall_poscut=systematics(dfall_tamp,tes[i])
-            del dfall_tamp
-            df_syst = pd.DataFrame(dfall_poscut, columns=columns)
-            del dfall_poscut
-            
-            #########################################################
-            ##########Can be removed, not sure if it's nice to have this
-            bin_edges[0]=df_syst[column].min()
-            bin_edges[-1]=df_syst[column].max()
+        signal_hist_ref=np.histogram(signal_field_ref,bins=bin_edges,weights=signal_weights,density=True)[0]
+        bkg_hist_ref=np.histogram(background_field_ref,bins=bin_edges,weights=background_weights,density=True)[0]
+        del signal_field_ref,background_field_ref,signal_weights, background_weights
 
-            signal_field = df_syst[target == 1][column]
-            background_field = df_syst[target == 0][column]
-            del df_syst
-            signal_weights = weights[target == 1]
-            background_weights = weights[target == 0]
+        figu, axi = plt.subplots(2,3,figsize=(17,20), subplot_kw={'projection': '3d'})
+        axi=axi.flatten()
+        y_obs_absmin=1000
+        y_obs_absmax=1000
+        for j, syst_type in enumerate(systematics_list_TJS_type) :
+            signal_hist=[None]*var_lenght
+            bkg_hist=[None]*var_lenght
+            for i in range(var_lenght) :
+                dfall_tamp=dfall.copy()
+                if j==0 :
+                    print("systematics :", syst_type[i]," pour ",column)
+                    dfall_poscut=systematics(dfall_tamp,tes=syst_type[i])
+                elif j==1 :
+                    print("systematics :", syst_type[i]," pour ",column)
+                    dfall_poscut=systematics(dfall_tamp,jes=syst_type[i])
+                else :
+                    print("systematics :", syst_type[i]," pour ",column)
+                    dfall_poscut=systematics(dfall_tamp,soft_met=syst_type[i])
+                del dfall_tamp
+                labels = dfall_poscut["labels"]
+                weights =dfall_poscut["weights"]
+                data= dfall_poscut["data"]
+                del dfall_poscut
+                
+                #########################################################
+                ##########Can be removed, not sure if it's nice to have this
+                colum_min=data[column].min()
+                colum_max=data[column].max()
+                if colum_min<bin_edges[0] :
+                    bin_edges[0]=data[column].min()
+                if colum_max>bin_edges[-1] :
+                    bin_edges[-1]=data[column].max()
 
-            signal_hist[i]=np.histogram(signal_field,bins=bin_edges,weights=signal_weights,density=True
-                                        )[0]-signal_hist_ref
-            
-            bkg_hist[i]=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True
-                                     )[0] - bkg_hist_ref
-            del signal_weights, background_weights
-        
-        signal_hist_order = np.array( [
-        [signal_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
-        ])
-        del signal_hist
-        bkg_hist_order = np.array( [
-        [bkg_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
-        ])
-        del bkg_hist
+                signal_field = data[column][labels==1]
+                background_field = data[column][labels==0]
+                signal_weights = weights[labels==1]
+                background_weights = weights[labels==0]
 
-
-        from mpl_toolkits.mplot3d import Axes3D
-        y_obs=[signal_hist_order,bkg_hist_order]
-        y_obs_name=["signal","bkg"]
-        for k in range(len(y_obs)) :
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-
-            # Plot surface with facecolors set by normalized Z values
-            surf_signal = ax.plot_surface(tes, bin_edges, y_obs[k], facecolors=plt.cm.viridis((y_obs[k] - y_obs[k].min()) / (y_obs[k].max() - y_obs[k].min())), shade=False)
-
-            ax.set_xlabel('tes')
-            ax.set_ylabel('Bins')
-            ax.set_zlabel('Density shift')
-
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            if not os.path.exists("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir)):
-                os.makedirs("%s/Images/FeaturesAnalysis_VS_syst"%(current_dir))
-            plt.savefig("%s/Images/FeaturesAnalysis_VS_syst/FAIRuniverse_StackedHist_%s_tot_size%s.png"%(current_dir,y_obs_name[k],THV_size[0]+THV_size[1]+THV_size[2]))
-
-            plt.close()
+                signal_hist[i]=np.histogram(signal_field,bins=bin_edges,weights=signal_weights,density=True
+                                            )[0]-signal_hist_ref
+                
+                bkg_hist[i]=np.histogram(background_field,bins=bin_edges,weights=background_weights,density=True
+                                        )[0] - bkg_hist_ref
+                del signal_weights, background_weights
+                
 
 
 
 
+            signal_hist_order = np.array( [
+            [signal_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
+            ])
+            del signal_hist
+            bkg_hist_order = np.array( [
+            [bkg_hist[j][i] for j in range(var_lenght)] for i in range(nb_bins)
+            ])
+            del bkg_hist
 
 
+            hist_min=min( np.min(signal_hist_order) , np.min(bkg_hist_order) )
+            hist_max=max( np.max(signal_hist_order) , np.max(bkg_hist_order) )
+
+
+            if j==0 or hist_min< y_obs_absmin :
+                y_obs_absmin =hist_min
+            if j==0 or hist_max> y_obs_absmax :
+                y_obs_absmax =hist_max
+
+
+            from mpl_toolkits.mplot3d import Axes3D
+            y_obs=[signal_hist_order,bkg_hist_order]
+            y_obs_name=["signal","bkg"]
+            for k in range(len(y_obs)) :
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection='3d')
+
+                mid_bins=np.linspace(1,nb_bins,nb_bins)
+                X, Y = np.meshgrid(systematics_list_TJS_type[j], mid_bins)  # Meshgrid with correct shapes
+                Z = y_obs[k]
+
+                print("X shape:", X.shape)
+                print("Y shape:", Y.shape)
+                print("Z shape:", Z.shape)
+                print("Z min/max:", Z.min(), Z.max())
+
+                # Plot surface with facecolors set by normalized Z values
+                normalised_color=(y_obs[k] - y_obs[k].min()) / (y_obs[k].max() - y_obs[k].min() + 1e-8)
+                mappable = cm.ScalarMappable(cmap='viridis')
+                mappable.set_array(normalised_color)
+
+                surf_signal = ax.plot_surface(X,Y,Z, facecolors=plt.cm.viridis(normalised_color), shade=False)
+
+                ax.set_xlabel('tes')
+                ax.set_ylabel('Bins')
+                ax.set_zlabel('Density shift')
+                ax.view_init(elev=90, azim=-90)
+                ax.grid(True)
+                ax.set_title("%s pour %s"%(systematics_TJS_list_name[j], y_obs_name[k]))
+                fig.colorbar(mappable, ax=ax, location='right', shrink=0.6, label='Density shift')
+
+                plt.savefig("%s/Images/FeaturesAnalysis_VS_syst/%s_%s_%s_FAIRuniverse_StackedHist_tot_size%s.png"%(current_dir,columns[h],systematics_TJS_list_name[j],y_obs_name[k],THV_size[0]+THV_size[1]+THV_size[2]))
+
+                plt.close(fig)
+
+
+                surf_signal_bis = axi[2*j+k].plot_surface(X,Y,Z, facecolors=plt.cm.viridis((y_obs[k] - y_obs[k].min()) / (y_obs[k].max() - y_obs[k].min() + 1e-8)), shade=False)
+                axi[2*j+k].set_xlabel('tes')
+                axi[2*j+k].set_ylabel('Bins')
+                axi[2*j+k].set_zlabel('Density shift')
+                axi[2*j+k].view_init(elev=90, azim=-90)
+                axi[2*j+k].grid(True)
+                axi[2*j+k].set_title("%s pour %s"%(systematics_TJS_list_name[j],y_obs_name[k]))
+
+
+
+
+        for j, syst_type in enumerate(systematics_list_TJS_type) :
+            for k in range(len(y_obs)) :
+                normalised_color=(y_obs[k] - y_obs_absmin) / (y_obs_absmax - y_obs_absmin + 1e-8)
+                mappable = cm.ScalarMappable(cmap='viridis')
+                mappable.set_array(normalised_color)
+                figu.colorbar(mappable, ax=axi[2*j+k], location='right', shrink=0.6, label='Density shift')
+
+                
+        figu.suptitle("%s"%(columns[h]), fontsize=16)
+        plt.savefig("%s/Images/FeaturesAnalysis_VS_syst/%s_BigPlot_FAIRuniverse_StackedHist_tot_size%s.png"%(current_dir,columns[h],THV_size[0]+THV_size[1]+THV_size[2]))
+
+        plt.close(figu)
 
 
 

@@ -26,7 +26,7 @@ THV_size=Tamp_parameter["THV_size"]
 ModelType=Tamp_parameter["ModelType"]
 
 
-def histogram_dataset(dfall, target, weights, columns=None, nbin=25):
+def histogram_dataset(dfall, weights, columns=None, nbin=25):
     """
     Plots histograms of the dataset features.
 

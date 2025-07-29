@@ -208,6 +208,7 @@ class Model:
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print("Holdout Subset : Created")
         holdout_df = self.get_train_set(selected_indices=holdout_indices)
+
         holdout_set = {
             "labels": holdout_df.pop("labels"),
             "weights": holdout_df.pop("weights"),
@@ -215,6 +216,51 @@ class Model:
             "data": holdout_df,
         }
         del holdout_df
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## features_systematics_dependence plot
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if  Features_VS_syst   :  
+
+            from feature_analysis import features_systematics_dependence
+            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,nb_bins=20,var_lenght=1000, columns=[
+                    # "PRI_lep_phi",
+                    # "PRI_met",
+                    # "DER_pt_ratio_lep_had",
+                    # "DER_deltaeta_jet_jet",
+
+                    "PRI_lep_pt",
+                    "PRI_lep_eta",
+                    "PRI_lep_phi",
+                    "PRI_had_pt",
+                    "PRI_had_eta",
+                    "PRI_had_phi",
+                    "PRI_jet_leading_pt",
+                    "PRI_jet_leading_eta",
+                    "PRI_jet_leading_phi",
+                    "PRI_jet_subleading_pt",
+                    "PRI_jet_subleading_eta",
+                    "PRI_jet_subleading_phi",
+                    "PRI_n_jets",
+                    "PRI_jet_all_pt",
+                    "PRI_met",
+                    "PRI_met_phi",
+                    #"weights",###########################A retirer surement
+                    "DER_mass_transverse_met_lep",
+                    "DER_mass_vis",
+                    "DER_pt_h",
+                    "DER_deltaeta_jet_jet",
+                    "DER_mass_jet_jet",
+                    "DER_prodeta_jet_jet",
+                    "DER_deltar_had_lep",
+                    "DER_pt_tot",
+                    "DER_sum_pt",
+                    "DER_pt_ratio_lep_had",
+                    "DER_met_phi_centrality",
+                    "DER_lep_eta_centrality",
+                ])
+            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
         #statistical_subset_info(holdout_set,"Holdout Subset Before poscut")
 
 
@@ -254,15 +300,6 @@ class Model:
             regression_soft_met ( holdout_set, self.model,self.systematics,nb_bins=Nb_bins_distrib )
             print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ## features_systematics_dependence plot
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if  Features_VS_syst   :  
-            from feature_analysis import features_systematics_dependence
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,columns=["PRI_lep_phi", "PRI_met", "DER_mass_vis", "DER_deltaeta_jet_jet"])
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #### Apply systematics on the holdout set 
