@@ -223,7 +223,8 @@ class Model:
 
             from feature_analysis import features_systematics_dependence
             print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,nb_bins=20,var_lenght=1000, columns=[
+            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,
+                                            nb_bins=20,var_lenght=1000, n_jobs=5,columns=[
                     # "PRI_lep_phi",
                     # "PRI_met",
                     # "DER_pt_ratio_lep_had",
