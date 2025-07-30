@@ -42,7 +42,7 @@ class NeuralNetwork:
 
         self.scaler.fit_transform(train_data)
         X_train = self.scaler.transform(train_data)
-        self.model.train(
+        self.model.fit(
             X_train, y_train, sample_weight=weights_train, epochs=100, batch_size=1024, verbose=2
         )
 
