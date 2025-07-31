@@ -19,11 +19,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 from parameter_management_scan import Parameter_Distribution
-Tamp_parameter=Parameter_Distribution.get_all()
-THV_size=Tamp_parameter["THV_size"]
-ModelType=Tamp_parameter["ModelType"]
+
+Tamp_parameter = Parameter_Distribution.get_all()
+THV_size = Tamp_parameter["THV_size"]
+ModelType = Tamp_parameter["ModelType"]
 
 
 def histogram_dataset(dfall, weights, columns=None, nbin=25):
@@ -122,7 +122,10 @@ def histogram_dataset(dfall, weights, columns=None, nbin=25):
     for j in range(i + 1, len(axes)):
         fig.delaxes(axes[j])
 
-    plt.savefig("images/%s_histogram_T=%s_H=%s_V=%s.png"%(ModelType,THV_size[0],THV_size[1],THV_size[2]))
+    plt.savefig(
+        "images/%s_histogram_T=%s_H=%s_V=%s.png"
+        % (ModelType, THV_size[0], THV_size[1], THV_size[2])
+    )
     plt.show()
 
 
@@ -157,44 +160,62 @@ def roc_curve_wrapper(score, labels, weights, plot_label="model", color="b", lw=
     plt.legend(loc="lower right")
 
     plt.show()
-    plt.savefig("images/%s_ROCcurve_T=%s_H=%s_V=%s.png"%(ModelType,THV_size[0],THV_size[1],THV_size[2]))
-    
+    plt.savefig(
+        "images/%s_ROCcurve_T=%s_H=%s_V=%s.png"
+        % (ModelType, THV_size[0], THV_size[1], THV_size[2])
+    )
+
     plt.close()
 
 
-
-def statistical_subset_info (data_set,data_name) :
+def statistical_subset_info(data_set, data_name):
     print(" ~~~~~~~~~~~~ ")
-    print("For %s \n"%(data_name))
+    print("For %s \n" % (data_name))
     print("Training Data: ", data_set["data"].shape)
     print("Training Labels: ", data_set["labels"].shape)
     print("Training Weights: ", data_set["weights"].shape)
-    number_sig_events_row=(data_set["data"][data_set["labels"] == 1].shape)[0]
-    number_bkg_events_row=(data_set["data"][data_set["labels"] == 0].shape)[0]
-    sum_bkg=data_set["weights"][data_set["labels"] == 0].sum()
-    sum_sig=data_set["weights"][data_set["labels"] == 1].sum()
-    print ("Nbr of signal events: ",number_sig_events_row)
+    number_sig_events_row = (data_set["data"][data_set["labels"] == 1].shape)[0]
+    number_bkg_events_row = (data_set["data"][data_set["labels"] == 0].shape)[0]
+    sum_bkg = data_set["weights"][data_set["labels"] == 0].sum()
+    sum_sig = data_set["weights"][data_set["labels"] == 1].sum()
+    print("Nbr of signal events: ", number_sig_events_row)
     print(
         "sum_signal_weights: ",
         sum_sig,
     )
-    mean_sig=sum_sig/number_sig_events_row
+    mean_sig = sum_sig / number_sig_events_row
     print("Mean signal value: ", mean_sig)
-    devia_sig=np.sqrt(np.sum(np.power(data_set["weights"][data_set["labels"] == 1],2)))
-    print("Standard deviation for signal: ",devia_sig," which represents: ",(devia_sig/sum_sig)*100,"% of the sum of sig" )
-    print("Sig_effective/sig: ", 1/(1+( (devia_sig**2)/(mean_sig**2) ) ) )
+    devia_sig = np.sqrt(
+        np.sum(np.power(data_set["weights"][data_set["labels"] == 1], 2))
+    )
+    print(
+        "Standard deviation for signal: ",
+        devia_sig,
+        " which represents: ",
+        (devia_sig / sum_sig) * 100,
+        "% of the sum of sig",
+    )
+    print("Sig_effective/sig: ", 1 / (1 + ((devia_sig**2) / (mean_sig**2))))
 
     print("\n")
 
-    print ("Nbr of bkg events: ",number_bkg_events_row)
+    print("Nbr of bkg events: ", number_bkg_events_row)
     print(
         "sum_bkg_weights: ",
         sum_bkg,
     )
-    mean_bkg=sum_bkg/number_sig_events_row
-    print("Mean bkg value: ",mean_bkg)
-    devia_bkg=np.sqrt(np.sum(np.power(data_set["weights"][data_set["labels"] == 0],2)))
-    print("Standard deviation for signal: ",devia_bkg," which represents: ",(devia_bkg/sum_bkg)*100,"% of the sum of bkg" )
-    print("Bkg_effective/bkg: ", 1/(1+( (devia_bkg**2)/(mean_bkg**2) ) ) )
+    mean_bkg = sum_bkg / number_sig_events_row
+    print("Mean bkg value: ", mean_bkg)
+    devia_bkg = np.sqrt(
+        np.sum(np.power(data_set["weights"][data_set["labels"] == 0], 2))
+    )
+    print(
+        "Standard deviation for signal: ",
+        devia_bkg,
+        " which represents: ",
+        (devia_bkg / sum_bkg) * 100,
+        "% of the sum of bkg",
+    )
+    print("Bkg_effective/bkg: ", 1 / (1 + ((devia_bkg**2) / (mean_bkg**2))))
     print("\n")
     print(" ~~~~~~~~~~~~\n ")

@@ -22,26 +22,28 @@ NbTrain = THV_size[0]
 NbHoldout = THV_size[1]
 NbValidation = THV_size[2]
 
-Nb_bins_distrib=1
+Nb_bins_distrib = 1
 
 
 ######################################################################################
-    #####################        class Model
+#####################        class Model
 ######################################################################################
+
 
 class Model:
 
-######################################################################################
+    ######################################################################################
     #####################       Init
-######################################################################################
+    ######################################################################################
     def __init__(self, get_train_set=None, systematics=None, model_type="sample_model"):
 
         indices = np.arange(THV_size.sum())
         import time
+
         seed = int(time.time_ns() % (2**32))  # or use os.urandom() if needed
 
         print(f"Random seed used: {seed}")
-        np.random.seed(42)    #10912983
+        np.random.seed(42)  # 10912983
         np.random.shuffle(indices)
         train_indices = indices[: THV_size[0]]
         holdout_indices = indices[THV_size[0] : THV_size[0] + THV_size[1]]
@@ -79,37 +81,40 @@ class Model:
         del holdout_df
 
         from utils import statistical_subset_info
+
         print("We have just created the subset")
-        statistical_subset_info(self.training_set,"train init")
-        statistical_subset_info(self.holdout_set,"holdout init")
-        statistical_subset_info(self.valid_set,"valid init")
+        statistical_subset_info(self.training_set, "train init")
+        statistical_subset_info(self.holdout_set, "holdout init")
+        statistical_subset_info(self.valid_set, "valid init")
 
         if model_type == "BDT":
             from boosted_decision_tree import BoostedDecisionTree
+
             self.model = BoostedDecisionTree(train_data=self.training_set["data"])
 
         elif model_type == "NN":
             from neural_network import NeuralNetwork
+
             self.model = NeuralNetwork(train_data=self.training_set["data"])
 
         elif model_type == "sample_model":
             from sample_model import SampleModel
+
             self.model = SampleModel()
 
         else:
             print(f"model_type {model_type} not found")
             raise ValueError(f"model_type {model_type} not found")
-        
+
         self.name = model_type
         print(f" Model is { self.name}")
 
-######################################################################################
+    ######################################################################################
     #####################        FIT
-######################################################################################
-
+    ######################################################################################
 
     def fit(self, Add_info_plot=False):
-     
+
         Add_info_plot = "True"
         NbPoints_Prec_Thresh = 50  # NbPoints_Precision_Threshold  #75
 
@@ -135,20 +140,24 @@ class Model:
             balanced_set["data"], balanced_set["labels"], balanced_set["weights"]
         )
 
+        from systematic_analysis import (
+            regression_tes,
+            regression_jes,
+            regression_soft_met,
+            regression_tes_3bkg,
+            regression_jes_3bkg,
+            regression_soft_met_3bkg,
+        )
 
-        
-        from systematic_analysis import regression_tes, regression_jes,regression_soft_met,regression_tes_3bkg,regression_jes_3bkg,regression_soft_met_3bkg
+        ######################################################################################
+        #####################       the part below is used to create the file with the
+        #####################       regression for tes, jes and soft_met
+        #####################
+        #####################       Since we use a fixed random seed for the creation of
+        #####################       the train, hold and validation subset
+        #####################       We can just comment it out when the file is created
+        ######################################################################################
 
-
-######################################################################################
-    #####################       the part below is used to create the file with the 
-    #####################       regression for tes, jes and soft_met
-    #####################       
-    #####################       Since we use a fixed random seed for the creation of 
-    #####################       the train, hold and validation subset
-    #####################       We can just comment it out when the file is created
-######################################################################################
-        
         """
         bin_list_tamp = np.arange(1, 51, 3)
         for i in range ( len(bin_list_tamp) ):
@@ -169,42 +178,41 @@ class Model:
         #####
         ##for BNLL_syst
         #####
-        
+
         """
         regression_tes ( self.holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)  
         regression_jes( self.holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
         regression_soft_met ( self.holdout_set, self.model,self.systematics,nb_bins=Nb_bins_distrib )
         """
-        
 
-        
         import copy
-        #print("self.training_set shape before copy", self.training_set["data"].shape )
-        train_set_tamp=copy.deepcopy(self.training_set)
-        #print("self.training_set shape after copy", self.training_set["data"].shape )
-        #print("train_set_tamp shape before syst", train_set_tamp["data"].shape )
-        train_set_poscut=self.systematics(train_set_tamp,tes=1,jes=1,soft_met=0)
-        #print("self.training_set shapeafter syst", self.training_set["data"].shape )
-        #print("train_set_tamp shape after syst", train_set_poscut["data"].shape )
-        hold_set_tamp=copy.deepcopy(self.holdout_set)
-        hold_set_poscut=self.systematics(hold_set_tamp,tes=1,jes=1,soft_met=0)
-        valid_set_tamp=copy.deepcopy(self.valid_set)
-        valid_set_poscut=self.systematics(valid_set_tamp,tes=1,jes=1,soft_met=0)
-        #print("after systematics")
 
-        
+        # print("self.training_set shape before copy", self.training_set["data"].shape )
+        train_set_tamp = copy.deepcopy(self.training_set)
+        # print("self.training_set shape after copy", self.training_set["data"].shape )
+        # print("train_set_tamp shape before syst", train_set_tamp["data"].shape )
+        train_set_poscut = self.systematics(train_set_tamp, tes=1, jes=1, soft_met=0)
+        # print("self.training_set shapeafter syst", self.training_set["data"].shape )
+        # print("train_set_tamp shape after syst", train_set_poscut["data"].shape )
+        hold_set_tamp = copy.deepcopy(self.holdout_set)
+        hold_set_poscut = self.systematics(hold_set_tamp, tes=1, jes=1, soft_met=0)
+        valid_set_tamp = copy.deepcopy(self.valid_set)
+        valid_set_poscut = self.systematics(valid_set_tamp, tes=1, jes=1, soft_met=0)
+        # print("after systematics")
+
         from utils import statistical_subset_info
-        statistical_subset_info(train_set_poscut,"train fit poscut")
-        statistical_subset_info(hold_set_poscut,"holdout fit poscut")
-        statistical_subset_info(valid_set_poscut,"valid fit poscut")
 
-        
-        
-        #print("~~~~~~~~\n Saved_info pour hold set")
-        
-        self.saved_info = calculate_saved_info(model=self.model,
-             score=self.model.predict(self.holdout_set["data"]),
-             holdout_set=self.holdout_set,)
+        statistical_subset_info(train_set_poscut, "train fit poscut")
+        statistical_subset_info(hold_set_poscut, "holdout fit poscut")
+        statistical_subset_info(valid_set_poscut, "valid fit poscut")
+
+        # print("~~~~~~~~\n Saved_info pour hold set")
+
+        self.saved_info = calculate_saved_info(
+            model=self.model,
+            score=self.model.predict(self.holdout_set["data"]),
+            holdout_set=self.holdout_set,
+        )
         train_score = self.model.predict(train_set_poscut["data"])
         """
         train_results = compute_mu(
@@ -213,9 +221,9 @@ class Model:
              saved_info_hold=self.saved_info,
              weight_test=self.valid_set["weights"],)
         """
-        #print("hold_set_poscute[weight] ",hold_set_poscut["weights"].shape)
+        # print("hold_set_poscute[weight] ",hold_set_poscut["weights"].shape)
         holdout_score = self.model.predict(hold_set_poscut["data"])
-        #print("holdout_score ",holdout_score.shape 
+        # print("holdout_score ",holdout_score.shape
         """
         holdout_results = compute_mu(
                score_test= holdout_score, 
@@ -223,9 +231,9 @@ class Model:
              saved_info_hold=self.saved_info,
              weight_test=self.holdout_set["weights"],)
         """
-        #print("valid_set_poscute[weight] ",valid_set_poscut["weights"].shape)
+        # print("valid_set_poscute[weight] ",valid_set_poscut["weights"].shape)
         valid_score = self.model.predict(valid_set_poscut["data"])
-        #print("valid_score ",valid_score.shape )
+        # print("valid_score ",valid_score.shape )
         """
         valid_results = compute_mu(
             score_test= valid_score, 
@@ -234,9 +242,9 @@ class Model:
              weight_test=self.valid_set["weights"],)
         """
 
-         
         from Function_analysis import Parabola_Likelihood_plot
-        Add_info_plot="True"
+
+        Add_info_plot = "True"
         if Add_info_plot == "True":
             """
             print("Train Results: ")
@@ -473,23 +481,23 @@ class Model:
             plt.show()
             """
 
-        #print("~~~~~~~~\n Saved_info pour hold poscut set")
+        # print("~~~~~~~~\n Saved_info pour hold poscut set")
         saved_info_tamp_hold = calculate_saved_info(
-            holdout_score, hold_set_poscut , threshold=0,model=self.model
+            holdout_score, hold_set_poscut, threshold=0, model=self.model
         )
-        #print("~~~~~~~~\n Saved_info pour valid poscut set")
+        # print("~~~~~~~~\n Saved_info pour valid poscut set")
         saved_info_tamp_valid = calculate_saved_info(
-            valid_score, valid_set_poscut , threshold=0,model=self.model
+            valid_score, valid_set_poscut, threshold=0, model=self.model
         )
-        #print("~~~~~~~~\n Saved_info pour train poscut set")
+        # print("~~~~~~~~\n Saved_info pour train poscut set")
         saved_info_tamp_train = calculate_saved_info(
-            train_score, train_set_poscut , threshold=0,model=self.model
+            train_score, train_set_poscut, threshold=0, model=self.model
         )
         print("+++++++++++++++++++++ here ")
-        
-        score_test=[train_score,holdout_score,valid_score]
-        data_set_test_poscut=[train_set_poscut,hold_set_poscut,valid_set_poscut]
-        data_set_name=[" Train"," Holdout"," Validation"]
+
+        score_test = [train_score, holdout_score, valid_score]
+        data_set_test_poscut = [train_set_poscut, hold_set_poscut, valid_set_poscut]
+        data_set_name = [" Train", " Holdout", " Validation"]
         """
         for name in ["UNLL", "BNLL", "Direct", "BNLL_syst","BNLL_syst_normal_bkg"] :
             print("name in model ",name)
@@ -507,26 +515,27 @@ class Model:
                 )
             plt.show()
         """
-       
-        
-        for i in range (3):
-            print("~~~~~~~~~\n Parabola plot for",data_set_name[i])
-            
+
+        for i in range(3):
+            print("~~~~~~~~~\n Parabola plot for", data_set_name[i])
+
             Parabola_Likelihood_plot(
                 nb_bins=Nb_bins_distrib,
                 threshold=0,
                 saved_info_hold=saved_info_tamp_hold,
                 score_test=score_test[i],
-                weight_test= data_set_test_poscut[i] ["weights"],
+                weight_test=data_set_test_poscut[i]["weights"],
                 score_exp_hold=holdout_score,
-                weight_exp_hold= hold_set_poscut ["weights"],
-                label_exp_hold= hold_set_poscut ["labels"],
+                weight_exp_hold=hold_set_poscut["weights"],
+                label_exp_hold=hold_set_poscut["labels"],
                 detailed_labels_exp_hold=hold_set_poscut["detailed_labels"],
-                Methode_Mu_Compar=["UNLL", "BNLL"],   #  "UNLL", "BNLL", "Direct", "BNLL_syst","BNLL_syst_normal_bkg", "BNLL_all_syst"
+                Methode_Mu_Compar=[
+                    "UNLL",
+                    "BNLL",
+                ],  #  "UNLL", "BNLL", "Direct", "BNLL_syst","BNLL_syst_normal_bkg", "BNLL_all_syst"
                 mu_init=1.0,
             )
-        
-        
+
         """
         from Function_analysis import Bins_BNLL_varia
         for i in range (3):
@@ -561,63 +570,63 @@ class Model:
         return self.best_opti
         """
 
-######################################################################################
+    ######################################################################################
     #####################        PREDICT
-######################################################################################
-    
+    ######################################################################################
+
     def predict(self, test_set):
 
         from statistical_analysis import calculate_saved_info
-        
-        threshold=0
-        mu_init=1
 
-        
+        threshold = 0
+        mu_init = 1
+
         test_data = test_set["data"]
         test_weights = test_set["weights"]
-        
-    
+
         import copy
-        hold_set_tamp=copy.deepcopy(self.holdout_set)
-        hold_set_poscut=self.systematics(hold_set_tamp,tes=1,jes=1,soft_met=0)
-        
-        holdout_data=hold_set_poscut["data"]
-        
 
+        hold_set_tamp = copy.deepcopy(self.holdout_set)
+        hold_set_poscut = self.systematics(hold_set_tamp, tes=1, jes=1, soft_met=0)
 
+        holdout_data = hold_set_poscut["data"]
 
-######################################################################################
-    #####################        The method define the model used
-    #####################  "BNLL_all_syst" = 5 syst (all except soft_met which is commented out)
-    #####################  "BNLL_syst_normal_bkg"  = bkg_scale, ttbar_scale and diboson_scale but without tes or jes
-    #####################  "BNLL_syst" = tes and jes (soft_met is commented out)
-    #####################  "BNLL" = only binned 
-    ### "Direct"
-    ### "UNLL"
-######################################################################################
-        method="UNLL"
-######################################################################################
-######################################################################################
+        ######################################################################################
+        #####################        The method define the model used
+        #####################  "BNLL_all_syst" = 5 syst (all except soft_met which is commented out)
+        #####################  "BNLL_syst_normal_bkg"  = bkg_scale, ttbar_scale and diboson_scale but without tes or jes
+        #####################  "BNLL_syst" = tes and jes (soft_met is commented out)
+        #####################  "BNLL" = only binned
+        ### "Direct"
+        ### "UNLL"
+        ######################################################################################
+        method = "UNLL"
+        ######################################################################################
+        ######################################################################################
         predictions = self.model.predict(test_data)
-        holdout_score=self.model.predict(holdout_data)
+        holdout_score = self.model.predict(holdout_data)
 
-        saved_info_hold=calculate_saved_info(
-                    holdout_score, hold_set_poscut, threshold,model=self.model
-                    )
+        saved_info_hold = calculate_saved_info(
+            holdout_score, hold_set_poscut, threshold, model=self.model
+        )
 
-        #test_weights=np.ones(len(test_weights))*(saved_info_hold["N"])/len(hold_set_poscut["weights"])
-            
-        result_mu_cal = compute_mu(saved_info_hold=saved_info_hold,
-                                   score_test=predictions, 
-                                   weight_test=test_weights,
-                                   score_exp_hold=holdout_score,
-                                   weight_exp_hold=hold_set_poscut["weights"],    #CAUTION ABOUT THE ROI (threshold)
-                                   label_exp_hold=hold_set_poscut["labels"],
-                                   detailed_labels_exp_hold=hold_set_poscut["detailed_labels"],
-                                   mu_init=mu_init,
-                                   method=method,
-                                   threshold=threshold,
-                                   nb_bins=Nb_bins_distrib)
+        # test_weights=np.ones(len(test_weights))*(saved_info_hold["N"])/len(hold_set_poscut["weights"])
+
+        result_mu_cal = compute_mu(
+            saved_info_hold=saved_info_hold,
+            score_test=predictions,
+            weight_test=test_weights,
+            score_exp_hold=holdout_score,
+            weight_exp_hold=hold_set_poscut[
+                "weights"
+            ],  # CAUTION ABOUT THE ROI (threshold)
+            label_exp_hold=hold_set_poscut["labels"],
+            detailed_labels_exp_hold=hold_set_poscut["detailed_labels"],
+            mu_init=mu_init,
+            method=method,
+            threshold=threshold,
+            nb_bins=Nb_bins_distrib,
+        )
         """
         #print("result_mu_cal[mu_hat]: ", result_mu_cal["mu_hat"])
         from Function_analysis import Parabola_Likelihood_plot
@@ -638,7 +647,7 @@ class Model:
 
         )
         """
-        
+
         result = {
             "mu_hat": result_mu_cal["mu_hat"],
             "delta_mu_hat": result_mu_cal["del_mu_tot"],
