@@ -1,14 +1,14 @@
 import numpy as np
 
 
-Plotteur = "False"
+Plotteur = "True"
 
-nb_points_soft_met_for_fitting = 15
-nb_points_tes_for_fitting=10
-nb_points_jes_for_fitting=10
+nb_points_soft_met_for_fitting = 20
+nb_points_tes_for_fitting=15
+nb_points_jes_for_fitting=15
 
 
-n_jobs_distrib=6
+n_jobs_distrib=13
 
 from joblib import Parallel, delayed
 from iminuit import Minuit

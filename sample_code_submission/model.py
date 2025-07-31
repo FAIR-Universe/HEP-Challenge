@@ -29,6 +29,8 @@ from parameter_management_scan import Parameter_Distribution
 
 Tamp_parameter = Parameter_Distribution.get_all()
 
+SkipTHV_OnlyPredict=Tamp_parameter["SkipTHV_OnlyPredict"]
+
 THV_size = Tamp_parameter["THV_size"]
 Nb_bins_distrib=Tamp_parameter["Nb_bins_distrib"]
 threshold_distrib=Tamp_parameter["threshold_distrib"]
@@ -115,356 +117,369 @@ class Model:
 ###############################################################
 
     def fit(self):
-        print("###########################################")
-        print("Beginning of the fitting of the model")
-        print("###########################################")
-        from utils import statistical_subset_info
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #### Define index of the events for train, holdout and validation set from the whole FairUniverse dataset
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        print("///////////////////////////////////////////////////////////////////////////////")
-        print(f"Random seed used: {random_seed}")
-        print("///////////////////////////////////////////////////////////////////////////////")
-        indices = np.arange(THV_size.sum())
-        np.random.seed(random_seed)    
-        np.random.shuffle(indices)
-        
-        train_indices = indices[: THV_size[0]]
-        holdout_indices = indices[THV_size[0] : THV_size[0] + THV_size[1]]
-        valid_indices = indices[THV_size[0] + THV_size[1] :]
+        if SkipTHV_OnlyPredict :
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists('%s/Saved_Info'%(current_dir) ):
+                print("Problem : Saved info Not Found")
+            else :
+                from joblib import load
+                self.saved_info=load('%s/Saved_Info/Saved_info_%s_%sbins_computed_wt_%s_events_seed%s.pkl'%(current_dir,ModelType,Nb_bins_distrib,THV_size[1],random_seed) )
+                print("Saved info loaded")
+                print("###########################################")
 
+        else :
+            print("###########################################")
+            print("Beginning of the fitting of the model")
+            print("###########################################")
+            from utils import statistical_subset_info
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #### Define index of the events for train, holdout and validation set from the whole FairUniverse dataset
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    #///////////////////////////////////////////////////////////////////////////////
-    #### Train the classifier (so create the train set) or load an already trained classifier
-    #///////////////////////////////////////////////////////////////////////////////
-        if Load_Classifier != True or ModelType == "sample_model":
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            #### Initialise train set 
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            print("Train Subset : Created")
-            training_df = self.get_train_set(selected_indices=train_indices)
-            training_set = {
-                "labels": training_df.pop("labels"),
-                "weights": training_df.pop("weights"),
-                "detailed_labels": training_df.pop("detailed_labels"),
-                "data": training_df,
-            }
-            del training_df
-            #statistical_subset_info(training_set,"Training subset Before poscut")
+            print("///////////////////////////////////////////////////////////////////////////////")
+            print(f"Random seed used: {random_seed}")
+            print("///////////////////////////////////////////////////////////////////////////////")
+            indices = np.arange(THV_size.sum())
+            np.random.seed(random_seed)    
+            np.random.shuffle(indices)
+            
+            train_indices = indices[: THV_size[0]]
+            holdout_indices = indices[THV_size[0] : THV_size[0] + THV_size[1]]
+            valid_indices = indices[THV_size[0] + THV_size[1] :]
 
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            #### Apply systematics on the training set 
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            train_set_poscut = self.systematics(training_set,tes=1,jes=1,soft_met=0)
-            del training_set
-            #statistical_subset_info(train_set_poscut,"Training subset After poscut")
 
         #///////////////////////////////////////////////////////////////////////////////
-            ## Normalisation Weight
-            ####
-            ################################
-            ## TO CHECK #########################################################################
-            ################################""
-            ##
+        #### Train the classifier (so create the train set) or load an already trained classifier
+        #///////////////////////////////////////////////////////////////////////////////
+            if Load_Classifier != True or ModelType == "sample_model":
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #### Initialise train set 
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                print("Train Subset : Created")
+                training_df = self.get_train_set(selected_indices=train_indices)
+                training_set = {
+                    "labels": training_df.pop("labels"),
+                    "weights": training_df.pop("weights"),
+                    "detailed_labels": training_df.pop("detailed_labels"),
+                    "data": training_df,
+                }
+                del training_df
+                #statistical_subset_info(training_set,"Training subset Before poscut")
+
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #### Apply systematics on the training set 
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                train_set_poscut = self.systematics(training_set,tes=1,jes=1,soft_met=0)
+                del training_set
+                #statistical_subset_info(train_set_poscut,"Training subset After poscut")
+
+            #///////////////////////////////////////////////////////////////////////////////
+                ## Normalisation Weight
+                ####
+                ################################
+                ## TO CHECK #########################################################################
+                ################################""
+                ##
+            #/////////////////////////////////////////////////////////////////////////////// 
+                balanced_set = train_set_poscut
+                weights_train = train_set_poscut["weights"]
+                train_labels = train_set_poscut["labels"]
+                class_weights_train = (
+                    weights_train[train_labels == 0].sum(),
+                    weights_train[train_labels == 1].sum(),
+                )
+
+                for i in range(len(class_weights_train)):  # loop on B then S target
+                    # training dataset: equalize number of background and signal
+                    weights_train[train_labels == i] *= (
+                        max(class_weights_train) / class_weights_train[i]
+                    )
+                    # test dataset : increase test weight to compensate for sampling
+                balanced_set["weights"] = weights_train
+
+                #------------------------------
+                #### Fit the classifier
+                #------------------------------
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of the classifier \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                self.model.fit(
+                    balanced_set["data"], train_labels, weights_train=balanced_set["weights"], 
+                    train_size=NbTrain, seed=random_seed,
+                )
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of the classifier \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+                del weights_train, train_labels, class_weights_train
+                del balanced_set
+                del train_set_poscut
+                print("Train subset : Deleted ")
+                print("========================================================================================")
+
+        #///////////////////////////////////////////////////////////////////////////////
+        #### Create holdout subset and compute saved info
+        #///////////////////////////////////////////////////////////////////////////////
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #### Initialise holdout set 
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            print("Holdout Subset : Created")
+            holdout_df = self.get_train_set(selected_indices=holdout_indices)
+
+            holdout_set = {
+                "labels": holdout_df.pop("labels"),
+                "weights": holdout_df.pop("weights"),
+                "detailed_labels": holdout_df.pop("detailed_labels"),
+                "data": holdout_df,
+            }
+            del holdout_df
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ## features_systematics_dependence plot
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if  Features_VS_syst   :  
+
+                from feature_analysis import features_systematics_dependence
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,
+                                                nb_bins=20,var_lenght=1000, n_jobs=12,columns=[
+                        # "PRI_lep_phi",
+                        # "PRI_met",
+                        # "DER_pt_ratio_lep_had",
+                        # "DER_deltaeta_jet_jet",
+
+                        "PRI_lep_pt",
+                        "PRI_lep_eta",
+                        "PRI_lep_phi",
+                        "PRI_had_pt",
+                        "PRI_had_eta",
+                        "PRI_had_phi",
+                        "PRI_jet_leading_pt",
+                        "PRI_jet_leading_eta",
+                        "PRI_jet_leading_phi",
+                        "PRI_jet_subleading_pt",
+                        "PRI_jet_subleading_eta",
+                        "PRI_jet_subleading_phi",
+                        "PRI_n_jets",
+                        "PRI_jet_all_pt",
+                        "PRI_met",
+                        "PRI_met_phi",
+                        #"weights",###########################A retirer surement
+                        "DER_mass_transverse_met_lep",
+                        "DER_mass_vis",
+                        "DER_pt_h",
+                        "DER_deltaeta_jet_jet",
+                        "DER_mass_jet_jet",
+                        "DER_prodeta_jet_jet",
+                        "DER_deltar_had_lep",
+                        "DER_pt_tot",
+                        "DER_sum_pt",
+                        "DER_pt_ratio_lep_had",
+                        "DER_met_phi_centrality",
+                        "DER_lep_eta_centrality",
+                    ])
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+            #statistical_subset_info(holdout_set,"Holdout Subset Before poscut")
+
+
+        #///////////////////////////////////////////////////////////////////////////////
+        ## TES JES and Soft MET fitting  , there is 2 versions : one for syst and one for all syst (when we divide bkg in its differents channel)
         #/////////////////////////////////////////////////////////////////////////////// 
-            balanced_set = train_set_poscut
-            weights_train = train_set_poscut["weights"]
-            train_labels = train_set_poscut["labels"]
-            class_weights_train = (
-                weights_train[train_labels == 0].sum(),
-                weights_train[train_labels == 1].sum(),
-            )
-
-            for i in range(len(class_weights_train)):  # loop on B then S target
-                # training dataset: equalize number of background and signal
-                weights_train[train_labels == i] *= (
-                    max(class_weights_train) / class_weights_train[i]
-                )
-                # test dataset : increase test weight to compensate for sampling
-            balanced_set["weights"] = weights_train
-
-            #------------------------------
-            #### Fit the classifier
-            #------------------------------
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of the classifier \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            self.model.fit(
-                balanced_set["data"], train_labels, weights_train=balanced_set["weights"], 
-                train_size=NbTrain, seed=random_seed,
-            )
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of the classifier \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-            del weights_train, train_labels, class_weights_train
-            del balanced_set
-            del train_set_poscut
-            print("Train subset : Deleted ")
-            print("========================================================================================")
-
-    #///////////////////////////////////////////////////////////////////////////////
-    #### Create holdout subset and compute saved info
-    #///////////////////////////////////////////////////////////////////////////////
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #### Initialise holdout set 
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        print("Holdout Subset : Created")
-        holdout_df = self.get_train_set(selected_indices=holdout_indices)
-
-        holdout_set = {
-            "labels": holdout_df.pop("labels"),
-            "weights": holdout_df.pop("weights"),
-            "detailed_labels": holdout_df.pop("detailed_labels"),
-            "data": holdout_df,
-        }
-        del holdout_df
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ## features_systematics_dependence plot
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if  Features_VS_syst   :  
-
-            from feature_analysis import features_systematics_dependence
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            features_systematics_dependence(dfall=holdout_set,systematics=self.systematics,
-                                            nb_bins=20,var_lenght=1000, n_jobs=5,columns=[
-                    # "PRI_lep_phi",
-                    # "PRI_met",
-                    # "DER_pt_ratio_lep_had",
-                    # "DER_deltaeta_jet_jet",
-
-                    "PRI_lep_pt",
-                    "PRI_lep_eta",
-                    "PRI_lep_phi",
-                    "PRI_had_pt",
-                    "PRI_had_eta",
-                    "PRI_had_phi",
-                    "PRI_jet_leading_pt",
-                    "PRI_jet_leading_eta",
-                    "PRI_jet_leading_phi",
-                    "PRI_jet_subleading_pt",
-                    "PRI_jet_subleading_eta",
-                    "PRI_jet_subleading_phi",
-                    "PRI_n_jets",
-                    "PRI_jet_all_pt",
-                    "PRI_met",
-                    "PRI_met_phi",
-                    #"weights",###########################A retirer surement
-                    "DER_mass_transverse_met_lep",
-                    "DER_mass_vis",
-                    "DER_pt_h",
-                    "DER_deltaeta_jet_jet",
-                    "DER_mass_jet_jet",
-                    "DER_prodeta_jet_jet",
-                    "DER_deltar_had_lep",
-                    "DER_pt_tot",
-                    "DER_sum_pt",
-                    "DER_pt_ratio_lep_had",
-                    "DER_met_phi_centrality",
-                    "DER_lep_eta_centrality",
-                ])
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of Features VS syst big graph \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-        #statistical_subset_info(holdout_set,"Holdout Subset Before poscut")
+            from systematic_analysis import regression_tes, regression_jes,regression_soft_met,regression_tes_3bkg,regression_jes_3bkg,regression_soft_met_3bkg
+            
+            """
+            the part below is used to create the file with the 
+            regression for tes, jes and soft_met
+            
+            Since we use a fixed random seed for the creation of 
+            the train, hold and validation subset
+            We can just comment it out when the file is created
+            """
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ####for BNLL_all_syst   (fit on Signal and Ztautau, ttbar and Diboson + Ntot)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if ( Force_3bkg_regression ) or ( ("BNLL_all_syst" in method_used) and fitting_3bkg)  :
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of TES,JES,SoftMet for 3bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                from systematic_analysis import regression_tes_3bkg,regression_jes_3bkg,regression_soft_met_3bkg
+                regression_tes_3bkg( holdout_set, self.model ,self.systematics, nb_bins=Nb_bins_distrib)
+                regression_jes_3bkg( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
+                regression_soft_met_3bkg( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 3bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 
-    #///////////////////////////////////////////////////////////////////////////////
-    ## TES JES and Soft MET fitting  , there is 2 versions : one for syst and one for all syst (when we divide bkg in its differents channel)
-    #/////////////////////////////////////////////////////////////////////////////// 
-        from systematic_analysis import regression_tes, regression_jes,regression_soft_met,regression_tes_3bkg,regression_jes_3bkg,regression_soft_met_3bkg
-        
-        """
-        the part below is used to create the file with the 
-        regression for tes, jes and soft_met
-        
-        Since we use a fixed random seed for the creation of 
-        the train, hold and validation subset
-        We can just comment it out when the file is created
-        """
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ####for BNLL_all_syst   (fit on Signal and Ztautau, ttbar and Diboson + Ntot)
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if ( Force_3bkg_regression ) or ( ("BNLL_all_syst" in method_used) and fitting_3bkg)  :
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of TES,JES,SoftMet for 3bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            from systematic_analysis import regression_tes_3bkg,regression_jes_3bkg,regression_soft_met_3bkg
-            regression_tes_3bkg( holdout_set, self.model ,self.systematics, nb_bins=Nb_bins_distrib)
-            regression_jes_3bkg( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
-            regression_soft_met_3bkg( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 3bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            ##for BNLL_syst     (fit on Signal and Background + Ntot)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if ( Force_1bkg_regression ) or ( ("BNLL_syst" in method_used) and fitting_1bkg) :
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+                from systematic_analysis import regression_tes, regression_jes,regression_soft_met
+                regression_tes ( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)  
+                regression_jes( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
+                regression_soft_met ( holdout_set, self.model,self.systematics,nb_bins=Nb_bins_distrib )
+                print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ##for BNLL_syst     (fit on Signal and Background + Ntot)
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if ( Force_1bkg_regression ) or ( ("BNLL_syst" in method_used) and fitting_1bkg) :
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Start of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-            from systematic_analysis import regression_tes, regression_jes,regression_soft_met
-            regression_tes ( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)  
-            regression_jes( holdout_set, self.model ,self.systematics,nb_bins=Nb_bins_distrib)
-            regression_soft_met ( holdout_set, self.model,self.systematics,nb_bins=Nb_bins_distrib )
-            print ("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n End of fitting of TES,JES,SoftMet for 1bkg \n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #### Apply systematics on the holdout set 
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            hold_set_tamp=holdout_set.copy()
+            hold_set_poscut=self.systematics(hold_set_tamp,tes=1,jes=1,soft_met=0)
+            del holdout_set
+            #statistical_subset_info(hold_set_poscut,"Holdout Subset After poscut")
+            holdout_score = self.model.predict(hold_set_poscut["data"])
 
-
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            #### Apply systematics on the holdout set 
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        hold_set_tamp=holdout_set.copy()
-        hold_set_poscut=self.systematics(hold_set_tamp,tes=1,jes=1,soft_met=0)
-        del holdout_set
-        #statistical_subset_info(hold_set_poscut,"Holdout Subset After poscut")
-        holdout_score = self.model.predict(hold_set_poscut["data"])
-
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute score and saved info
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        self.saved_info = calculate_saved_info(model=self.model,
-             score=holdout_score,
-             holdout_set=hold_set_poscut,
-             threshold=threshold_distrib,
-             nb_bins=Nb_bins_distrib,)
-        
-        if First_plots_hist_roc or Parabola_method != []:
-            holdout_weights = hold_set_poscut["weights"]
-
-        else :
-            del holdout_score
-            del hold_set_poscut
-            print("Holdout subset : deleted after saved info computation (1 of the 2 ways to delete it)")
-            print("========================================================================================")
-
-    #///////////////////////////////////////////////////////////////////////////////
-    ## Definition of the validation set 
-    #/////////////////////////////////////////////////////////////////////////////// 
-        print("Validation Subset : Created")
-        valid_df = self.get_train_set(selected_indices=valid_indices)
-        valid_set = {
-            "labels": valid_df.pop("labels"),
-            "weights": valid_df.pop("weights"),
-            "detailed_labels": valid_df.pop("detailed_labels"),
-            "data": valid_df,
-        }
-        del valid_df
-        #statistical_subset_info(valid_set,"Validation Subset Before poscut")
-        
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            #### Apply systematics on the validation set 
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        valid_set_tamp=valid_set.copy()
-        valid_set_poscut=self.systematics(valid_set_tamp,tes=1,jes=1,soft_met=0)
-        del valid_set
-        #statistical_subset_info(valid_set_poscut,"Validation Subset After poscut")
-        
-        if First_plots_hist_roc  or Parabola_method != [] or Bins_varia_plot:
-            valid_weights = valid_set_poscut["weights"]
-            valid_score = self.model.predict(valid_set_poscut["data"])
-
-    #///////////////////////////////////////////////////////////////////////////////
-        # Somes plots
-    #///////////////////////////////////////////////////////////////////////////////
-
-            if First_plots_hist_roc :   #Be cautious it will maybe not run
-                holdout_results = compute_mu(
-                    saved_info_hold=self.saved_info,
-                    score_test= holdout_score, 
-                    weight_test=holdout_weights,)
-
-                valid_results = compute_mu(
-                    saved_info_hold=self.saved_info,
-                    score_test= valid_score, 
-                    weight_test=valid_weights,)
-
-
-                print("Holdout Results: ")
-                for key in holdout_results.keys():
-                    print("\t", key, " : ", holdout_results[key])
-
-                print("Valid Results: ")
-                for key in valid_results.keys():
-                    print("\t", key, " : ", valid_results[key])
-
-                print("saved info", self.saved_info)
-
-                
-                valid_set_poscut["data"]["score"] = valid_score
-                from utils import roc_curve_wrapper, histogram_dataset
-                
-                print("saved info", self.saved_info)
-                
-                histogram_dataset(
-                    valid_set_poscut["data"],
-                    valid_set_poscut["labels"],
-                    valid_set_poscut["weights"],
-                    columns=["score"],
-                )
-
-                # from HiggsML.visualization import stacked_histogram  #Problem
-
-                # stacked_histogram(
-                #      self.valid_set["data"],
-                #      self.valid_set["labels"],
-                #     self.valid_set["weights"],
-                #     self.valid_set["detailed_labels"],
-                #      "score",
-                #  )
-
-                roc_curve_wrapper(
-                    score=valid_score,
-                    labels=valid_set_poscut["labels"],
-                    weights=valid_set_poscut["weights"],
-                    plot_label="valid_set" + self.name,
-                )
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # End of the 1st plots
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                
-            if Parabola_method != [] or Bins_varia_plot :
-                score_test=[holdout_score,valid_score]
-                data_set_test_poscut=[hold_set_poscut,valid_set_poscut]
-                data_set_name=[" Holdout"," Validation"]
-    
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Parabola curve
+            # Compute score and saved info
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                if Parabola_method != [] :
-                    from Function_analysis import Parabola_Likelihood_plot
-                    for i in range (2):
-                        print("~~~~~~~~~\n Parabola plot for",data_set_name[i])
-                        
-                        Parabola_Likelihood_plot(
-                            saved_info_hold=self.saved_info,
+            self.saved_info = calculate_saved_info(model=self.model,
+                score=holdout_score,
+                holdout_set=hold_set_poscut,
+                threshold=threshold_distrib,
+                nb_bins=Nb_bins_distrib,)
+            
+            if First_plots_hist_roc or Parabola_method != []:
+                holdout_weights = hold_set_poscut["weights"]
 
-                            score_test=score_test[i],
-                            weight_test= data_set_test_poscut[i] ["weights"],
+            else :
+                del holdout_score
+                del hold_set_poscut
+                print("Holdout subset : deleted after saved info computation (1 of the 2 ways to delete it)")
+                print("========================================================================================")
 
-                            nb_bins=Nb_bins_distrib,
-                            threshold=threshold_distrib,
-                            Methode_Mu_Compar=Parabola_method,   #  "UNLL", "BNLL", "Direct", "BNLL_syst","BNLL_syst_normal_bkg", "BNLL_all_syst"
-                            mu_init=1.0,
-                        )
-                
-                
-                if Bins_varia_plot :
-                    from Function_analysis import Bins_BNLL_varia
-                    for i in range (2):
+        #///////////////////////////////////////////////////////////////////////////////
+        ## Definition of the validation set 
+        #/////////////////////////////////////////////////////////////////////////////// 
+            print("Validation Subset : Created")
+            valid_df = self.get_train_set(selected_indices=valid_indices)
+            valid_set = {
+                "labels": valid_df.pop("labels"),
+                "weights": valid_df.pop("weights"),
+                "detailed_labels": valid_df.pop("detailed_labels"),
+                "data": valid_df,
+            }
+            del valid_df
+            #statistical_subset_info(valid_set,"Validation Subset Before poscut")
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #### Apply systematics on the validation set 
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            valid_set_tamp=valid_set.copy()
+            valid_set_poscut=self.systematics(valid_set_tamp,tes=1,jes=1,soft_met=0)
+            del valid_set
+            #statistical_subset_info(valid_set_poscut,"Validation Subset After poscut")
+            
+            if First_plots_hist_roc  or Parabola_method != [] or Bins_varia_plot:
+                valid_weights = valid_set_poscut["weights"]
+                valid_score = self.model.predict(valid_set_poscut["data"])
+
+        #///////////////////////////////////////////////////////////////////////////////
+            # Somes plots
+        #///////////////////////////////////////////////////////////////////////////////
+
+                if First_plots_hist_roc :   #Be cautious it will maybe not run
+                    holdout_results = compute_mu(
+                        saved_info_hold=self.saved_info,
+                        score_test= holdout_score, 
+                        weight_test=holdout_weights,)
+
+                    valid_results = compute_mu(
+                        saved_info_hold=self.saved_info,
+                        score_test= valid_score, 
+                        weight_test=valid_weights,)
+
+
+                    print("Holdout Results: ")
+                    for key in holdout_results.keys():
+                        print("\t", key, " : ", holdout_results[key])
+
+                    print("Valid Results: ")
+                    for key in valid_results.keys():
+                        print("\t", key, " : ", valid_results[key])
+
+                    print("saved info", self.saved_info)
+
+                    
+                    valid_set_poscut["data"]["score"] = valid_score
+                    from utils import roc_curve_wrapper, histogram_dataset
+                    
+                    print("saved info", self.saved_info)
+                    
+                    histogram_dataset(
+                        valid_set_poscut["data"],
+                        valid_set_poscut["labels"],
+                        valid_set_poscut["weights"],
+                        columns=["score"],
+                    )
+
+                    # from HiggsML.visualization import stacked_histogram  #Problem
+
+                    # stacked_histogram(
+                    #      self.valid_set["data"],
+                    #      self.valid_set["labels"],
+                    #     self.valid_set["weights"],
+                    #     self.valid_set["detailed_labels"],
+                    #      "score",
+                    #  )
+
+                    roc_curve_wrapper(
+                        score=valid_score,
+                        labels=valid_set_poscut["labels"],
+                        weights=valid_set_poscut["weights"],
+                        plot_label="valid_set" + self.name,
+                    )
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Numbers of bins VS Result
+                    # End of the 1st plots
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        print("~~~~~~~~~\n Parabola plot for",data_set_name[i])
-                        Bins_BNLL_varia(
-                            saved_info_hold=self.saved_info,
+                    
+                if Parabola_method != [] or Bins_varia_plot :
+                    score_test=[holdout_score,valid_score]
+                    data_set_test_poscut=[hold_set_poscut,valid_set_poscut]
+                    data_set_name=[" Holdout"," Validation"]
+        
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Parabola curve
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    if Parabola_method != [] :
+                        from Function_analysis import Parabola_Likelihood_plot
+                        for i in range (2):
+                            print("~~~~~~~~~\n Parabola plot for",data_set_name[i])
+                            
+                            Parabola_Likelihood_plot(
+                                saved_info_hold=self.saved_info,
 
-                            score_test=score_test[i],
-                            weight_test= data_set_test_poscut[i] ["weights"],
+                                score_test=score_test[i],
+                                weight_test= data_set_test_poscut[i] ["weights"],
 
-                            bin_min=Bins_varia_Min_Max_Step[0],
-                            bin_max=Bins_varia_Min_Max_Step[1],
-                            value_bin_step=Bins_varia_Min_Max_Step[2],
+                                nb_bins=Nb_bins_distrib,
+                                threshold=threshold_distrib,
+                                Methode_Mu_Compar=Parabola_method,   #  "UNLL", "BNLL", "Direct", "BNLL_syst","BNLL_syst_normal_bkg", "BNLL_all_syst"
+                                mu_init=1.0,
+                            )
+                    
+                    
+                    if Bins_varia_plot :
+                        from Function_analysis import Bins_BNLL_varia
+                        for i in range (2):
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Numbers of bins VS Result
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            print("~~~~~~~~~\n Parabola plot for",data_set_name[i])
+                            Bins_BNLL_varia(
+                                saved_info_hold=self.saved_info,
 
-                            mu_init=1.0,
-                            threshold=0,
-                        )
+                                score_test=score_test[i],
+                                weight_test= data_set_test_poscut[i] ["weights"],
 
-        else :
-            del valid_set_poscut
-            print("Validation subset : deleted after saved info computation (1 of the 2 ways to delete it)")
-            print("========================================================================================")
+                                bin_min=Bins_varia_Min_Max_Step[0],
+                                bin_max=Bins_varia_Min_Max_Step[1],
+                                value_bin_step=Bins_varia_Min_Max_Step[2],
+
+                                mu_init=1.0,
+                                threshold=0,
+                            )
+
+            else :
+                del valid_set_poscut
+                print("Validation subset : deleted after saved info computation (1 of the 2 ways to delete it)")
+                print("========================================================================================")
 
 
         

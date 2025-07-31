@@ -607,6 +607,7 @@ def calculate_saved_info(
     #Del_Mu_method="None",
 ):
 
+
     # del_signal=np.sqrt(np.sum(np.power(weight_ROIscore[label_Roiscore==1], 2)))
     # del_bkg=np.sqrt(np.sum(np.power(weight_ROIscore[label_Roiscore==0], 2)))
 
@@ -648,20 +649,35 @@ def calculate_saved_info(
 
     saved_info = {
         "N": N,  # Total nb of events in the ROI
-        "bkg": bkg,
-        "signal": signal,
+        "bkg": bkg, #nb
+        "signal": signal,#nb
         
-        "ztautau_hist": ztautau_hist,
-        "ttbar_hist": ttbar_hist,
-        "diboson_hist": diboson_hist,
-        "bkg_hist": ztautau_hist +ttbar_hist+diboson_hist ,
-        "signal_hist":signal_hist,
+        "ztautau_hist": ztautau_hist, #np array
+        "ttbar_hist": ttbar_hist,  #np array
+        "diboson_hist": diboson_hist,  #np array
+        "bkg_hist": ztautau_hist +ttbar_hist+diboson_hist ,  #np array
+        "signal_hist":signal_hist,  #np array
 
-        "threshold":threshold,
-        "nb_bins":nb_bins,
+        "threshold":threshold, #nb
+        "nb_bins":nb_bins, #nb
         # "del_beta": del_beta,
         # "del_gamma": del_gamma,
     }
+
+    from parameter_management_scan import Parameter_Distribution
+    Tamp_parameter = Parameter_Distribution.get_all()
+    THV_size = Tamp_parameter["THV_size"]
+    ModelType = Tamp_parameter["ModelType"]
+    random_seed=Tamp_parameter["random_seed"]
+    Nb_bins_distrib=Tamp_parameter["Nb_bins_distrib"]
+    from joblib import dump
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists("%s/Saved_Info"%(current_dir)):
+        os.makedirs("%s/Saved_Info"%(current_dir))
+    dump(saved_info, '%s/Saved_Info/Saved_info_%s_%sbins_computed_wt_%s_events_seed%s.pkl'%(current_dir,ModelType,Nb_bins_distrib,THV_size[1],random_seed) )
+    print("saved info saved")
+    print("###########################################")
 
     # print("saved_info", saved_info)
     return saved_info
