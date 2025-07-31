@@ -60,7 +60,7 @@ def compute_mu(
     label_exp_hold=0,
     detailed_labels_exp_hold=0
 ):  
-    start1 = time.perf_counter()
+
 
     if saved_info_hold["threshold"]!=threshold or saved_info_hold["nb_bins"]!=nb_bins:
         if saved_info_hold["threshold"]!=threshold :
@@ -98,8 +98,6 @@ def compute_mu(
 
     mu, del_mu_stat, del_mu_tot, del_mu_sys = (0, 0, 0, 0)
 
-    end1 = time.perf_counter()
-    print(f"1st section : {(end1 - start1) :.5f} s")
 
     ###############################################################
     ###############################################################
@@ -168,6 +166,9 @@ def compute_mu(
         tes=tes_init_ref
         jes=jes_init_ref
         soft_met=soft_met_init_ref
+        bkg_scale=bkg_scale_init_ref
+        ttbar_scale=ttbar_scale_init_ref
+        diboson_scale=diboson_scale_init_ref 
 
     ###############################################################
     ###############################################################
@@ -175,7 +176,6 @@ def compute_mu(
     ###############################################################
     elif method == "BNLL":
 
-        start_bnll = time.perf_counter()
         #///////////////////////////////////////////////////////////////////////////////
         ## Cost_bnll
         #///////////////////////////////////////////////////////////////////////////////   
@@ -190,18 +190,9 @@ def compute_mu(
             m_bnll.limits["mu"] = (0, 4)
             m_bnll.errordef = Minuit.LIKELIHOOD
 
-            start_bnll_migrad = time.perf_counter()
-
             m_bnll.migrad()
-
-            end_bnll_migrad = time.perf_counter()
-            print(f"bnll migrad section : {(end_bnll_migrad - start_bnll_migrad):.5f} s")
-            start_bnll_hesse = time.perf_counter()
-
             m_bnll.hesse()
 
-            end_bnll_hesse = time.perf_counter()
-            print(f"bnll hesse section : {(end_bnll_hesse - start_bnll_hesse) * 1e6:.5f} s")
 
             #m_bnll.draw_mnprofile("mu")
             mu = m_bnll.values["mu"]
@@ -215,9 +206,11 @@ def compute_mu(
         tes=tes_init_ref
         jes=jes_init_ref
         soft_met=soft_met_init_ref
+        bkg_scale=bkg_scale_init_ref
+        ttbar_scale=ttbar_scale_init_ref
+        diboson_scale=diboson_scale_init_ref 
 
-        end_bnll = time.perf_counter()
-        print(f"bnll whole section : {(end_bnll - start_bnll) * 1e6:.3f} µs")
+
 
 
     ###############################################################
@@ -312,7 +305,9 @@ def compute_mu(
     
 
         mu, del_mu_stat,del_mu_stat_inf,del_mu_stat_sup, tes, jes, soft_met =BNLL_syst_mu_computation(mu_init=mu_init ,tes_init=tes_init_ref ,jes_init=jes_init_ref,soft_met_init=soft_met_init_ref ) #tes_init=1 ,jes_init=1 ,soft_met_init=soft_met_init_ref)
-                                   
+        bkg_scale=bkg_scale_init_ref
+        ttbar_scale=ttbar_scale_init_ref
+        diboson_scale=diboson_scale_init_ref                  
 
     ###############################################################
     ###############################################################
@@ -590,7 +585,10 @@ def compute_mu(
         "mu_axis_values": mu_axis_values,
         "tes": tes,
         "jes": jes,
-        "soft_met":soft_met
+        "soft_met":soft_met,
+        "bkg_scale":bkg_scale,
+        "ttbar_scale":ttbar_scale,
+        "diboson_scale":diboson_scale,
     }
 
 
@@ -660,6 +658,8 @@ def calculate_saved_info(
 
         "threshold":threshold, #nb
         "nb_bins":nb_bins, #nb
+
+        "Bins_edges":Bins_edges,
         # "del_beta": del_beta,
         # "del_gamma": del_gamma,
     }

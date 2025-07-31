@@ -43,7 +43,7 @@ class NeuralNetwork:
         self.scaler.fit_transform(train_data)
         X_train = self.scaler.transform(train_data)
         self.model.fit(
-            X_train, y_train, sample_weight=weights_train, epochs=100, batch_size=1024, verbose=2 
+            X_train, y_train, sample_weight=weights_train, epochs=100, batch_size=4_096, verbose=2 
         )
 
         import os
@@ -55,4 +55,4 @@ class NeuralNetwork:
 
     def predict(self, test_data):
         test_data = self.scaler.transform(test_data)
-        return self.model.predict(test_data, batch_size=1024).flatten().ravel()
+        return self.model.predict(test_data, batch_size=4_096).flatten().ravel()

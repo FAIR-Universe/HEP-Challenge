@@ -1,19 +1,20 @@
+from joblib import Parallel, delayed
+from iminuit import Minuit
+# Automatic error propagation at each x
+from iminuit.util import propagate
+import matplotlib.pyplot as plt
 import numpy as np
 
 
 Plotteur = "True"
 
-nb_points_soft_met_for_fitting = 20
-nb_points_tes_for_fitting=15
-nb_points_jes_for_fitting=15
+nb_points_soft_met_for_fitting = 10
+nb_points_tes_for_fitting=10
+nb_points_jes_for_fitting=10
 
 
-n_jobs_distrib=13
+n_jobs_distrib=3
 
-from joblib import Parallel, delayed
-from iminuit import Minuit
-# Automatic error propagation at each x
-from iminuit.util import propagate
 
 
 
@@ -36,7 +37,7 @@ def Polynomial_Reg_Model_forced_soft_met(x, a2, b1   ):
 #Classic Sig VS bkg 
 #########################################################
 def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
-    import matplotlib.pyplot as plt
+
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -301,9 +302,15 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
 def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
 
-    dataset_tamp=dataset
+    import os
+    
+    
+    
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    dataset_tamp = dataset
     dataset_tamp = systematics(dataset_tamp, jes=1)
     if "score" in dataset_tamp["data"].columns:
         dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -312,7 +319,7 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     label_Roiscore = dataset_tamp["labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
+    Bins_edges = np.linspace(0, 1, nb_bins + 1)
     signal_obs_ref = np.histogram(
         score_ROIscore[label_Roiscore == 1],
         bins=Bins_edges,
@@ -326,45 +333,31 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     N_obs_ref = np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[
         0
     ]
-    
+
+    del weight_ROIscore, detailed_labels_Roiscore, score_ROIscore
 
     sigma = np.linspace(-0.106, 0.096, nb_points_jes_for_fitting)
-    var_lenght=len(sigma)
+    var_lenght = len(sigma)
     jes = [np.exp(sigma[i]) for i in range(var_lenght)]
-    signal_obs = [None] * var_lenght
-    bkg_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
 
-    # data_score=[model.predict(systematics(dataset,jes=jes[i]))  for i in range(len(sigma)) ]  #Alternative to the for loop
-    # weight_ROIscore=[dataset["weights"][data_score[i] > threshold] for i in range(len(sigma))]
-    # label_Roiscore=[dataset["labels"][data_score[i]>threshold] for i in range(len(sigma))]
-    # score_ROIscore=[data_score[data_score[i]>threshold]  for i in range(len(sigma))]
-    # Bins_edges=[np.linspace(np.min(score_ROIscore[i]),np.max(score_ROIscore[i]),nb_bins+1) for i in range(len(sigma))]
-    # signal_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==1], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==1])[0] for i in range(len(sigma))]
-    # bkg_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==0], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==0])[0] for i in range(len(sigma))]
-    # N_obs=[np.histogram(score_ROIscore[i], bins=Bins_edges[i], weights=weight_ROIscore[i])[0] for i in range(len(sigma))]
-
-    # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
-        ##We need the for loop due to the addition of the score cell in the data_score
+    def jes_hist_syst_points(i):
         dataset_tamp = systematics(dataset, jes=jes[i])
         if "score" in dataset_tamp["data"].columns:
             dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
         data_score = model.predict(dataset_tamp["data"])
-
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         label_Roiscore = dataset_tamp["labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = (
+
+        signal = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 1],
                 bins=Bins_edges,
                 weights=weight_ROIscore[label_Roiscore == 1],
             )[0]
             - signal_obs_ref
-        )  # 3 lignes below new
-        bkg_obs[i] = (
+        )
+        bkg = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 0],
                 bins=Bins_edges,
@@ -372,10 +365,26 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
             )[0]
             - bkg_obs_ref
         )
-        N_obs[i] = (
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
+        return signal, bkg, N
+
+    results_jes_hist_syst_points = Parallel(n_jobs=n_jobs_distrib)(
+        delayed(jes_hist_syst_points)(i) for i in range(var_lenght)
+    )
+    print("End of the jes hist")
+    del dataset, dataset_tamp
+
+    signal_obs = [None] * var_lenght
+    bkg_obs = [None] * var_lenght
+    N_obs = [None] * var_lenght
+
+    for i, (signal, bkg, N) in enumerate(results_jes_hist_syst_points):
+        signal_obs[i] = signal
+        bkg_obs[i] = bkg
+        N_obs[i] = N
 
     y_obs_name = ["signal obs", "bkg obs", " total obs"]
     signal_obs_order = [
@@ -384,126 +393,89 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
     bkg_obs_order = [[bkg_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     y_obs = [signal_obs_order, bkg_obs_order, N_obs_order]
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un JES précis
+
+    def jes_fit_and_plot_over_bins(i, j):
+        x_data = np.array(jes)
+        y_data = y_obs[i][j]
+
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
+            return np.sum((y_data - y_fit) ** 2)
+
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse()
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        jes_fit = np.linspace(min(jes), max(jes), 40)
+        y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_params))
+
+        results_propa = [
+            propagate(
+                lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]),
+                m.values,
+                fit_cov,
+            )
+            for xi in jes_fit
+        ]
+
+        y = np.array([r[0] for r in results_propa])
+        ycov = np.array([r[1] for r in results_propa])
+        y_std = ycov**0.5
+
+        if Plotteur == "True" and (j in [0, 10, nb_bins - 2]):
+            plt.scatter(
+                jes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
+            )
+            plt.plot(jes_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(
+                jes_fit,
+                y - y_std,
+                y + y_std,
+                color="orange",
+                alpha=0.3,
+                label="Fitting uncertainty",
+            )
+            plt.ylabel("data observed")
+            plt.xlabel("jes factor")
+            plt.title("Data observed with a variation of Jes (bin n°%s)" % (j + 1))
+            plt.legend()
+            plt.grid()
+
+            if not os.path.exists("%s/Images/Fitting/JES/one_bkg" % (current_dir)):
+                os.makedirs("%s/Images/Fitting/JES/one_bkg" % (current_dir))
+            plt.savefig(
+                "%s/Images/Fitting/JES/one_bkg/JES_%s_Bins%s_over_%s_1bkg"
+                % (current_dir, y_obs_name[i], j, nb_bins)
+            )
+            plt.close()
+
+        return j, fit_params, fit_cov
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =3
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(jes)
-            y_data = y_obs[i][j]
-           
-            
-            def chi2(a, b  ):
-                y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b )
-                return np.sum((y_data - y_fit)**2)
+    for i in range(len(y_obs)):
+        results = Parallel(n_jobs=n_jobs_distrib)(
+            delayed(jes_fit_and_plot_over_bins)(i, j) for j in range(nb_bins)
+        )
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
 
-            
-            m = Minuit(chi2, a=0, b=0 )
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
+    print("End of the fit of jes")
 
-            fit_param[j][i] = [m.values["a"],m.values["b"]  ]
-            print(fit_param[j][i])
-            fit_cov[j][i] =  m.covariance
-
-
-            jes_fit = np.linspace(min(jes), max(jes), 40)
-            y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_param[j][i]))
-
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
-
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in jes_fit])   
-
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in jes_fit]
-
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(jes_fit), 1, 1)
-
-            y_std = ycov**0.5
-            
-
-
-                            # fit_param_tamp, fit_cov_tamp = curve_fit(
-                            #     Polynomial_Reg_Model_forced_jes_tes, jes, y_obs[i][j]
-                            # )
-                            # fit_param[j][i] = fit_param_tamp
-                            # fit_cov[j][i] = fit_cov_tamp
-
-                            # # popt = best-fit parameters [a0, a1, a2]
-                            # # pcov = covariance matrix of parameters
-
-                            # # Calculate uncertainty (standard deviation) of parameters
-                            # param_err = np.sqrt(np.diag(fit_cov[j][i]))
-
-                            # print("Fit parameters:", fit_param[j][i])
-                            # print("Parameter uncertainties:", param_err)
-
-                            # # Predict values
-                            # jes_fit = np.linspace(min(jes), max(jes), 200)
-                            # y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_param[j][i]))
-
-                            # # To get uncertainty on the fit curve, propagate errors:
-                            # # Compute Jacobian matrix at each x_fit
-                            # J = np.vstack(
-                            #     [jes_fit**k for k in range(len(fit_param[j][i]))]
-                            # ).T  # shape (num_points, 4)
-                            # print("J:", J)
-
-                            # # y_var = np.sum(J @ fit_cov[j][i] * J, axis=1)
-                            # y_var = np.einsum("ij,jk,ik->i", J, fit_cov[j][i], J)
-                            
-                            # y_std = np.sqrt(y_var)
-
-
-            # Plot
-
-            if Plotteur == "True" and (j in [0,10,nb_bins-2]):
-
-                plt.scatter(
-                    jes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(jes_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    jes_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("jes factor")
-                plt.title("Data observed with a variation of Jes (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
-
-    # Save fiting param
-    import os
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("%s/Fitting_Parameters/one_bkg"%(current_dir)):
-        os.makedirs("current_dir/Fitting_Parameters/one_bkg")
+    if not os.path.exists("%s/Fitting_Parameters/one_bkg" % (current_dir)):
+        os.makedirs("%s/Fitting_Parameters/one_bkg" % (current_dir))
     np.savez(
-        "%s/Fitting_Parameters/one_bkg/JES_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
+        "%s/Fitting_Parameters/one_bkg/JES_%sbins_2orderFittingParam.npz"
+        % (current_dir, nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
-
 
 
 
@@ -512,9 +484,15 @@ def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
 def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
 
-    dataset_tamp=dataset
+    import os
+    
+    
+    
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    dataset_tamp = dataset
     dataset_tamp = systematics(dataset_tamp, soft_met=0)
     if "score" in dataset_tamp["data"].columns:
         dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -523,7 +501,8 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     label_Roiscore = dataset_tamp["labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
+    Bins_edges = np.linspace(0, 1, nb_bins + 1)
+
     signal_obs_ref = np.histogram(
         score_ROIscore[label_Roiscore == 1],
         bins=Bins_edges,
@@ -537,26 +516,13 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     N_obs_ref = np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[
         0
     ]
-    
+
+    del weight_ROIscore, detailed_labels_Roiscore, score_ROIscore
 
     soft_met = np.linspace(0, 5, nb_points_soft_met_for_fitting)
-    var_lenght=len(soft_met)
-    signal_obs = [None] * var_lenght
-    bkg_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
+    var_lenght = len(soft_met)
 
-    # data_score=[model.predict(systematics(dataset,soft_met=soft_met[i]))  for i in range(len(sigma)) ]  #Alternative to the for loop
-    # weight_ROIscore=[dataset["weights"][data_score[i] > threshold] for i in range(len(sigma))]
-    # label_Roiscore=[dataset["labels"][data_score[i]>threshold] for i in range(len(sigma))]
-    # score_ROIscore=[data_score[data_score[i]>threshold]  for i in range(len(sigma))]
-    # Bins_edges=[np.linspace(np.min(score_ROIscore[i]),np.max(score_ROIscore[i]),nb_bins+1) for i in range(len(sigma))]
-    # signal_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==1], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==1])[0] for i in range(len(sigma))]
-    # bkg_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==0], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==0])[0] for i in range(len(sigma))]
-    # N_obs=[np.histogram(score_ROIscore[i], bins=Bins_edges[i], weights=weight_ROIscore[i])[0] for i in range(len(sigma))]
-
-    # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
-        ##We need the for loop due to the addition of the score cell in the data_score
+    def soft_met_hist_syst_points(i):
         dataset_tamp = systematics(dataset, soft_met=soft_met[i])
         if "score" in dataset_tamp["data"].columns:
             dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -565,16 +531,16 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         label_Roiscore = dataset_tamp["labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = (
+
+        signal = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 1],
                 bins=Bins_edges,
                 weights=weight_ROIscore[label_Roiscore == 1],
             )[0]
             - signal_obs_ref
-        )  # 3 lignes below new
-        bkg_obs[i] = (
+        )
+        bkg = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 0],
                 bins=Bins_edges,
@@ -582,10 +548,25 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
             )[0]
             - bkg_obs_ref
         )
-        N_obs[i] = (
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
+        return signal, bkg, N
+
+    results_soft_met_hist_syst_points = Parallel(n_jobs=n_jobs_distrib)(
+        delayed(soft_met_hist_syst_points)(i) for i in range(var_lenght)
+    )
+    print("End of the soft_met hist")
+
+    signal_obs = [None] * var_lenght
+    bkg_obs = [None] * var_lenght
+    N_obs = [None] * var_lenght
+
+    for i, (signal, bkg, N) in enumerate(results_soft_met_hist_syst_points):
+        signal_obs[i] = signal
+        bkg_obs[i] = bkg
+        N_obs[i] = N
 
     y_obs_name = ["signal obs", "bkg obs", " total obs"]
     signal_obs_order = [
@@ -594,123 +575,83 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
     bkg_obs_order = [[bkg_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     y_obs = [signal_obs_order, bkg_obs_order, N_obs_order]
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un soft met précis
+
+    def soft_met_fit_and_plot_over_bins(i, j):
+        x_data = np.array(soft_met)
+        y_data = y_obs[i][j]
+
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_soft_met(x_data, a, b)
+            return np.sum((y_data - y_fit) ** 2)
+
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse()
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        soft_met_fit = np.linspace(min(soft_met), max(soft_met), 60)
+        y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_params))
+
+        results_propa = [
+            propagate(
+                lambda p: Polynomial_Reg_Model_forced_soft_met(xi, p[0], p[1]),
+                m.values,
+                fit_cov,
+            )
+            for xi in soft_met_fit
+        ]
+        y = np.array([r[0] for r in results_propa])
+        ycov = np.array([r[1] for r in results_propa])
+        y_std = ycov**0.5
+
+        if Plotteur == "True" and (j in [0, 10, nb_bins - 2]):
+            plt.scatter(
+                soft_met,
+                y_obs[i][j],
+                label="%s" % (y_obs_name[i]),
+                color="dodgerblue",
+            )
+            plt.plot(soft_met_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(
+                soft_met_fit,
+                y - y_std,
+                y + y_std,
+                color="orange",
+                alpha=0.3,
+                label="Fitting uncertainty",
+            )
+            plt.ylabel("data observed")
+            plt.xlabel("soft met factor")
+            plt.title("Data observed with a variation of soft met (bin n°%s)" % (j + 1))
+            plt.legend()
+            plt.grid()
+            plt.close()
+
+        return j, fit_params, fit_cov
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =3
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(soft_met)
-            y_data = y_obs[i][j]
-           
-            
-            def chi2(a, b):
-                y_fit = Polynomial_Reg_Model_forced_soft_met(x_data, a, b )
-                return np.sum((y_data - y_fit)**2)
+    for i in range(len(y_obs)):
+        results = Parallel(n_jobs=n_jobs_distrib)(
+            delayed(soft_met_fit_and_plot_over_bins)(i, j) for j in range(nb_bins)
+        )
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
 
-            
-            m = Minuit(chi2, a=0, b=0 )
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
-
-            fit_param[j][i] = [m.values["a"],m.values["b"]]
-            fit_cov[j][i] =  m.covariance
-
-
-            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 60)
-            y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_param[j][i]))
-
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
-
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in soft_met_fit])   
-
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_soft_met(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in soft_met_fit]
-
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(soft_met_fit), 1, 1)import matplotlib.pyplot as plt
-
-            y_std = ycov**0.5
-            
-
-
-                            # fit_param_tamp, fit_cov_tamp = curve_fit(
-                            #     Polynomial_Reg_Model_forced_soft_met, soft_met, y_obs[i][j]
-                            # )
-                            # fit_param[j][i] = fit_param_tamp
-                            # fit_cov[j][i] = fit_cov_tamp
-
-                            # # popt = best-fit parameters [a0, a1, a2]
-                            # # pcov = covariance matrix of parameters
-
-                            # # Calculate uncertainty (standard deviation) of parameters
-                            # param_err = np.sqrt(np.diag(fit_cov[j][i]))
-
-                            # print("Fit parameters:", fit_param[j][i])
-                            # print("Parameter uncertainties:", param_err)
-
-                            # # Predict values
-                            # soft_met_fit = np.linspace(min(soft_met), max(soft_met), 200)
-                            # y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_param[j][i]))
-
-                            # # To get uncertainty on the fit curve, propagate errors:
-                            # # Compute Jacobian matrix at each x_fit
-                            # J = np.vstack(
-                            #     [soft_met_fit**k for k in range(len(fit_param[j][i]))]
-                            # ).T  # shape (num_points, 4)
-                            # print("J:", J)
-
-                            # # y_var = np.sum(J @ fit_cov[j][i] * J, axis=1)
-                            # y_var = np.einsum("ij,jk,ik->i", J, fit_cov[j][i], J)
-                            
-                            # y_std = np.sqrt(y_var)
-
-
-            # Plot
-
-            if Plotteur == "True" and (j in [2,11,nb_bins-2]):
-                plt.scatter(
-                    soft_met, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(soft_met_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    soft_met_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("soft met factor")
-                plt.title("Data observed with a variation of soft met (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
-
-    # Save fiting param
-    import os
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    if not os.path.exists("%s/Fitting_Parameters/one_bkg"%(current_dir)):
-        os.makedirs("%s/Fitting_Parameters/one_bkg"%(current_dir))
+    if not os.path.exists("%s/Fitting_Parameters/one_bkg" % (current_dir)):
+        os.makedirs("%s/Fitting_Parameters/one_bkg" % (current_dir))
     np.savez(
-        "%s/Fitting_Parameters/one_bkg/SOFTMET_%sbins_2orderFittingParam.npz" % (current_dir,nb_bins),
+        "%s/Fitting_Parameters/one_bkg/SOFTMET_%sbins_2orderFittingParam.npz"
+        % (current_dir, nb_bins),
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
+
 
 
 #########################################################
@@ -720,7 +661,7 @@ def regression_soft_met(dataset, model, systematics, nb_bins=20, threshold=0):
 def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
     
     dataset_tamp=dataset
     dataset_tamp = systematics(dataset_tamp, tes=1)
@@ -731,7 +672,7 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    bkg_channel_list=["ztautau" , "ttbar", "diboson"]
+    del dataset_tamp, data_score
     
     Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
     signal_obs_ref = np.histogram(
@@ -758,20 +699,17 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
         0
     ]
     
+    del weight_ROIscore, detailed_labels_Roiscore, score_ROIscore
+    
 
     sigma = np.linspace(-0.106, 0.096, nb_points_tes_for_fitting)
     var_lenght=len(sigma)
     tes = [np.exp(sigma[i]) for i in range(var_lenght)]
-    signal_obs = [None] * var_lenght
-    ztautau_obs = [None] * var_lenght
-    ttbar_obs = [None] * var_lenght
-    diboson_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
 
     # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
+    def tes_hist_syst_points(i):
         ##We need the for loop due to the addition of the score cell in the data_score
-        dataset_tamp=dataset
+        dataset_tamp = dataset
         dataset_tamp = systematics(dataset_tamp, tes=tes[i])
         if "score" in dataset_tamp["data"].columns:
             dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -780,40 +718,61 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = ( np.histogram(
+        del dataset_tamp,data_score
+
+        signal = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "htautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "htautau"],
             )[0] 
             -signal_obs_ref
-                     )
-        ztautau_obs[i] = ( np.histogram(
+        )
+        ztautau = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ztautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ztautau"],
             )[0] 
             -ztautau_obs_ref
-                      )
-        ttbar_obs[i] =( np.histogram(
+        )
+        ttbar = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ttbar"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ttbar"],
             )[0] 
             -ttbar_obs_ref 
-                   )
-        diboson_obs[i] =( np.histogram(
+        )
+        diboson = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "diboson"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "diboson"],
             )[0] 
             -diboson_obs_ref
-                    )
-            
-        N_obs[i] = (
+        )
+                
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
+        
+        return signal, ztautau, ttbar, diboson, N
+
+    results = Parallel(n_jobs=n_jobs_distrib)(delayed(tes_hist_syst_points)(i) for i in range(var_lenght))
+    
+    del signal_obs_ref,ztautau_obs_ref,ttbar_obs_ref,diboson_obs_ref, N_obs_ref
+
+    signal_obs = [None] * var_lenght
+    ztautau_obs = [None] * var_lenght
+    ttbar_obs = [None] * var_lenght
+    diboson_obs = [None] * var_lenght
+    N_obs = [None] * var_lenght
+    for i, (signal, ztautau, ttbar, diboson, N) in enumerate(results):
+        signal_obs[i] = signal
+        ztautau_obs[i] = ztautau
+        ttbar_obs[i] = ttbar
+        diboson_obs[i] = diboson
+        N_obs[i] = N
+    print("End of the tes hist")
+
    
     y_obs_name = ["signal (htautau) obs", "ztautau obs","ttbar obs","diboson obs", " total obs"]
     signal_obs_order = [[signal_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
@@ -821,75 +780,63 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     ttbar_obs_order = [[ttbar_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     diboson_obs_order = [[diboson_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
+    del signal_obs,ztautau_obs,ttbar_obs,diboson_obs,N_obs
     y_obs = [signal_obs_order, ztautau_obs_order,ttbar_obs_order,diboson_obs_order, N_obs_order]
+    del signal_obs_order,ztautau_obs_order,ttbar_obs_order,diboson_obs_order,N_obs_order
     # y_obs[0:2] = sig, bkg, tot
     # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
     # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un TES précis
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =5
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(tes)
-            y_data = y_obs[i][j]
-            
-            def chi2(a, b):
-                y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
-                return np.sum((y_data - y_fit)**2)
+    def fit_and_plot(j, i, y_obs, y_obs_name, tes, nb_bins, Plotteur):
+        x_data = np.array(tes)
+        y_data = y_obs[i][j]
 
-            # Minimize
-            m = Minuit(chi2, a=0, b=0)
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
+            return np.sum((y_data - y_fit)**2)
 
-            fit_param[j][i] = [m.values["a"],m.values["b"]]
-            fit_cov[j][i] =  m.covariance
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse()
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        tes_fit = np.linspace(min(tes), max(tes), 40)
+        y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *fit_params)
+
+        results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov) for xi in tes_fit]
+        y = np.array([r[0] for r in results])
+        ycov = np.array([r[1] for r in results])
+        y_std = ycov**0.5
+
+        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+            plt.scatter(tes, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue")
+            plt.plot(tes_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(tes_fit, y - y_std, y + y_std, color="orange", alpha=0.3, label="Fitting uncertainty")
+            plt.ylabel("data observed")
+            plt.xlabel("TES factor")
+            plt.title(f"Data observed with a variation of TES (bin n°{j + 1})")
+            plt.legend()
+            plt.grid()
+            plt.close()
+
+        return (j, fit_params, fit_cov)
 
 
-            tes_fit = np.linspace(min(tes), max(tes), 40)
-            y_fit = Polynomial_Reg_Model_forced_jes_tes(tes_fit, *(fit_param[j][i]))
 
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
+    for i in range(len(y_obs)):  # i = 0..4
+        results = Parallel(n_jobs=n_jobs_distrib)(delayed(fit_and_plot)(j, i, y_obs, y_obs_name, tes, nb_bins, Plotteur) for j in range(nb_bins))
 
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in tes_fit])   
 
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in tes_fit]
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
 
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(tes_fit), 1, 1)
-
-            y_std = ycov**0.5
-            
-            # Plot
-
-            if Plotteur == "True" and (j in [2 ,nb_bins-2]):
-
-                plt.scatter(
-                    tes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(tes_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    tes_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("TES factor")
-                plt.title("Data observed with a variation of TES (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
 
     # Save fiting param
     import os
@@ -908,10 +855,11 @@ def regression_tes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
 
 
 
+
 def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
     
     dataset_tamp=dataset
     dataset_tamp = systematics(dataset_tamp, jes=1)
@@ -922,7 +870,7 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    bkg_channel_list=["ztautau" , "ttbar", "diboson"]
+    del dataset_tamp,data_score
     
     Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
     signal_obs_ref = np.histogram(
@@ -953,16 +901,11 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     sigma = np.linspace(-0.106, 0.096, nb_points_jes_for_fitting)
     var_lenght=len(sigma)
     jes = [np.exp(sigma[i]) for i in range(var_lenght)]
-    signal_obs = [None] * var_lenght
-    ztautau_obs = [None] * var_lenght
-    ttbar_obs = [None] * var_lenght
-    diboson_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
 
     # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
+    def jes_hist_syst_points(i):
         ##We need the for loop due to the addition of the score cell in the data_score
-        dataset_tamp=dataset
+        dataset_tamp = dataset
         dataset_tamp = systematics(dataset_tamp, jes=jes[i])
         if "score" in dataset_tamp["data"].columns:
             dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -971,40 +914,62 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = ( np.histogram(
+        del dataset_tamp,data_score
+
+        signal = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "htautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "htautau"],
             )[0] 
             -signal_obs_ref
-                     )
-        ztautau_obs[i] = ( np.histogram(
+        )
+        ztautau = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ztautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ztautau"],
             )[0] 
             -ztautau_obs_ref
-                      )
-        ttbar_obs[i] =( np.histogram(
+        )
+        ttbar = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ttbar"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ttbar"],
             )[0] 
             -ttbar_obs_ref 
-                   )
-        diboson_obs[i] =( np.histogram(
+        )
+        diboson = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "diboson"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "diboson"],
             )[0] 
             -diboson_obs_ref
-                    )
-            
-        N_obs[i] = (
+        )
+                
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
+        del dataset_tamp
+        
+        return signal, ztautau, ttbar, diboson, N
+
+    results = Parallel(n_jobs=n_jobs_distrib)(delayed(jes_hist_syst_points)(i) for i in range(var_lenght))
+
+    del signal_obs_ref,ztautau_obs_ref,ttbar_obs_ref,diboson_obs_ref, N_obs_ref
+    
+    signal_obs = [None] * var_lenght
+    ztautau_obs = [None] * var_lenght
+    ttbar_obs = [None] * var_lenght
+    diboson_obs = [None] * var_lenght
+    N_obs = [None] * var_lenght
+    for i, (signal, ztautau, ttbar, diboson, N) in enumerate(results):
+        signal_obs[i] = signal
+        ztautau_obs[i] = ztautau
+        ttbar_obs[i] = ttbar
+        diboson_obs[i] = diboson
+        N_obs[i] = N
+    print("End of the jes hist")
+
    
     y_obs_name = ["signal (htautau) obs", "ztautau obs","ttbar obs","diboson obs", " total obs"]
     signal_obs_order = [[signal_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
@@ -1012,75 +977,61 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     ttbar_obs_order = [[ttbar_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     diboson_obs_order = [[diboson_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
+    del signal_obs,ztautau_obs,ttbar_obs,diboson_obs,N_obs
     y_obs = [signal_obs_order, ztautau_obs_order,ttbar_obs_order,diboson_obs_order, N_obs_order]
+    del signal_obs_order,ztautau_obs_order,ttbar_obs_order,diboson_obs_order,N_obs_order
     # y_obs[0:2] = sig, bkg, tot
     # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un JES précis
+    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un jes précis
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =5
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(jes)
-            y_data = y_obs[i][j]
-            
-            def chi2(a, b):
-                y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
-                return np.sum((y_data - y_fit)**2)
+    def fit_and_plot(j, i, y_obs, y_obs_name, jes, nb_bins, Plotteur):
+        x_data = np.array(jes)
+        y_data = y_obs[i][j]
 
-            # Minimize
-            m = Minuit(chi2, a=0, b=0)
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_jes_tes(x_data, a, b)
+            return np.sum((y_data - y_fit)**2)
 
-            fit_param[j][i] = [m.values["a"],m.values["b"]]
-            fit_cov[j][i] =  m.covariance
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse()
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        jes_fit = np.linspace(min(jes), max(jes), 40)
+        y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *fit_params)
+
+        results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov) for xi in jes_fit]
+        y = np.array([r[0] for r in results])
+        ycov = np.array([r[1] for r in results])
+        y_std = ycov**0.5
+
+        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+            plt.scatter(jes, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue")
+            plt.plot(jes_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(jes_fit, y - y_std, y + y_std, color="orange", alpha=0.3, label="Fitting uncertainty")
+            plt.ylabel("data observed")
+            plt.xlabel("JES factor")
+            plt.title(f"Data observed with a variation of JES (bin n°{j + 1})")
+            plt.legend()
+            plt.grid()
+            plt.close()
+
+        return (j, fit_params, fit_cov)
 
 
-            jes_fit = np.linspace(min(jes), max(jes), 40)
-            y_fit = Polynomial_Reg_Model_forced_jes_tes(jes_fit, *(fit_param[j][i]))
+    for i in range(len(y_obs)):  # i = 0..4
+        results = Parallel(n_jobs=n_jobs_distrib)(delayed(fit_and_plot)(j, i, y_obs, y_obs_name,jes , nb_bins, Plotteur) for j in range(nb_bins))
 
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
 
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in jes_fit])   
-
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_jes_tes(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in jes_fit]
-
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(jes_fit), 1, 1)
-
-            y_std = ycov**0.5
-            
-            # Plot
-
-            if Plotteur == "True" and (j in [2 ,nb_bins-2]):
-
-                plt.scatter(
-                    jes, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(jes_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    jes_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("JES factor")
-                plt.title("Data observed with a variation of JES (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
 
     # Save fiting param
     import os
@@ -1092,19 +1043,23 @@ def regression_jes_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
 
 
-def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold=0):
+
+
+
+
+
+
+
+
+def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=20, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
     
     dataset_tamp=dataset
-    dataset_tamp = systematics(dataset_tamp, soft_met=0)
+    dataset_tamp = systematics(dataset_tamp, soft_met=1)
     if "score" in dataset_tamp["data"].columns:
         dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
     data_score = model.predict(dataset_tamp["data"])
@@ -1112,7 +1067,7 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    bkg_channel_list=["ztautau" , "ttbar", "diboson"]
+    del dataset_tamp,data_score
     
     Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
     signal_obs_ref = np.histogram(
@@ -1142,16 +1097,11 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
 
     soft_met = np.linspace(0, 5, nb_points_soft_met_for_fitting)
     var_lenght=len(soft_met)
-    signal_obs = [None] * var_lenght
-    ztautau_obs = [None] * var_lenght
-    ttbar_obs = [None] * var_lenght
-    diboson_obs = [None] * var_lenght
-    N_obs = [None] * var_lenght
 
     # We create the modified observed list so we can fit on
-    for i in range(var_lenght):
+    def soft_met_hist_syst_points(i):
         ##We need the for loop due to the addition of the score cell in the data_score
-        dataset_tamp=dataset
+        dataset_tamp = dataset
         dataset_tamp = systematics(dataset_tamp, soft_met=soft_met[i])
         if "score" in dataset_tamp["data"].columns:
             dataset_tamp["data"] = dataset_tamp["data"].drop(columns=["score"])
@@ -1160,40 +1110,62 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         detailed_labels_Roiscore = dataset_tamp["detailed_labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
-        signal_obs[i] = ( np.histogram(
+        del dataset_tamp,data_score
+
+        signal = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "htautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "htautau"],
             )[0] 
             -signal_obs_ref
-                     )
-        ztautau_obs[i] = ( np.histogram(
+        )
+        ztautau = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ztautau"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ztautau"],
             )[0] 
             -ztautau_obs_ref
-                      )
-        ttbar_obs[i] =( np.histogram(
+        )
+        ttbar = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "ttbar"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "ttbar"],
             )[0] 
             -ttbar_obs_ref 
-                   )
-        diboson_obs[i] =( np.histogram(
+        )
+        diboson = ( np.histogram(
             score_ROIscore[detailed_labels_Roiscore == "diboson"],
             bins=Bins_edges,
             weights=weight_ROIscore[detailed_labels_Roiscore == "diboson"],
             )[0] 
             -diboson_obs_ref
-                    )
-            
-        N_obs[i] = (
+        )
+                
+        N = (
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
+        del dataset_tamp
+        
+        return signal, ztautau, ttbar, diboson, N
+
+    results = Parallel(n_jobs=n_jobs_distrib)(delayed(soft_met_hist_syst_points)(i) for i in range(var_lenght))
+
+    del signal_obs_ref,ztautau_obs_ref,ttbar_obs_ref,diboson_obs_ref, N_obs_ref
+    
+    signal_obs = [None] * var_lenght
+    ztautau_obs = [None] * var_lenght
+    ttbar_obs = [None] * var_lenght
+    diboson_obs = [None] * var_lenght
+    N_obs = [None] * var_lenght
+    for i, (signal, ztautau, ttbar, diboson, N) in enumerate(results):
+        signal_obs[i] = signal
+        ztautau_obs[i] = ztautau
+        ttbar_obs[i] = ttbar
+        diboson_obs[i] = diboson
+        N_obs[i] = N
+    print("End of the Soft MET hist")
+
    
     y_obs_name = ["signal (htautau) obs", "ztautau obs","ttbar obs","diboson obs", " total obs"]
     signal_obs_order = [[signal_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
@@ -1201,75 +1173,61 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
     ttbar_obs_order = [[ttbar_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     diboson_obs_order = [[diboson_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
     N_obs_order = [[N_obs[j][i] for j in range(var_lenght)] for i in range(nb_bins)]
+    del signal_obs,ztautau_obs,ttbar_obs,diboson_obs,N_obs
     y_obs = [signal_obs_order, ztautau_obs_order,ttbar_obs_order,diboson_obs_order, N_obs_order]
+    del signal_obs_order,ztautau_obs_order,ttbar_obs_order,diboson_obs_order,N_obs_order
     # y_obs[0:2] = sig, bkg, tot
     # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
     # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un soft_met précis
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
-    for i in range(len(y_obs)):  # =5
-        for j in range(nb_bins):
-            # Fit
-            from iminuit import Minuit
 
-            
-            x_data = np.array(soft_met)
-            y_data = y_obs[i][j]
-            
-            def chi2(a, b):
-                y_fit = Polynomial_Reg_Model_forced_soft_met(x_data, a, b)
-                return np.sum((y_data - y_fit)**2)
+    def fit_and_plot(j, i, y_obs, y_obs_name, soft_met, nb_bins, Plotteur):
+        x_data = np.array(soft_met)
+        y_data = y_obs[i][j]
 
-            # Minimize
-            m = Minuit(chi2, a=0, b=0)
-            m.errordef = Minuit.LEAST_SQUARES
-            m.migrad()
-            m.hesse() 
+        def chi2(a, b):
+            y_fit = Polynomial_Reg_Model_forced_soft_met(x_data, a, b)
+            return np.sum((y_data - y_fit)**2)
 
-            fit_param[j][i] = [m.values["a"],m.values["b"]]
-            fit_cov[j][i] =  m.covariance
+        m = Minuit(chi2, a=0, b=0)
+        m.errordef = Minuit.LEAST_SQUARES
+        m.migrad()
+        m.hesse()
+
+        fit_params = [m.values["a"], m.values["b"]]
+        fit_cov = m.covariance
+
+        soft_met_fit = np.linspace(min(soft_met), max(soft_met), 40)
+        y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *fit_params)
+
+        results = [propagate(lambda p: Polynomial_Reg_Model_forced_soft_met(xi, p[0], p[1]), m.values, fit_cov) for xi in soft_met_fit]
+        y = np.array([r[0] for r in results])
+        ycov = np.array([r[1] for r in results])
+        y_std = ycov**0.5
+
+        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+            plt.scatter(soft_met, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue")
+            plt.plot(soft_met_fit, y_fit, color="darkorange", label="Fit")
+            plt.fill_between(soft_met_fit, y - y_std, y + y_std, color="orange", alpha=0.3, label="Fitting uncertainty")
+            plt.ylabel("data observed")
+            plt.xlabel("Soft MET factor")
+            plt.title(f"Data observed with a variation of Soft MET (bin n°{j + 1})")
+            plt.legend()
+            plt.grid()
+            plt.close()
+
+        return (j, fit_params, fit_cov)
 
 
-            soft_met_fit = np.linspace(min(soft_met), max(soft_met), 60)
-            y_fit = Polynomial_Reg_Model_forced_soft_met(soft_met_fit, *(fit_param[j][i]))
+    for i in range(len(y_obs)):  # i = 0..4
+        results = Parallel(n_jobs=n_jobs_distrib)(delayed(fit_and_plot)(j, i, y_obs, y_obs_name, soft_met, nb_bins, Plotteur) for j in range(nb_bins))
 
-            # Automatic error propagation at each x
-            from iminuit.util import propagate
+        for j, params, cov in results:
+            fit_param[j][i] = params
+            fit_cov[j][i] = cov
 
-            # y_std = np.array([
-            #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
-            #     for xi in soft_met_fit])   
-
-            results = [propagate(lambda p: Polynomial_Reg_Model_forced_soft_met(xi, p[0], p[1]), m.values, fit_cov[j][i]) for xi in soft_met_fit]
-
-            y = np.array([r[0] for r in results])
-            ycov = np.array([r[1] for r in results])  # shape (len(soft_met_fit), 1, 1)
-
-            y_std = ycov**0.5
-            
-            # Plot
-
-            if Plotteur == "True" and (j in [2 ,nb_bins-2]):
-
-                plt.scatter(
-                    soft_met, y_obs[i][j], label="%s" % (y_obs_name[i]), color="dodgerblue"
-                )
-                plt.plot(soft_met_fit, y_fit, color="darkorange", label="Fit")
-                plt.fill_between(
-                    soft_met_fit,
-                    y - y_std,
-                    y + y_std,
-                    color="orange",
-                    alpha=0.3,
-                    label="Fitting uncertainty",
-                )
-                plt.ylabel("data observed")
-                plt.xlabel("Soft MET factor")
-                plt.title("Data observed with a variation of Soft MET (bin n°%s)" % (j + 1))
-                plt.legend()
-                plt.grid()
-                plt.show()
 
     # Save fiting param
     import os
@@ -1281,10 +1239,8 @@ def regression_soft_met_3bkg (dataset, model, systematics, nb_bins=25, threshold
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
+
+
 
 
 #################
@@ -1369,7 +1325,7 @@ def jes_fitter(
 def regression_jes(dataset, model, nb_bins=25, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
 
     dataset_tamp = systematics(dataset, jes=1)
     if "score" in dataset_tamp["data"].columns:
@@ -1508,7 +1464,7 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
                 plt.title("Data observed with a variation of Jes (bin n°%s)" % (j + 1))
                 plt.legend()
                 plt.grid()
-                plt.show()
+                plt.close()
 
     # Save fiting param
     np.savez(
@@ -1525,7 +1481,7 @@ def regression_jes(dataset, model, nb_bins=25, threshold=0):
 def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
 
     dataset_tamp = systematics(dataset, soft_met=0)
     if "score" in dataset_tamp["data"].columns:
@@ -1672,7 +1628,7 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
                 )
                 plt.legend()
                 plt.grid()
-                plt.show()
+                plt.close()
 
     # Save fiting param
     np.savez(
@@ -1703,7 +1659,7 @@ def regression_soft_met(dataset, model, nb_bins=25, threshold=0):
 def regression_tes_old(dataset, model, nb_bins=25, threshold=0):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
 
     dataset_tamp=dataset
     dataset_tamp = systematics(dataset_tamp, tes=1)
@@ -1794,7 +1750,7 @@ def regression_tes_old(dataset, model, nb_bins=25, threshold=0):
     for i in range(len(y_obs)):  # =3
         for j in range(nb_bins):
             # Fit
-            from iminuit import Minuit
+            
 
             # Data
             x_data = np.array(tes)
@@ -1825,7 +1781,7 @@ def regression_tes_old(dataset, model, nb_bins=25, threshold=0):
             y_fit = model(tes_fit, *(fit_param[j][i]))
 
             # Automatic error propagation at each x
-            from iminuit.util import propagate
+            
 
             # y_std = np.array([
             #     propagate(lambda a, b: model(xi, a, b), m.values, fit_cov[j][i])
@@ -1894,7 +1850,7 @@ def regression_tes_old(dataset, model, nb_bins=25, threshold=0):
                 plt.title("Data observed with a variation of Tes (bin n°%s)" % (j + 1))
                 plt.legend()
                 plt.grid()
-                plt.show()
+                plt.close()
 
     # Save fiting param
     np.savez(
@@ -1915,7 +1871,7 @@ def regression_tes_old(dataset, model, nb_bins=25, threshold=0):
 def regression_SoftMET_old(dataset, model, nb_bins=25, threshold=0.93):
     from utils import histogram_dataset
     from statistical_analysis import calculate_saved_info
-    import matplotlib.pyplot as plt
+
 
     SoftMET = np.linspace(0, 5, 100)
     signal_obs = [None] * len(SoftMET)
@@ -2035,7 +1991,7 @@ def regression_SoftMET_old(dataset, model, nb_bins=25, threshold=0.93):
                 )
                 plt.legend()
                 plt.grid()
-                plt.show()
+                plt.close()
 
     # Save fiting param
     np.savez(
@@ -2072,7 +2028,7 @@ def regression_SoftMET_old(dataset, model, nb_bins=25, threshold=0.93):
     # plt.fill_between(x_pred.ravel(), y_pred - 1*sigma, y_pred + 1*sigma,color='gray', alpha=0.2, label="1sigma")
     # plt.legend()
     # plt.title("Gaussian Process Regression test")
-    # plt.show()
+    # plt.close()
     # import joblib
     # # Save to a file
     # joblib.dump(gp, 'Tes_Sig_gp_fit_model.joblib')

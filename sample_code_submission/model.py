@@ -57,6 +57,7 @@ Compute_Best_Opti = Tamp_parameter["Compute_Best_Opti"]
 if Compute_Best_Opti == True:
     NbPoints_Prec_Thresh = Tamp_parameter["NbPoints_Prec_Thresh"]
 Features_VS_syst= Tamp_parameter["Features_VS_syst"]
+Print_NLL_score_biased_stacked=Tamp_parameter["Print_NLL_score_biased_stacked"]
 
 NbTrain = THV_size[0]
 NbHoldout = THV_size[1]
@@ -542,6 +543,142 @@ class Model:
                                    threshold=threshold_distrib,
                                    nb_bins=Nb_bins_distrib)
         
+        
+
+        if Print_NLL_score_biased_stacked :
+            saved_biaised_info=calculate_saved_info(model=self.model,
+                score=predictions,
+                holdout_set=self.systematics(test_set,tes=0,jes=0,soft_met=1),
+                threshold=threshold_distrib,
+                nb_bins=Nb_bins_distrib,)
+            
+            def Bias_My_Set(saved_info_hold,nb_bins,mu ,tes, jes, soft_met,bkg_scale, ttbar_scale, diboson_scale):
+                import os
+                def BNLL_all_syst_mu_fitting_param(nb_bins) :
+                    # # Load
+                    FitingData = [None] * 3
+                    SystName = ["TES", "JES", "SOFTMET"]
+
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    for i in range(3):   #######ATTENTION BESOIN DE METTRE A 3 for all
+                        if os.path.isfile(
+                            "%s/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,SystName[i], nb_bins)
+                        ):
+                            FitingData[i] = np.load(
+                                "%s/Fitting_Parameters/bkg_subchannel/%s_3bkg_%sbins_2orderFittingParam.npz" % (current_dir,SystName[i], nb_bins)
+                            )
+                        else:
+                            print("A file is missing \n ~~~~ \n ~~~ \n ~~ \n ~")
+
+                    return FitingData
+                
+                FitingData=BNLL_all_syst_mu_fitting_param(nb_bins=nb_bins)
+
+                
+                #///////////////////////////////////////////////////////////////////////////////
+                ## Cost_nll_all_syst
+                #/////////////////////////////////////////////////////////////////////////////// 
+                from systematic_analysis import Polynomial_Reg_Model_forced_jes_tes,Polynomial_Reg_Model_forced_soft_met
+                sig_exp_hold_biaised = ( saved_info_hold["signal_hist"]  #saved_info_hold["signal_hist"] = sig_exp_hold_unbiaised  
+                                        # Below tes
+                        + np.array([Polynomial_Reg_Model_forced_jes_tes(tes, *FitingData[0]["fit_param"][j][0])for j in range(nb_bins) 
+                        ])
+                                        # Below jes
+                        +np.array([Polynomial_Reg_Model_forced_jes_tes(jes,*FitingData[1]["fit_param"][j][0]) for j in range(nb_bins)
+                        ])
+                                        # Below soft_met
+                        + np.array([Polynomial_Reg_Model_forced_soft_met(soft_met,*FitingData[2]["fit_param"][j][0]) for j in range(nb_bins)
+                        ]) 
+                                    )
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                ##First we define the tes, jes and soft met syst and then the scaling for ztautau,ttbar and diboson
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                bkg_scale_ztautau_exp_hold_biaised = (1+bkg_scale)*( saved_info_hold["ztautau_hist"]  #saved_info_hold["ztautau_hist"] = ztautau_hist_exp_hold_unbiaised  
+                                                    # Below tes
+                            + np.array([Polynomial_Reg_Model_forced_jes_tes(tes, *FitingData[0]["fit_param"][j][1])for j in range(nb_bins) 
+                            ])
+                                                    # Below jes
+                            +np.array([Polynomial_Reg_Model_forced_jes_tes(jes,*FitingData[1]["fit_param"][j][1]) for j in range(nb_bins)
+                            ])
+                                                    # Below soft_met
+                            + np.array([Polynomial_Reg_Model_forced_soft_met(soft_met,*FitingData[2]["fit_param"][j][1]) for j in range(nb_bins)
+                            ])   
+                                                        )
+                
+                bkg_ttbar_exp_hold_exp_hold_biaised = (1+bkg_scale)*(1+ttbar_scale)*( saved_info_hold["ttbar_hist"]  #saved_info_hold["ttbar_hist"] = ttbar_hist_exp_hold_unbiaised  
+                                                        # Below tes
+                            + np.array([Polynomial_Reg_Model_forced_jes_tes(tes, *FitingData[0]["fit_param"][j][2])for j in range(nb_bins) 
+                            ])
+                                                        # Below jes
+                            +np.array([Polynomial_Reg_Model_forced_jes_tes(jes,*FitingData[1]["fit_param"][j][2]) for j in range(nb_bins)
+                            ])
+                                                    # Below soft_met
+                            + np.array([Polynomial_Reg_Model_forced_soft_met(soft_met,*FitingData[2]["fit_param"][j][2]) for j in range(nb_bins)
+                            ])   
+                                                        )
+                
+                bkg_diboson_exp_hold_biaised =(1+bkg_scale)*(1+diboson_scale)*( saved_info_hold["diboson_hist"]  #saved_info_hold["diboson_hist"] = diboson_hist_exp_hold_unbiaised  
+                                                # Below tes
+                            + np.array([Polynomial_Reg_Model_forced_jes_tes(tes, *FitingData[0]["fit_param"][j][3])for j in range(nb_bins) 
+                            ])
+                                                # Below jes
+                            +np.array([Polynomial_Reg_Model_forced_jes_tes(jes,*FitingData[1]["fit_param"][j][3]) for j in range(nb_bins)
+                            ])
+                                            # Below soft_met
+                            + np.array([Polynomial_Reg_Model_forced_soft_met(soft_met,*FitingData[2]["fit_param"][j][3]) for j in range(nb_bins)
+                            ])   
+                                                )
+                
+                return sig_exp_hold_biaised, bkg_scale_ztautau_exp_hold_biaised, bkg_ttbar_exp_hold_exp_hold_biaised, bkg_diboson_exp_hold_biaised
+            sig_exp_hold_biaised, bkg_scale_ztautau_exp_hold_biaised, bkg_ttbar_exp_hold_exp_hold_biaised, bkg_diboson_exp_hold_biaised=Bias_My_Set(saved_info_hold=self.saved_info,nb_bins=Nb_bins_distrib,mu=result_mu_cal["mu_hat"],tes=result_mu_cal["tes"], jes=result_mu_cal["jes"], soft_met=result_mu_cal["soft_met"],bkg_scale=result_mu_cal["bkg_scale"], ttbar_scale=result_mu_cal["ttbar_scale"], diboson_scale=result_mu_cal["diboson_scale"])
+            Bins_edges=self.saved_info["Bins_edges"]
+            plt.plot(1, 1, figsize=(8,6))
+            plt.hist(
+                bkg_scale_ztautau_exp_hold_biaised,
+                bins=Bins_edges,
+                alpha=0.4,
+                color="blue",
+                label="Predicted Ztautau",
+            )
+            plt.hist(
+                bkg_ttbar_exp_hold_exp_hold_biaised,
+                bins=Bins_edges,
+                alpha=0.4,
+                color="orange",
+                label="Predicted ttbar",
+            )
+            plt.hist(
+                bkg_diboson_exp_hold_biaised,
+                bins=Bins_edges,
+                alpha=0.4,
+                color="green",
+                label="Predicted diboson",
+            )
+            plt.hist(
+                sig_exp_hold_biaised,
+                bins=Bins_edges,
+                alpha=0.4,
+                color="red",
+                label="Predicted Htautau",
+            )
+
+            half_bins=np.linspace(0,1,Nb_bins_distrib)
+
+            plt.scatter(half_bins,saved_biaised_info["signal_hist"]+saved_biaised_info["bkg_hist"], label="Ground Truth")
+            plt.xlabel("BDT Score")
+            plt.ylabel("Weighted number of events")
+            plt.title("%s_%s_bins_%s Scores"%(ModelType,Nb_bins_distrib,Predict_method))
+            plt.legend()
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            if not os.path.exists("%s/Images/ScoresVSBDT_biased"%(current_dir)):
+                os.makedirs("%s/Images/ScoresVSBDT_biased"%(current_dir))
+            plt.savefig(
+                "%s/Images/ScoresVSBDT_biased/%s_%s_bins_%s Scores"%(current_dir,ModelType,Nb_bins_distrib,Predict_method))
+            plt.close()
+
+
         
         result = {
             "mu_hat": result_mu_cal["mu_hat"],
