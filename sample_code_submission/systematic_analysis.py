@@ -962,7 +962,7 @@ def regression_tes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
         ycov = np.array([r[1] for r in results])
         y_std = ycov**0.5
 
-        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+        if Plotteur == "True" : #and (j in [2, nb_bins - 2])
             plt.scatter(tes, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue")
             plt.plot(tes_fit, y_fit, color="darkorange", label="Fit")
             plt.fill_between(
@@ -1107,7 +1107,6 @@ def regression_jes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
-        del dataset_tamp
 
         return signal, ztautau, ttbar, diboson, N
 
@@ -1203,7 +1202,7 @@ def regression_jes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
         ycov = np.array([r[1] for r in results])
         y_std = ycov**0.5
 
-        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+        if Plotteur == "True" : #and (j in [2, nb_bins - 2])
             plt.scatter(jes, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue")
             plt.plot(jes_fit, y_fit, color="darkorange", label="Fit")
             plt.fill_between(
@@ -1343,7 +1342,7 @@ def regression_soft_met_3bkg(dataset, model, systematics, nb_bins=20, threshold=
             np.histogram(score_ROIscore, bins=Bins_edges, weights=weight_ROIscore)[0]
             - N_obs_ref
         )
-        del dataset_tamp
+
 
         return signal, ztautau, ttbar, diboson, N
 
@@ -1439,7 +1438,7 @@ def regression_soft_met_3bkg(dataset, model, systematics, nb_bins=20, threshold=
         ycov = np.array([r[1] for r in results])
         y_std = ycov**0.5
 
-        if Plotteur == "True" and (j in [2, nb_bins - 2]):
+        if Plotteur == "True" : # and (j in [2, nb_bins - 2])
             plt.scatter(
                 soft_met, y_obs[i][j], label=f"{y_obs_name[i]}", color="dodgerblue"
             )

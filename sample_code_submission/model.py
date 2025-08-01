@@ -354,13 +354,14 @@ class Model:
                     regression_soft_met_3bkg,
                 )
 
-                regression_tes_3bkg(
+                
+                regression_soft_met_3bkg(
                     holdout_set, self.model, self.systematics, nb_bins=Nb_bins_distrib
                 )
                 regression_jes_3bkg(
                     holdout_set, self.model, self.systematics, nb_bins=Nb_bins_distrib
                 )
-                regression_soft_met_3bkg(
+                regression_tes_3bkg(
                     holdout_set, self.model, self.systematics, nb_bins=Nb_bins_distrib
                 )
                 print(
