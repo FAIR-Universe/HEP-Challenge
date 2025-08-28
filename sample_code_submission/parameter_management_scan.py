@@ -16,6 +16,7 @@ class Parameter_Distribution:
         "Nb_bins_distrib": 20,
         "threshold_distrib": 0,
         "random_seed": 10912983,  # 10912983 or seed for random seed
+
         "First_plots_hist_roc": False,
         "Bins_varia_plot": False,
         "Bins_varia_Min_Max_Step": [1, 52, 5],
@@ -24,6 +25,7 @@ class Parameter_Distribution:
         "Compute_Best_Opti": False,
         "NbPoints_Prec_Thresh": 50,
         "Parabola_method": [],
+        
         #        The method define the model used
         #  "BNLL_all_syst" = all syst
         #  "BNLL_syst_normal_bkg"  = bkg_scale, ttbar_scale and diboson_scale but without tes or jes
@@ -32,6 +34,7 @@ class Parameter_Distribution:
         #  "Direct"
         #  "UNLL"
         "Predict_method": ["BNLL"],  # l'autre c'etait all syst
+
         "Dont_compute_tes": False,
         "Dont_compute_jes": False,
         "Dont_compute_soft_met": False,
@@ -60,8 +63,10 @@ class Parameter_Distribution:
     ):
         import numpy as np
 
-        # Modification_Size_Method= nbr it means I give all the difference to the other subset (0:Train, 1:Holdout, 2:Validation)
-        # The main study subset is defined thanks to number (0:Train, 1:Holdout, 2:Validation)
+        """
+        Modification_Size_Method= nbr it means I give all the difference to the other subset (0:Train, 1:Holdout, 2:Validation)
+        The main study subset is defined thanks to number (0:Train, 1:Holdout, 2:Validation)
+        """
         New_Pop = np.array(cls.parameter["THV_size"])
 
         Security_Sum = np.sum(New_Pop)

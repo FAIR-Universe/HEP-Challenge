@@ -29,13 +29,8 @@ def Correlation_big_graph(
 
             Bkg_Sig_dfplot = dfplot[
                 data["labels"] == i
-            ]  # Sert surement a rien ###############################################
-            #############################
-            #############
-            ########
-            ####
-            ##
-            #
+            ]  
+
             Detail_Sig_Bkg_dfplot = Bkg_Sig_dfplot[
                 data["detailed_labels"] == Detailled_label[j]
             ]
@@ -60,7 +55,7 @@ def Correlation_big_graph(
     Bkg_Sig_dfplot = dfplot[data["labels"] == 0]
     Detail_Sig_Bkg_dfplot = Bkg_Sig_dfplot[data["detailed_labels"] != "htautau"]
     Weighted_Correlation_matrix_mean_bkg = Detail_Sig_Bkg_dfplot.corr()
-    # Correlation_matrix_mean_bkg=(Correlation_matrix_list[1]+Correlation_matrix_list[2]+Correlation_matrix_list[3])/3
+    
     sns.heatmap(
         Weighted_Correlation_matrix_mean_bkg,
         vmin=-1,
@@ -251,8 +246,8 @@ def Correlation_diff_graph(
     )
 
 
-# --------------------------------------  Fct mise en forme panda table and appel fct ploteur
-
+""" Fct for panda table and then call plotting function 
+"""
 
 def feature_correlations(data, field_name):
 
@@ -972,15 +967,19 @@ def features_systematics_dependence_new_old(
         for j, syst_type in enumerate(systematics_list_TJS_type):
             print(f"Processing systematic: {systematics_TJS_list_name[j]}")
 
-            # Initialize arrays to store histogram differences
-            # Shape: (nb_bins, var_lenght) where rows=bins, columns=systematic_values
+            """
+            Initialize arrays to store histogram differences
+            Shape: (nb_bins, var_lenght) where rows=bins, columns=systematic_values
+            """
             signal_hist_diff = np.zeros((nb_bins, var_lenght))
             bkg_hist_diff = np.zeros((nb_bins, var_lenght))
 
             for i in range(var_lenght):
                 dfall_tamp = dfall.copy()
 
-                # Apply systematic variations
+                """
+                Apply systematic variations
+                """
                 if j == 0:  # TES
                     print(f"systematics: {syst_type[i]} pour {column}")
                     dfall_poscut = systematics(dfall_tamp, tes=syst_type[i])
@@ -998,7 +997,9 @@ def features_systematics_dependence_new_old(
                 data = dfall_poscut["data"]
                 del dfall_poscut
 
-                # Update bin edges if necessary (optional)
+                """
+                Update bin edges if necessary (optional)
+                """
                 colum_min = data[column].min()
                 colum_max = data[column].max()
                 if colum_min < bin_edges[0]:
@@ -1006,7 +1007,9 @@ def features_systematics_dependence_new_old(
                 if colum_max > bin_edges[-1]:
                     bin_edges[-1] = colum_max
 
-                # Calculate histograms for this systematic variation
+                """
+                Calculate histograms for this systematic variation
+                """
                 signal_field = data[column][labels == 1]
                 background_field = data[column][labels == 0]
                 signal_weights = weights[labels == 1]
@@ -1022,27 +1025,37 @@ def features_systematics_dependence_new_old(
                     density=True,
                 )[0]
 
-                # Store differences from reference
+                """
+                Store differences from reference
+                """
                 signal_hist_diff[:, i] = signal_hist - signal_hist_ref
                 bkg_hist_diff[:, i] = bkg_hist - bkg_hist_ref
 
                 del signal_weights, background_weights
 
-            # Update global min/max
+            """
+            Update global min/max
+            """
             global_min = min(global_min, signal_hist_diff.min(), bkg_hist_diff.min())
             global_max = max(global_max, signal_hist_diff.max(), bkg_hist_diff.max())
 
-            # Store heatmap data
+            """
+            Store heatmap data
+            """
             all_heatmaps.extend([signal_hist_diff, bkg_hist_diff])
 
-        # Create heatmaps with consistent color scale
+        """
+        Create heatmaps with consistent color scale
+        """
         vmin, vmax = global_min, global_max
 
         for j, syst_type in enumerate(systematics_list_TJS_type):
             signal_hist_diff = all_heatmaps[2 * j]
             bkg_hist_diff = all_heatmaps[2 * j + 1]
 
-            # Create individual heatmaps
+            """
+            Create individual heatmaps
+            """
             for k, (hist_data, label) in enumerate(
                 [(signal_hist_diff, "signal"), (bkg_hist_diff, "bkg")]
             ):
@@ -1095,13 +1108,15 @@ def features_systematics_dependence_new_old(
                 axes[2 * j + k].set_ylabel("Bin Number")
                 axes[2 * j + k].set_title(f"{systematics_TJS_list_name[j]} - {label}")
 
-                # Set ticks for combined plot
+
                 axes[2 * j + k].set_xticks(x_ticks)
                 axes[2 * j + k].set_xticklabels(x_labels, rotation=45)
                 axes[2 * j + k].set_yticks(y_ticks)
                 axes[2 * j + k].set_yticklabels(y_labels)
 
-        # Add colorbars to combined plot
+        """
+        Add colorbars to combined plot
+        """
         for i in range(6):
             cbar = fig.colorbar(im_combined, ax=axes[i], shrink=0.8)
             cbar.set_label("Density Shift")
@@ -1210,12 +1225,14 @@ def features_systematics_dependence_old(
 
         print("min value :", min_value, "  max value:", max_value)
 
-        # Define the bin edges
+        """
+        Define the bin edges
+        """
         bin_edges = np.linspace(
             min_value, max_value, nb_bins + 1
-        )  # Serait bien de définir min et max par rapport à la valeur moyenne
+        )  
 
-        ### Faire une liste des mins et max pour chaque colonne comme ca on peut virer def ref
+        ### Add list of min max to remove ref
         signal_field_ref = data_ref[column][labels_ref == 1]
         background_field_ref = data_ref[column][labels_ref == 0]
         signal_weights = weights_ref[labels_ref == 1]
@@ -1258,8 +1275,8 @@ def features_systematics_dependence_old(
                 data = dfall_poscut["data"]
                 del dfall_poscut
 
-                #########################################################
-                ##########Can be removed, not sure if it's nice to have this
+
+                # Can be removed, not sure if it's nice to have this
                 colum_min = data[column].min()
                 colum_max = data[column].max()
                 if colum_min < bin_edges[0]:

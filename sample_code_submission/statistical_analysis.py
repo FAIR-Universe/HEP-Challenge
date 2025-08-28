@@ -81,7 +81,6 @@ def compute_mu(
 
     Bins_edges = np.linspace(0, 1, nb_bins + 1)
 
-    # print ("signal :",saved_info_hold["signal"]," bkg: ",saved_info_hold["bkg"], " n_obs: ", np.sum(weight_test[score_test>threshold]) )
 
     def Model(mu, sig, bkg):
         return mu * sig + bkg
@@ -98,10 +97,9 @@ def compute_mu(
 
     mu, del_mu_stat, del_mu_tot, del_mu_sys = (0, 0, 0, 0)
 
-    ###############################################################
-    ###############################################################
-    ######## DIRECT METHOD
-    ###############################################################
+    """
+    Direct method = Counting method 
+    """
     if method == "Direct":  # Based on N=mu*S+b
 
         def counting_mu(score, weight, saved_info):
@@ -120,24 +118,13 @@ def compute_mu(
         jes = jes_init_ref
         soft_met = soft_met_init_ref
 
-    ###############################################################
-    ###############################################################
-    ######## UNLL METHOD
-    ###############################################################
+        """
+        1 NLL method
+        """
     elif method == "UNLL":
 
-        # def UNLL_mu_parameter(saved_info_hold,weight_test,score_test,threshold) :
-        #     sig_exp_holdout_unll = saved_info_hold["signal"]
-        #     bkg_exp_holdout_unll = saved_info_hold["bkg"]
-        #     n_obs_test_unll = np.sum(weight_test[score_test>threshold])
+      
 
-        #     return n_obs_test_unll,sig_exp_holdout_unll,bkg_exp_holdout_unll
-
-        # n_obs_test_unll, sig_exp_holdout_unll, bkg_exp_holdout_unll = UNLL_mu_parameter(saved_info_hold=saved_info_hold,weight_test=weight_test,score_test=score_test,threshold=threshold)
-
-        # ///////////////////////////////////////////////////////////////////////////////
-        ## Cost_unll
-        # ///////////////////////////////////////////////////////////////////////////////
         def Cost_unll(mu):
             N_exp_unll = Model(
                 mu=mu, sig=saved_info_hold["signal"], bkg=saved_info_hold["bkg"]
@@ -170,15 +157,12 @@ def compute_mu(
         ttbar_scale = ttbar_scale_init_ref
         diboson_scale = diboson_scale_init_ref
 
-    ###############################################################
-    ###############################################################
-    ######## BNLL METHOD
-    ###############################################################
+        """
+        Binned NLL method 
+        """
     elif method == "BNLL":
 
-        # ///////////////////////////////////////////////////////////////////////////////
-        ## Cost_bnll
-        # ///////////////////////////////////////////////////////////////////////////////
+ 
         def Cost_bnll(mu):
             N_exp_bnll = Model(
                 mu=mu,
@@ -196,7 +180,6 @@ def compute_mu(
             m_bnll.migrad()
             m_bnll.hesse()
 
-            # m_bnll.draw_mnprofile("mu")
             mu = m_bnll.values["mu"]
             del_mu_stat = m_bnll.errors["mu"]
             del_mu_stat_inf = -del_mu_stat
@@ -214,9 +197,11 @@ def compute_mu(
         ttbar_scale = ttbar_scale_init_ref
         diboson_scale = diboson_scale_init_ref
 
-    ###############################################################
-    ######## BNLL_syst METHOD
-    ###############################################################
+
+        """
+        Binned NLL with features distorsion uncertainty 
+        (Tes, Jes, Soft met)
+        """
     elif method == "BNLL_syst":
 
         import os
@@ -227,7 +212,7 @@ def compute_mu(
             SystName = ["TES", "JES", "SOFTMET"]
 
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            for i in range(3):  #######ATTENTION BESOIN DE METTRE A 3 POUR SOFT MET
+            for i in range(3): 
                 if os.path.isfile(
                     "%s/Fitting_Parameters/one_bkg/%s_%sbins_2orderFittingParam.npz"
                     % (current_dir, SystName[i], nb_bins)
@@ -243,9 +228,7 @@ def compute_mu(
 
         FitingData = BNLL_syst_mu_fitting_param(nb_bins=nb_bins)
 
-        # ///////////////////////////////////////////////////////////////////////////////
-        ## Cost_bnll_syst
-        # ///////////////////////////////////////////////////////////////////////////////
+ 
         def Cost_bnll_syst(mu, tes, jes, soft_met):  # tes, jes, soft_met):
             from systematic_analysis import (
                 Polynomial_Reg_Model_forced_jes_tes,
@@ -345,8 +328,7 @@ def compute_mu(
 
             m_bnll_syst.migrad()
             m_bnll_syst.hesse()
-            # m_bnll_syst.draw_mnmatrix(cl=[1, 2, 3])
-            # m_bnll_syst.draw_mnprofile("mu")
+
 
             del_mu_stat = m_bnll_syst.errors["mu"]
             mu = m_bnll_syst.values["mu"]
@@ -371,15 +353,14 @@ def compute_mu(
         ttbar_scale = ttbar_scale_init_ref
         diboson_scale = diboson_scale_init_ref
 
-    ###############################################################
-    ###############################################################
-    ######## BNLL_syst_normal_bkg METHOD
-    ###############################################################
+        """
+        Binned NLL with normalisation weight uncertainty 
+        (bkg_scale, ttbar_scale, diboson_scale)
+        """
+
     elif method == "BNLL_syst_normal_bkg":
 
-        # ///////////////////////////////////////////////////////////////////////////////
-        ## Cost_nll_syst_norm
-        # ///////////////////////////////////////////////////////////////////////////////
+      
         def Cost_nll_syst_norm(
             mu, bkg_scale, ttbar_scale, diboson_scale
         ):  # bkg_scale, ttbar_scale, diboson_scale tes, jes, soft_met):
@@ -417,8 +398,6 @@ def compute_mu(
 
             m_bnll_syst_norm.migrad()
             m_bnll_syst_norm.hesse()
-            # m_bnll_syst_norm.draw_mnmatrix(cl=[1, 2, 3,4])
-            # m_bnll_syst_norm.draw_mnprofile("mu")
 
             del_mu_stat = m_bnll_syst_norm.errors["mu"]
             mu = m_bnll_syst_norm.values["mu"]
@@ -457,10 +436,11 @@ def compute_mu(
         jes = jes_init_ref
         soft_met = soft_met_init_ref
 
-    ###############################################################
-    ###############################################################
-    ######## BNLL_all_syst METHOD
-    ###############################################################
+        """
+        Binned NLL with all systematic uncertainty 
+        (Tes, Jes, Soft met, bkg_scale, ttbar_scale, diboson_scale)
+        """
+
     elif method == "BNLL_all_syst":
 
         import os
@@ -498,9 +478,7 @@ def compute_mu(
 
         FitingData = BNLL_all_syst_mu_fitting_param(nb_bins=nb_bins)
 
-        # ///////////////////////////////////////////////////////////////////////////////
-        ## Cost_nll_all_syst
-        # ///////////////////////////////////////////////////////////////////////////////
+
         def Cost_nll_all_syst(
             mu, bkg_scale, ttbar_scale, diboson_scale, tes, jes, soft_met
         ):  # tes, jes, soft_met, bkg_scale, ttbar_scale, diboson_scale :
@@ -695,8 +673,7 @@ def compute_mu(
 
             m_bnll_all_syst.migrad()
             m_bnll_all_syst.hesse()
-            # m_bnll_all_syst.draw_mnmatrix(cl=[1, 2, 3,4,5,6])
-            # m_bnll_all_syst.draw_mnprofile("mu")
+
 
             del_mu_stat = m_bnll_all_syst.errors["mu"]
             mu = m_bnll_all_syst.values["mu"]
@@ -764,7 +741,7 @@ def compute_mu(
 
     elif (
         method == "BNLL"
-    ):  # or (method == "BNLL_syst")or (method == "BNLL_syst_normal_bkg") or (method == "BNLL_all_syst")
+    ):  
         start_bnll_negloglike = time.perf_counter()
 
         negloglike_values = np.array([Cost_bnll(mub) for mub in mu_axis_values])
@@ -775,7 +752,7 @@ def compute_mu(
             f"bnll negloglike section : {(end_bnll_negloglike - start_bnll_negloglike) :.5f} s"
         )
 
-    elif method == "BNLL_syst":  ######  and method=="REf" Just BLOCK THE CALCULATION
+    elif method == "BNLL_syst": 
         negloglike_values = np.array(
             [
                 Cost_bnll_syst(mu=mub, tes=tes, jes=jes, soft_met=soft_met)
@@ -863,8 +840,6 @@ def calculate_saved_info(
     # Del_Mu_method="None",
 ):
 
-    # del_signal=np.sqrt(np.sum(np.power(weight_ROIscore[label_Roiscore==1], 2)))
-    # del_bkg=np.sqrt(np.sum(np.power(weight_ROIscore[label_Roiscore==0], 2)))
 
     weight_ROIscore_exp_holdout = holdout_set["weights"][score > threshold]
     detailed_labels_Roiscore_exp_holdout = holdout_set["detailed_labels"][
@@ -879,8 +854,7 @@ def calculate_saved_info(
         weight_ROIscore_exp_holdout[detailed_labels_Roiscore_exp_holdout != "htautau"]
     )
     N = signal + bkg
-    # N=np.sum(weight_ROIscore_exp_holdout)
-    # bkg=N-signal
+
 
     Bins_edges = np.linspace(0, 1, nb_bins + 1)
 
@@ -953,7 +927,7 @@ def calculate_saved_info(
     print("saved info saved")
     print("###########################################")
 
-    # print("saved_info", saved_info)
+
     return saved_info
 
 
@@ -973,8 +947,7 @@ def calculate_best_threshold(
     mu_list = np.zeros(NbPoints_Prec_Thresh)
     compute_mu_tamp = np.zeros(NbPoints_Prec_Thresh)
 
-    for i in range(NbPoints_Prec_Thresh):  # Ajouter barre de progressio
-        # print("threshold[i] in best thresh calculate ",threshold_list[i])
+    for i in range(NbPoints_Prec_Thresh):  
         saved_info_tamp_hold = calculate_saved_info(
             score_hold_exp, holdout_exp_set, threshold_list[i]
         )
@@ -982,7 +955,7 @@ def calculate_best_threshold(
             score_valid_test, valid_test_set, threshold_list[i]
         )
 
-        # print("saved_info_tamp in best thresh calculate"," sig ",saved_info_tamp["signal"]," bkg ",saved_info_tamp["bkg"])
+      
         AMS_list[i] = calculate_AMS(saved_info_tamp_valid, 10e-2)
 
         compute_mu_tamp = compute_mu(
@@ -1074,7 +1047,7 @@ def calculate_AMS(saved_info, beta_reg=10e-2):
     AMS = np.sqrt(
         2
         * (
-            (  # Not needed
+            (  
                 (saved_info["signal"] + saved_info["bkg"] + beta_reg)
                 * np.log(1 + (saved_info["signal"] / (saved_info["bkg"] + beta_reg)))
             )

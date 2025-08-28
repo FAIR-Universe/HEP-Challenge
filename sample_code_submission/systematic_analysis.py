@@ -42,10 +42,10 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    #################Be careful
+
     if "score" in dataset["data"].columns:
         dataset["data"] = dataset["data"].drop(columns=["score"])
-    ######################
+
 
     dataset_tamp = dataset.copy()
     dataset_tamp = systematics(dataset_tamp, tes=1)
@@ -56,7 +56,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
     weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
     label_Roiscore = dataset_tamp["labels"][data_score > threshold]
     score_ROIscore = data_score[data_score > threshold]
-    Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
+    Bins_edges = np.linspace(0, 1, nb_bins + 1) 
     signal_obs_ref = np.histogram(
         score_ROIscore[label_Roiscore == 1],
         bins=Bins_edges,
@@ -134,16 +134,8 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
     var_lenght = len(sigma)
     tes = [np.exp(sigma[i]) for i in range(var_lenght)]
 
-    # data_score=[model.predict(systematics(dataset,tes=tes[i]))  for i in range(len(sigma)) ]  #Alternative to the for loop
-    # weight_ROIscore=[dataset["weights"][data_score[i] > threshold] for i in range(len(sigma))]
-    # label_Roiscore=[dataset["labels"][data_score[i]>threshold] for i in range(len(sigma))]
-    # score_ROIscore=[data_score[data_score[i]>threshold]  for i in range(len(sigma))]
-    # Bins_edges=[np.linspace(np.min(score_ROIscore[i]),np.max(score_ROIscore[i]),nb_bins+1) for i in range(len(sigma))]
-    # signal_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==1], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==1])[0] for i in range(len(sigma))]
-    # bkg_obs=[np.histogram(score_ROIscore[i][label_Roiscore[i]==0], bins=Bins_edges[i], weights=weight_ROIscore[i][label_Roiscore[i]==0])[0] for i in range(len(sigma))]
-    # N_obs=[np.histogram(score_ROIscore[i], bins=Bins_edges[i], weights=weight_ROIscore[i])[0] for i in range(len(sigma))]
-
-    # We create the modified observed list so we can fit on
+    
+    """We create the modified observed list so we can fit on"""
     def tes_hist_syst_points(i):
         ##We need the for loop due to the addition of the score cell in the data_score
         dataset_tamp = systematics(dataset, tes=tes[i])
@@ -154,7 +146,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
         weight_ROIscore = dataset_tamp["weights"][data_score > threshold]
         label_Roiscore = dataset_tamp["labels"][data_score > threshold]
         score_ROIscore = data_score[data_score > threshold]
-        # Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)
+        """Alternative Bins_edges=np.linspace(np.min(score_ROIscore),np.max(score_ROIscore),nb_bins+1)"""
         signal = (
             np.histogram(
                 score_ROIscore[label_Roiscore == 1],
@@ -297,12 +289,11 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
     delta_y_ref = [delta_sig_ref_order, delta_bkg_ref_order, delta_N_ref_order]
     """
     y_obs[0:2] = sig, bkg, tot
-    y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un TES précis*
+    y_obs[i][0:nb_bins]= y_obs for a given bin number
+    y_obs[i][j][0:len(sigma)]=y_obs for a given bin, the value of y_obs for a given TES 
     """
 
-    # for i in range(len(y_obs)):  # =3
-    # for j in range(nb_bins):
+
     def tes_fit_and_plot_over_bins(i, j):
         # Fit
         x_data = np.array(tes)
@@ -334,7 +325,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
         ]
 
         y = np.array([r[0] for r in results_propa])
-        ycov = np.array([r[1] for r in results_propa])  # shape (len(tes_fit), 1, 1)
+        ycov = np.array([r[1] for r in results_propa])  
         y_std = ycov**0.5
 
         # Plot
@@ -412,10 +403,7 @@ def regression_tes(dataset, model, systematics, nb_bins=20, threshold=0):
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
+
 
 
 def regression_jes(dataset, model, systematics, nb_bins=20, threshold=0):
@@ -924,9 +912,11 @@ def regression_tes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
         diboson_obs_order,
         N_obs_order,
     )
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un TES précis
+    """
+    y_obs[0:2] = sig, bkg, tot
+    y_obs[i][0:nb_bins]= y_obs for a given bin number
+    y_obs[i][j][0:len(sigma)]=y_obs for a given bin, the value of y_obs for a given TES 
+    """
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
@@ -1004,10 +994,7 @@ def regression_tes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
         fit_param=np.array(fit_param),
         fit_cov=np.array(fit_cov),
     )
-    # # Load
-    # data = np.load('4orderFittingParam.npz')
-    # print(data['fit_param'])
-    # print(data['fit_cov'])
+
 
 
 def regression_jes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
@@ -1054,9 +1041,9 @@ def regression_jes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
     var_lenght = len(sigma)
     jes = [np.exp(sigma[i]) for i in range(var_lenght)]
 
-    # We create the modified observed list so we can fit on
+    """ We create the modified observed list so we can fit on """
     def jes_hist_syst_points(i):
-        ##We need the for loop due to the addition of the score cell in the data_score
+        """ We need the for loop due to the addition of the score cell in the data_score """
         dataset_tamp = dataset
         dataset_tamp = systematics(dataset_tamp, jes=jes[i])
         if "score" in dataset_tamp["data"].columns:
@@ -1164,9 +1151,6 @@ def regression_jes_3bkg(dataset, model, systematics, nb_bins=20, threshold=0):
         diboson_obs_order,
         N_obs_order,
     )
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un jes précis
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]
@@ -1261,7 +1245,7 @@ def regression_soft_met_3bkg(dataset, model, systematics, nb_bins=20, threshold=
     score_ROIscore = data_score[data_score > threshold]
     del dataset_tamp, data_score
 
-    Bins_edges = np.linspace(0, 1, nb_bins + 1)  # A changer au besoin
+    Bins_edges = np.linspace(0, 1, nb_bins + 1)  
     signal_obs_ref = np.histogram(
         score_ROIscore[detailed_labels_Roiscore == "htautau"],
         bins=Bins_edges,
@@ -1289,9 +1273,9 @@ def regression_soft_met_3bkg(dataset, model, systematics, nb_bins=20, threshold=
     soft_met = np.linspace(0, 5, nb_points_soft_met_for_fitting)
     var_lenght = len(soft_met)
 
-    # We create the modified observed list so we can fit on
+    
     def soft_met_hist_syst_points(i):
-        ##We need the for loop due to the addition of the score cell in the data_score
+
         dataset_tamp = dataset
         dataset_tamp = systematics(dataset_tamp, soft_met=soft_met[i])
         if "score" in dataset_tamp["data"].columns:
@@ -1400,9 +1384,7 @@ def regression_soft_met_3bkg(dataset, model, systematics, nb_bins=20, threshold=
         diboson_obs_order,
         N_obs_order,
     )
-    # y_obs[0:2] = sig, bkg, tot
-    # y_obs[i][0:nb_bins]= y_obs pour le numéro de bin donné
-    # y_obs[i][j][0:len(sigma)]=y_obs pour le numéro de bin donné, la valeur de y_obs pour un soft_met précis
+
 
     fit_param = [[None] * len(y_obs) for i in range(nb_bins)]
     fit_cov = [[None] * len(y_obs) for i in range(nb_bins)]

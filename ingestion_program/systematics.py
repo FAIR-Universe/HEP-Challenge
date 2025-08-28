@@ -482,18 +482,18 @@ def postprocess(data):
     # if subleading jet pt below high threshold, do so it never existed
     mask = data['PRI_jet_subleading_pt'].between(0, 26)
     data.loc[mask, 'PRI_jet_all_pt'] -= data['PRI_jet_subleading_pt']
-    data.loc[mask, 'PRI_jet_subleading_pt'] = -25.0
-    data.loc[mask, 'PRI_jet_subleading_eta'] = -25.0
-    data.loc[mask, 'PRI_jet_subleading_phi'] = -25.0
-    data.loc[mask, 'PRI_n_jets'] -= 1.0
+    data.loc[mask, 'PRI_jet_subleading_pt'] = -25
+    data.loc[mask, 'PRI_jet_subleading_eta'] = -25
+    data.loc[mask, 'PRI_jet_subleading_phi'] = -25
+    data.loc[mask, 'PRI_n_jets'] -= 1
 
     # if leading jet pt below high threshold, do so it never existed
     mask = data['PRI_jet_leading_pt'].between(0, 26)
     data.loc[mask, 'PRI_jet_all_pt'] -= data['PRI_jet_leading_pt']
-    data.loc[mask, 'PRI_jet_leading_pt'] = -25.0
-    data.loc[mask, 'PRI_jet_leading_eta'] = -25.0
-    data.loc[mask, 'PRI_jet_leading_phi'] = -25.0
-    data.loc[mask, 'PRI_n_jets'] -= 1.0
+    data.loc[mask, 'PRI_jet_leading_pt'] = -25
+    data.loc[mask, 'PRI_jet_leading_eta'] = -25
+    data.loc[mask, 'PRI_jet_leading_phi'] = -25
+    data.loc[mask, 'PRI_n_jets'] -= 1
 
 
 

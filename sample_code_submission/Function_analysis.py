@@ -18,7 +18,7 @@ def Parabola_Likelihood_plot(
     threshold=0,
     mu_init=1.0,
 ):
-    # Plottttt parabole et sigma
+    # Plot parabola and sigma
     from statistical_analysis import compute_mu
     import matplotlib.pyplot as plt
     import numpy as np
@@ -111,7 +111,7 @@ def Parabola_Likelihood_plot(
     )
     plt.show()
     plt.close()
-    ##Fin plot parabole et sigma
+    ##End plot parabola and sigma
 
 
 def Bins_BNLL_varia(
