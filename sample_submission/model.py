@@ -20,7 +20,8 @@ class Model:
         self.scaler = StandardScaler()
         self.N_events_train = 5_000_000
         self.N_events_holdout = 5_000_000
-        self.N_events_total = 10_000_000
+        self.N_events_test = 5_000_000
+        self.N_events_total = 15_000_000
 
         
 
@@ -56,16 +57,18 @@ class Model:
         
         data_df = self.get_train_set(train_size=self.N_events_total)
         
-        training_df, holdout_df = train_test_split(
-            data_df, test_size=self.N_events_holdout / self.N_events_total, random_state=42, reweight=True
-        )  
+        training_df, temp_df = train_test_split(
+            data_df, test_size=(self.N_events_holdout + self.N_events_test) / self.N_events_total, random_state=42, reweight=True
+        )
+        
+        holdout_df, test_df = train_test_split(
+            temp_df, test_size=0.5, random_state=42, reweight=True
+        )
         
         print("Training set size: ", training_df.shape)
-        print("Training set columns: ", training_df.columns)
         print("Holdout set size: ", holdout_df.shape)
-        print("Holdout set columns: ", holdout_df.columns)
-         
-
+        print("Test set size: ", test_df.shape)
+        
         train_vis = Dataset_visualise(
             data_set=training_df,
             name="Training Set",
@@ -76,17 +79,7 @@ class Model:
         )
         
         train_vis.examine_dataset()
-        
-        holdout_vis = Dataset_visualise(
-            data_set=holdout_df,
-            name="Holdout Set",
-            columns=[
-                "PRI_met",
-                "PRI_had_pt",
-                "DER_mass_vis"],
-        )
-        holdout_vis.examine_dataset()
-        
+
                 
         training_df = self.systematics(training_df)
         
@@ -98,30 +91,8 @@ class Model:
         }
         
         
-
-        
-        print("\n\n\n\n\n")
-
-        print("Before balancing: ")
-        print("\t Number of background events: ", (training_set["labels"] == 0).sum())
-        print("\t Number of signal events: ", (training_set["labels"] == 1).sum())
-        print("\t Sum of weights for background events: ", training_set["weights"][training_set["labels"] ==  0].sum())
-        print("\t Sum of weights for signal events: ", training_set["weights"][training_set["labels"] == 1].sum())
-        
-        
-        print("\n\n\n\n\n")
-        
         balanced_set = balance_set(training_set)
-        
-        print("After balancing: ")
-        print("\t Number of background events: ", (balanced_set["labels"] == 0).sum())
-        print("\t Number of signal events: ", (balanced_set["labels"] == 1).sum())
-        print("\t Sum of weights for background events: ", balanced_set["weights"][balanced_set["labels"] ==  0].sum())
-        print("\t Sum of weights for signal events: ", balanced_set["weights"][balanced_set["labels"] == 1].sum())
-        print("\n\n\n\n\n")
-        
-        print("balanced columns: ", balanced_set["data"].columns)
-                        
+                                
         self.scaler.fit(balanced_set["data"])
         
         X_train_data = self.scaler.transform(balanced_set["data"])
@@ -139,37 +110,26 @@ class Model:
             "detailed_labels": holdout_df.pop("detailed_labels"),
             "data": holdout_df
         }
-        
-        # holdout_vis = Dataset_visualise(
-        #     data_set=holdout_df,
-        #     columns=[
-        #         "PRI_met",
-        #         "PRI_had_pt",
-        #         "DER_mass_vis"],
-        #     name="Holdout Set",
-        # )
-        
-        # holdout_vis.examine_dataset()
                 
         
-        self.saved_info = calculate_saved_info(self.model, holdout_set)
+        X_holdout = self.scaler.transform(holdout_set["data"])
 
-        holdout_score = self.model.predict_proba(holdout_set["data"])[:, 1]
+        holdout_score = self.model.predict_proba(X_holdout)[:, 1]
+
+        self.saved_info = calculate_saved_info(holdout_score, holdout_set)
+
+
         holdout_results = compute_mu(
             holdout_score, holdout_set["weights"], self.saved_info
         )
         
         roc_curve_wrapper(holdout_score, holdout_set["labels"],holdout_set["weights"], plot_label="Holdout ROC curve")
         
-        
-        training_score = self.model.predict_proba(training_set["data"])[:, 1]
-        roc_curve_wrapper(training_score, training_set["labels"],training_set["weights"], plot_label="Training ROC curve")
-        
-        stacked_histogram(detailed_label=training_set["detailed_labels"],
-            field=training_score,
-            weights=training_set["weights"],
+        stacked_histogram(detailed_label=holdout_set["detailed_labels"],
+            field=holdout_score,
+            weights=holdout_set["weights"],
             y_scale="log",
-            plot_label="Holdout Score"
+            plot_label="Holdout Score",
         )
         
         stacked_histogram(detailed_label=holdout_set["detailed_labels"],
@@ -192,34 +152,45 @@ class Model:
         print("Holdout Results: ")
         for key in holdout_results.keys():
             print("\t", key, " : ", holdout_results[key])
-            
+
+        test_vis = Dataset_visualise(
+            data_set=test_df,
+            name="Training Set",
+            columns=[
+                "PRI_met",
+                "PRI_had_pt",
+                "DER_mass_vis"],
+        )
         
-        # test_df = self.get_train_set(selected_indices=test_indices)
-        # test_set ={
-        #     "labels": test_df.pop("labels"),
-        #     "weights": test_df.pop("weights"),
-        #     "detailed_labels": test_df.pop("detailed_labels"),
-        #     "data": test_df
-        # }
+        test_vis.examine_dataset()    
         
-        # test_set = self.systematics(test_set)
+        test_df = self.systematics(test_df)
+
+        test_set ={
+            "labels": test_df.pop("labels"),
+            "weights": test_df.pop("weights"),
+            "detailed_labels": test_df.pop("detailed_labels"),
+            "data": test_df
+        }
+                
+        X_test =  self.scaler.transform(test_set["data"])
         
-        # test_score = self.model.predict_proba(test_set["data"])[:, 1]
-        # test_results = compute_mu(
-        #     test_score, test_set["weights"], self.saved_info
-        # )
-        # print("Test Results: ")
-        # for key in test_results.keys():
-        #     print("\t", key, " : ", test_results[key])
+        test_score = self.model.predict_proba(X_test)[:, 1]
+        test_results = compute_mu(
+            test_score, test_set["weights"], self.saved_info
+        )
+        print("Test Results: ")
+        for key in test_results.keys():
+            print("\t", key, " : ", test_results[key])
         
-        # stacked_histogram(detailed_label=holdout_set["detailed_labels"],
-        #     field=holdout_score,
-        #     weights=holdout_set["weights"],
-        #     pseudo_field=test_score,
-        #     pseudo_weight=test_set["weights"],
-        #     y_scale="log",
-        #     plot_label="Holdout Score"
-        # )
+        stacked_histogram(detailed_label=holdout_set["detailed_labels"],
+            field=holdout_score,
+            weights=holdout_set["weights"],
+            pseudo_field=test_score,
+            pseudo_weight=test_set["weights"],
+            y_scale="log",
+            plot_label="Holdout Score"
+        )
         
         
 

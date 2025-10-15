@@ -1,10 +1,7 @@
 
 import numpy as np
 
-def calculate_saved_info(model, train_set):
-
-
-    score = model.predict_proba(train_set["data"])[:, 1]
+def calculate_saved_info(score, train_set):
 
     print("score shape before threshold", score.shape)
 

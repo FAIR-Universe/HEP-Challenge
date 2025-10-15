@@ -227,7 +227,13 @@ class Dataset_visualise:
         plt.rcParams["figure.facecolor"] = "w"  # Set the figure facecolor to white
         ax.figure.suptitle("Pair plots of features in" + self.name)
         plt.show()
+
+        plt.rcParams['figure.figsize'] = plt.rcParamsDefault['figure.figsize']
+
+        sns.reset_orig()  # Reset to matplotlib defaults
+
         plt.close()
+
 
     def stacked_histogram(self, field_name, mu_hat=1.0, bins=30,y_scale='linear'):
         """
@@ -289,6 +295,11 @@ class Dataset_visualise:
 
         ax.figure.suptitle("Pair plots of features between syst and no_syst")
         plt.show()
+        
+        plt.rcParams['figure.figsize'] = plt.rcParamsDefault['figure.figsize']
+
+        sns.reset_orig()  # Reset to matplotlib defaults
+
         plt.close()
 
     def histogram_syst(self, df_syst, weight_syst, columns=None,nbin = 25):
@@ -568,7 +579,7 @@ def stacked_histogram(
     weights,
     pseudo_weight=None,
     pseudo_field=None,
-    bins=30,
+    bins=25,
     y_scale="linear",
     path_to_figures=None,
     plot_label="stacked_histogram",
@@ -600,7 +611,7 @@ def stacked_histogram(
     if not weighted:
         weights = np.ones_like(weights)
 
-    _, bins = np.histogram(
+    hist, bins = np.histogram(
         field,
         bins=bins,
         weights=weights,
@@ -608,7 +619,7 @@ def stacked_histogram(
 
     plt.figure()
 
-    cmap = plt.get_cmap("tab20")  # Has 20 distinct colors
+    cmap = plt.get_cmap("Set1")
 
     all_categories_sorted = sorted(categories)
     color_mapping = {cat: cmap(i) for i, cat in enumerate(all_categories_sorted)}
@@ -636,6 +647,7 @@ def stacked_histogram(
     )
 
     if (pseudo_weight is not None) and (pseudo_field is not None):
+        
         hist_pseudo, bins = np.histogram(
             pseudo_field,
             bins=bins,
@@ -651,7 +663,7 @@ def stacked_histogram(
         plt.errorbar(
             0.5 * (bins[1:] + bins[:-1]),
             hist_pseudo,
-            yerr=np.sqrt(err_pseudo),
+            yerr=err_pseudo,
             fmt="o",
             color="black",
             label="Pseudo data",
@@ -666,9 +678,7 @@ def stacked_histogram(
 
     plt.yscale(y_scale)
     if path_to_figures is not None:
-        plt.savefig(f"{path_to_figures}/{plot_label}.png")
+        plt.savefig(f"{path_to_figures}/{plot_label}.pdf")
     plt.show()
     plt.close()
 
-
-    
