@@ -241,64 +241,15 @@ class Dataset_visualise:
         .. Image:: ../images/stacked_histogram.png
         """
         field = self.dfall[field_name]
-        sns.set_theme(rc={"figure.figsize": (8, 7)}, style="whitegrid")
-
-        bins = 30
-
-        hist_s, bins = np.histogram(
-            field[self.target == 1],
+        stacked_histogram(
+            self.detailed_label,
+            field,
+            self.weights,
             bins=bins,
-            weights=self.weights[self.target == 1],
+            y_scale=y_scale,
+            plot_label=field_name,
         )
-
-        hist_b, bins = np.histogram(
-            field[self.target == 0],
-            bins=bins,
-            weights=self.weights[self.target == 0],
-        )
-
-        hist_bkg = hist_b.copy()
-
-        higgs = "htautau"
-
-        for key in self.keys:
-            if key != higgs:
-                field_key = field[self.detailed_label == key]
-                print(key, field_key.shape)
-                print(key, self.weight_keys[key].shape)
-                hist, bins = np.histogram(
-                    field_key,
-                    bins=bins,
-                    weights=self.weight_keys[key],
-                )
-                plt.stairs(hist_b, bins, fill=True, label=f"{key} bkg")
-                hist_b -= hist
-            else:
-                print(key, hist_s.shape)
-
-        plt.stairs(
-            hist_s * mu_hat + hist_bkg,
-            bins,
-            fill=False,
-            color="orange",
-            label = f"$H \\rightarrow \\tau \\tau (\\mu = {mu_hat:.3f})$"
-        )
-
-        plt.stairs(
-            hist_s + hist_bkg,
-            bins,
-            fill=False,
-            color="red",
-            label=f"$H \\rightarrow \\tau \\tau (\\mu = {1.0:.3f})$",
-        )
-
-        plt.legend()
-        plt.title(f"Stacked histogram of {field_name} in {self.name}")
-        plt.xlabel(f"{field_name}")
-        plt.ylabel("Weighted count")
-        plt.yscale(y_scale)
-        plt.show()
-
+    
     def pair_plots_syst(self, df_syst, sample_size=100):
         """
         Plots pair plots between the dataset and a system dataset.
@@ -609,3 +560,115 @@ def custom_pretty_print(d):
     if table_data:
 
         print(tabulate(table_data, headers=["Key", "Value","Type"], tablefmt='grid'))
+
+
+def stacked_histogram(
+    detailed_label,
+    field,
+    weights,
+    pseudo_weight=None,
+    pseudo_field=None,
+    bins=30,
+    y_scale="linear",
+    path_to_figures=None,
+    plot_label="stacked_histogram",
+    weighted=True,
+):
+    """
+    Plots a stacked histogram of a specific field in the dataset.
+
+    Args:
+        * field (numpy.ndarray): The field to plot.
+        * labels (numpy.ndarray): The labels of the dataset.
+        * weights (numpy.ndarray): The weights of the dataset.
+        * kl_hat (float): The value of kl_hat.
+        * bins (int): The number of bins.
+        * y_scale (str): The scale of the y-axis.
+        * plot_label (str): The label of the plot.
+
+
+    .. Image:: ../images/stacked_histogram.png
+    """
+
+    categories = np.unique(detailed_label)
+
+    # Build stack from smallest to largest (bottom to top)
+    sorted_categories = sorted(
+        categories, key=lambda k: np.sum(weights[detailed_label == k])
+    )
+
+    if not weighted:
+        weights = np.ones_like(weights)
+
+    _, bins = np.histogram(
+        field,
+        bins=bins,
+        weights=weights,
+    )
+
+    plt.figure()
+
+    cmap = plt.get_cmap("tab20")  # Has 20 distinct colors
+
+    all_categories_sorted = sorted(categories)
+    color_mapping = {cat: cmap(i) for i, cat in enumerate(all_categories_sorted)}
+
+    all_data = []
+    all_weights = []
+    colors = []
+
+    for category in sorted_categories:
+        condition = detailed_label == category
+        field_key = np.array(field[condition])
+        weights_key = np.array(weights[condition])
+        all_data.append(field_key)
+        all_weights.append(weights_key)
+        colors.append(color_mapping[category])
+
+    # This creates discrete filled bars (not smooth)
+    plt.hist(
+        all_data,
+        bins=bins,
+        weights=all_weights,
+        stacked=True,
+        label=sorted_categories,
+        color=colors,
+    )
+
+    if (pseudo_weight is not None) and (pseudo_field is not None):
+        hist_pseudo, bins = np.histogram(
+            pseudo_field,
+            bins=bins,
+            weights=pseudo_weight,
+        )
+
+        err_pseudo = np.histogram(
+            pseudo_field,
+            bins=bins,
+            weights=pseudo_weight**2,
+        )[0]
+
+        plt.errorbar(
+            0.5 * (bins[1:] + bins[:-1]),
+            hist_pseudo,
+            yerr=np.sqrt(err_pseudo),
+            fmt="o",
+            color="black",
+            label="Pseudo data",
+        )
+
+    plt.legend(ncol=2)
+    plt.xlabel(f"{plot_label}")
+    if weighted:
+        plt.ylabel("Weighted count")
+    else:
+        plt.ylabel("MC events")
+
+    plt.yscale(y_scale)
+    if path_to_figures is not None:
+        plt.savefig(f"{path_to_figures}/{plot_label}.png")
+    plt.show()
+    plt.close()
+
+
+    
