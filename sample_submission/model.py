@@ -18,9 +18,7 @@ class Model:
         )
         self.name = "model_XGB"
         self.scaler = StandardScaler()
-        self.N_events_train = 5_000_000
-        self.N_events_holdout = 5_000_000
-        self.N_events_test = 5_000_000
+
         self.N_events_total = 15_000_000
 
         
@@ -42,27 +40,21 @@ class Model:
         """
 
         from visualization import stacked_histogram, Dataset_visualise, roc_curve_wrapper
-
-        indices = np.arange(self.N_events_total)
-
-        np.random.shuffle(indices)
-
-        train_indices = np.sort(indices[: self.N_events_train])
-        holdout_indices = np.sort(indices[
-            self.N_events_train : self.N_events_train + self.N_events_holdout
-        ])
-        test_indices = np.sort(indices[self.N_events_train + self.N_events_holdout :])
-
-
         
-        data_df = self.get_train_set(train_size=self.N_events_total)
+        try :
+            data_df = self.get_train_set(train_size=self.N_events_total)
+        except Exception as e :
+            print(e)
+            data_df = self.get_train_set(train_size=self.N_events_total)
+        
+        #Divide the dataset
         
         training_df, temp_df = train_test_split(
-            data_df, test_size=(self.N_events_holdout + self.N_events_test) / self.N_events_total, random_state=42, reweight=True
+            data_df, test_size= (2 / 3) , random_state=42, reweight=True
         )
         
         holdout_df, test_df = train_test_split(
-            temp_df, test_size=0.5, random_state=42, reweight=True
+            temp_df, test_size=(1/2), random_state=42, reweight=True
         )
         
         print("Training set size: ", training_df.shape)
@@ -124,30 +116,25 @@ class Model:
         )
         
         roc_curve_wrapper(holdout_score, holdout_set["labels"],holdout_set["weights"], plot_label="Holdout ROC curve")
+
         
         stacked_histogram(detailed_label=holdout_set["detailed_labels"],
             field=holdout_score,
             weights=holdout_set["weights"],
-            y_scale="log",
-            plot_label="Holdout Score",
-        )
-        
-        stacked_histogram(detailed_label=holdout_set["detailed_labels"],
-            field=holdout_score,
-            weights=holdout_set["weights"],
+            target=holdout_set["labels"],
             y_scale="linear",
             plot_label="Holdout Score No weights",
             weighted=False
         )
-
-
+        
         stacked_histogram(detailed_label=holdout_set["detailed_labels"],
             field=holdout_score,
             weights=holdout_set["weights"],
-            y_scale="linear",
-            plot_label="Holdout Score linear"
+            target=holdout_set["labels"],
+            y_scale="log",
+            plot_label="Holdout Score",
         )
-            
+
             
         print("Holdout Results: ")
         for key in holdout_results.keys():
@@ -163,7 +150,8 @@ class Model:
         )
         
         test_vis.examine_dataset()    
-        
+        bootstraped_test_df = test_df.copy()
+
         test_df = self.systematics(test_df)
 
         test_set ={
@@ -172,6 +160,11 @@ class Model:
             "detailed_labels": test_df.pop("detailed_labels"),
             "data": test_df
         }
+
+        random_state = np.random.RandomState(42)
+        mu_test =random_state.uniform(0.1, 3)
+                        
+        test_set["weights"][test_set["labels"] == 1] *= mu_test
                 
         X_test =  self.scaler.transform(test_set["data"])
         
@@ -179,6 +172,9 @@ class Model:
         test_results = compute_mu(
             test_score, test_set["weights"], self.saved_info
         )
+
+        mu_test_hat = test_results["mu_hat"]
+        
         print("Test Results: ")
         for key in test_results.keys():
             print("\t", key, " : ", test_results[key])
@@ -186,14 +182,16 @@ class Model:
         stacked_histogram(detailed_label=holdout_set["detailed_labels"],
             field=holdout_score,
             weights=holdout_set["weights"],
+            target=holdout_set["labels"],
+            mu_hat=mu_test_hat,
             pseudo_field=test_score,
             pseudo_weight=test_set["weights"],
             y_scale="log",
-            plot_label="Holdout Score"
+            plot_label="BDT Score",
+            seperate_signal=True,
+            path_to_figures="./"
         )
-        
-        
-
+                  
 
     def predict(self, test_set):
         """
@@ -264,8 +262,6 @@ def train_test_split(data_set, test_size=0.2, random_state=42, reweight=False):
         ] * (background_weight / background_weight_test)
 
     return train_set, test_set
-
-
 
 
 def balance_set(train_set):

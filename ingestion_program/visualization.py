@@ -36,8 +36,6 @@ class Dataset_visualise:
     """
 
     def __init__(self, data_set, name="dataset", columns=None):
-        print("\nGeneral Structure of the data object is a dictionary")
-        custom_pretty_print(data_set)
         
         self.target = data_set["labels"]
         self.weights = data_set["weights"]
@@ -60,6 +58,8 @@ class Dataset_visualise:
         """
 
         print()
+        
+        custom_pretty_print(self.dfall)
         
         info_dict = {
             "Dataset name": self.name,
@@ -251,6 +251,7 @@ class Dataset_visualise:
             self.detailed_label,
             field,
             self.weights,
+            self.target,
             bins=bins,
             y_scale=y_scale,
             plot_label=field_name,
@@ -577,13 +578,17 @@ def stacked_histogram(
     detailed_label,
     field,
     weights,
+    target,
     pseudo_weight=None,
     pseudo_field=None,
+    mu_hat=1,
     bins=25,
     y_scale="linear",
     path_to_figures=None,
     plot_label="stacked_histogram",
     weighted=True,
+    seperate_signal = False,
+    signal_tag = "htautau"
 ):
     """
     Plots a stacked histogram of a specific field in the dataset.
@@ -601,7 +606,10 @@ def stacked_histogram(
     .. Image:: ../images/stacked_histogram.png
     """
 
-    categories = np.unique(detailed_label)
+    categories = list(np.unique(detailed_label))
+    
+    if seperate_signal:
+        categories.remove(signal_tag)
 
     # Build stack from smallest to largest (bottom to top)
     sorted_categories = sorted(
@@ -611,15 +619,22 @@ def stacked_histogram(
     if not weighted:
         weights = np.ones_like(weights)
 
-    hist, bins = np.histogram(
-        field,
+    
+    hist_s, bin_edges = np.histogram(
+        field[target== 1],
         bins=bins,
-        weights=weights,
+        weights=weights[target== 1],
+    )
+
+    hist_b, _ = np.histogram(
+        field[target== 0],
+        bins=bin_edges,
+        weights=weights[target== 0],
     )
 
     plt.figure()
 
-    cmap = plt.get_cmap("Set1")
+    cmap = plt.get_cmap("tab20")
 
     all_categories_sorted = sorted(categories)
     color_mapping = {cat: cmap(i) for i, cat in enumerate(all_categories_sorted)}
@@ -639,12 +654,30 @@ def stacked_histogram(
     # This creates discrete filled bars (not smooth)
     plt.hist(
         all_data,
-        bins=bins,
+        bins=bin_edges,
         weights=all_weights,
         stacked=True,
         label=sorted_categories,
         color=colors,
     )
+    
+    if seperate_signal :
+        plt.stairs(
+            hist_s * mu_hat + hist_b,
+            edges=bin_edges,
+            fill=False,
+            color="orange",
+            label=f"$H \\rightarrow \\tau \\tau (\\mu = {mu_hat:.2f})$",
+        )
+
+        plt.stairs(
+            hist_s + hist_b,
+            edges=bin_edges,
+            fill=False,
+            color="red",
+            label=f"$H \\rightarrow \\tau \\tau (\\mu = {1.0:.2f})$",
+        )
+
 
     if (pseudo_weight is not None) and (pseudo_field is not None):
         
@@ -663,7 +696,7 @@ def stacked_histogram(
         plt.errorbar(
             0.5 * (bins[1:] + bins[:-1]),
             hist_pseudo,
-            yerr=err_pseudo,
+            yerr=np.sqrt(err_pseudo),
             fmt="o",
             color="black",
             label="Pseudo data",
