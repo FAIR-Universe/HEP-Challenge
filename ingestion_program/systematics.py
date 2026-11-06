@@ -446,7 +446,7 @@ def make_unweighted_set(data_set):
     keys = ["htautau", "ztautau", "ttbar", "diboson"]
     unweighted_set = {}
     for key in keys:
-        unweighted_set[key] = data_set["data"][data_set["detailedlabel"] == key].sample(
+        unweighted_set[key] = data_set["data"][data_set["detailed_labels"] == key].sample(
             frac=1, random_state=31415
         )
 
@@ -564,7 +564,7 @@ def systematics(
         # possibly remove events
         data_syst = postprocess(data_syst)
 
-    if "detailedlabel" in data_syst.columns:
+    if "detailed_labels" in data_syst.columns:
         if "weights" in data_syst.columns:
             weights = data_syst["weights"].copy()
         else:
